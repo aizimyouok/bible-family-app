@@ -3,10 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="no-referrer">
     <title>Bible Time for Family</title>
-    <link rel="icon" type="image/png" href="https://i.imgur.com/your-favicon.png">
-    <link rel="shortcut icon" href="https://i.imgur.com/your-favicon.png">
-    <link rel="apple-touch-icon" href="https://i.imgur.com/your-favicon.png">
+    <link rel="icon" type="image/png" href="YOUR_FAVICON_URL.png">
 
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Nanum+Myeongjo:wght@400;700&display=swap" rel="stylesheet">
@@ -19,18 +18,13 @@
         .theme-creation { --bg-main: #f0f4f8; --bg-container: #ffffff; --bg-accent: #e6f0e6; --text-primary: #2c3e50; --text-accent: #1e8449; --border-color: #d4e6d4; }
         .theme-jerusalem { --bg-main: #fdfaf6; --bg-container: #ffffff; --bg-accent: #f8f1e9; --text-primary: #5a4b42; --text-accent: #8d6e63; --border-color: #d7ccc8; }
         body { background-color: var(--bg-main); color: var(--text-primary); transition: background-color 0.5s, color 0.5s; }
-        .main-container { background-color: var(--bg-container); transition: background-color 0.5s; }
-        .accent-bg { background-color: var(--bg-accent); transition: background-color 0.5s; }
-        .accent-text { color: var(--text-accent); transition: color 0.5s; }
-        .border-custom { border-color: var(--border-color); transition: border-color 0.5s; }
-        .progress-bar-fill { background-color: var(--text-accent); transition: background-color 0.5s, width 0.3s ease-in-out; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .loading { animation: spin 1s linear infinite; }
-        .status-connected { color: #10b981; }
-        .status-disconnected { color: #ef4444; }
-        .status-loading { color: #f59e0b; }
+        .main-container { background-color: var(--bg-container); }
+        .accent-bg { background-color: var(--bg-accent); }
+        .accent-text { color: var(--text-accent); }
+        .progress-bar-fill { background-color: var(--text-accent); transition: width 0.3s ease-in-out; }
         details > summary { list-style: none; }
         details > summary::-webkit-details-marker { display: none; }
+        .tab-active { border-color: var(--text-accent); color: var(--text-accent); }
     </style>
 </head>
 <body class="theme-jerusalem">
@@ -47,7 +41,7 @@
             <div class="mt-4 flex justify-center items-center gap-4 flex-wrap">
                 <div>
                     <label for="theme-select" class="mr-2">테마 선택:</label>
-                    <select id="theme-select" class="p-1 rounded border-custom border-2 accent-bg">
+                    <select id="theme-select" class="p-1 rounded border-2" style="border-color: var(--border-color); background-color: var(--bg-accent);">
                         <option value="theme-jerusalem">예루살렘 (흙과 돌)</option>
                         <option value="theme-creation">천지창조 (하늘과 풀)</option>
                     </select>
@@ -58,407 +52,149 @@
 
         <div class="main-container shadow-xl rounded-2xl p-4 md:p-6">
             <section id="family-dashboard" class="mb-8 accent-bg rounded-lg p-4 grid grid-cols-2 md:grid-cols-4 gap-4 items-center text-center"></section>
-            <section class="mb-8 text-center p-6 border-2 border-dashed border-custom rounded-lg">
-                <h2 class="text-xl font-bold font-myeongjo accent-text mb-2">오늘의 지혜 말씀</h2>
-                <p id="wisdom-verse" class="text-lg"></p>
-            </section>
-            
+            <section class="mb-8 text-center p-6 border-2 border-dashed" style="border-color: var(--border-color);"><h2 class="text-xl font-bold font-myeongjo accent-text mb-2">오늘의 지혜 말씀</h2><p id="wisdom-verse" class="text-lg"></p></section>
             <section class="mb-8 space-y-4">
-                <details class="group">
-                    <summary class="text-2xl font-bold text-center cursor-pointer p-2 rounded-lg hover:bg-gray-100 transition">
-                        <span class="group-open:hidden">📖 구약 성경 펼치기 ▼</span>
-                        <span class="hidden group-open:inline">📖 구약 성경 접기 ▲</span>
-                    </summary>
-                    <div class="mt-4">
-                        <h3 class="text-xl font-semibold mb-3 text-center accent-text">구약 (39권)</h3>
-                        <div id="old-testament" class="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2"></div>
-                    </div>
-                </details>
-                <details class="group">
-                    <summary class="text-2xl font-bold text-center cursor-pointer p-2 rounded-lg hover:bg-gray-100 transition">
-                        <span class="group-open:hidden">📖 신약 성경 펼치기 ▼</span>
-                        <span class="hidden group-open:inline">📖 신약 성경 접기 ▲</span>
-                    </summary>
-                    <div class="mt-4">
-                        <h3 class="text-xl font-semibold mb-3 text-center accent-text">신약 (27권)</h3>
-                        <div id="new-testament" class="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2"></div>
-                    </div>
-                </details>
+                <details class="group"><summary class="text-2xl font-bold text-center cursor-pointer p-2 rounded-lg hover:bg-gray-100 transition"><span class="group-open:hidden">📖 구약 성경 펼치기 ▼</span><span class="hidden group-open:inline">📖 구약 성경 접기 ▲</span></summary><div class="mt-4"><h3 class="text-xl font-semibold mb-3 text-center accent-text">구약 (39권)</h3><div id="old-testament" class="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2"></div></div></details>
+                <details class="group"><summary class="text-2xl font-bold text-center cursor-pointer p-2 rounded-lg hover:bg-gray-100 transition"><span class="group-open:hidden">📖 신약 성경 펼치기 ▼</span><span class="hidden group-open:inline">📖 신약 성경 접기 ▲</span></summary><div class="mt-4"><h3 class="text-xl font-semibold mb-3 text-center accent-text">신약 (27권)</h3><div id="new-testament" class="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2"></div></div></details>
             </section>
-
             <section class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="accent-bg rounded-lg p-4">
-                    <h3 class="text-xl font-bold mb-3">💬 가족 묵상 나눔</h3>
-                    <div id="meditation-list" class="h-64 overflow-y-auto custom-scrollbar pr-2 mb-3 bg-white/50 rounded p-2"></div>
-                    <div class="flex gap-2">
-                        <select id="meditation-user" class="p-2 border-custom border rounded-md"></select>
-                        <input type="text" id="meditation-input" class="flex-grow p-2 border-custom border rounded-md" placeholder="오늘의 묵상을 나눠보세요...">
-                        <button id="add-meditation" class="bg-white/80 hover:bg-white p-2 rounded-md shadow">등록</button>
-                    </div>
-                </div>
-                <div class="accent-bg rounded-lg p-4">
-                    <h3 class="text-xl font-bold mb-3">🙏 가족 기도 노트</h3>
-                    <div id="prayer-list" class="h-64 overflow-y-auto custom-scrollbar pr-2 mb-3 bg-white/50 rounded p-2"></div>
-                    <div class="flex gap-2">
-                        <select id="prayer-user" class="p-2 border-custom border rounded-md"></select>
-                        <input type="text" id="prayer-input" class="flex-grow p-2 border-custom border rounded-md" placeholder="함께 기도할 제목을 나눠요...">
-                        <button id="add-prayer" class="bg-white/80 hover:bg-white p-2 rounded-md shadow">등록</button>
-                    </div>
-                </div>
+                <div class="accent-bg rounded-lg p-4"><h3 class="text-xl font-bold mb-3">💬 가족 묵상 나눔</h3><div id="meditation-list" class="h-64 overflow-y-auto custom-scrollbar pr-2 mb-3 bg-white/50 rounded p-2"></div><div class="flex gap-2"><select id="meditation-user" class="p-2 rounded-md" style="border-color: var(--border-color);"></select><input type="text" id="meditation-input" class="flex-grow p-2 rounded-md" placeholder="오늘의 묵상을 나눠보세요..." style="border-color: var(--border-color);"><button id="add-meditation" class="bg-white/80 hover:bg-white p-2 rounded-md shadow">등록</button></div></div>
+                <div class="accent-bg rounded-lg p-4"><h3 class="text-xl font-bold mb-3">🙏 가족 기도 노트</h3><div id="prayer-list" class="h-64 overflow-y-auto custom-scrollbar pr-2 mb-3 bg-white/50 rounded p-2"></div><div class="flex gap-2"><select id="prayer-user" class="p-2 rounded-md" style="border-color: var(--border-color);"></select><input type="text" id="prayer-input" class="flex-grow p-2 rounded-md" placeholder="함께 기도할 제목을 나눠요..." style="border-color: var(--border-color);"><button id="add-prayer" class="bg-white/80 hover:bg-white p-2 rounded-md shadow">등록</button></div></div>
             </section>
         </div>
     </div>
 
-    <div id="chapter-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-20">
-        <div class="bg-white rounded-lg shadow-2xl p-6 w-full max-w-2xl max-h-[80vh] flex flex-col">
-            <div class="flex justify-between items-center mb-4"><h2 id="modal-title" class="text-2xl font-bold"></h2><button id="close-modal" class="text-3xl">&times;</button></div>
-            <div id="modal-user-selector-container" class="flex items-center gap-2 mb-4"><label for="modal-user-selector">체크할 사람:</label><select id="modal-user-selector" class="p-1 border rounded"></select></div>
-            <div id="modal-chapters" class="flex-grow overflow-y-auto grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 gap-2 p-2 accent-bg rounded custom-scrollbar"></div>
-        </div>
-    </div>
-    <div id="badges-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-20">
-        <div class="bg-white rounded-lg shadow-2xl p-6 w-full max-w-4xl max-h-[80vh] flex flex-col">
-            <div class="flex justify-between items-center mb-4"><h2 class="text-2xl font-bold">🏆 우리 가족 뱃지 컬렉션</h2><button id="close-badges-modal" class="text-3xl">&times;</button></div>
-            <div id="badge-tabs" class="flex mb-4 border-b"></div><div id="badges-content" class="flex-grow overflow-y-auto custom-scrollbar"></div>
-        </div>
-    </div>
+    <div id="chapter-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-20"><div class="bg-white rounded-lg shadow-2xl p-6 w-full max-w-2xl max-h-[80vh] flex flex-col"><div class="flex justify-between items-center mb-4"><h2 id="modal-title" class="text-2xl font-bold"></h2><button id="close-modal" class="text-3xl">&times;</button></div><div id="modal-user-selector-container" class="flex items-center gap-2 mb-4"><label for="modal-user-selector">체크할 사람:</label><select id="modal-user-selector" class="p-1 border rounded"></select></div><div id="modal-chapters" class="flex-grow overflow-y-auto grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 gap-2 p-2 accent-bg rounded custom-scrollbar"></div></div></div>
+    <div id="badges-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-20"><div class="bg-white rounded-lg shadow-2xl p-6 w-full max-w-4xl max-h-[80vh] flex flex-col"><div class="flex justify-between items-center mb-4"><h2 class="text-2xl font-bold">🏆 우리 가족 뱃지 컬렉션</h2><button id="close-badges-modal" class="text-3xl">&times;</button></div><div id="badge-tabs" class="flex mb-4 border-b"></div><div id="badges-content" class="flex-grow overflow-y-auto custom-scrollbar"></div></div></div>
+    
     <div id="progress-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-30">
         <div class="bg-white rounded-lg shadow-2xl p-6 w-full max-w-lg max-h-[80vh] flex flex-col">
             <div class="flex justify-between items-center mb-4"><h2 id="progress-modal-title" class="text-2xl font-bold">상세 진행 현황</h2><button id="close-progress-modal" class="text-3xl">&times;</button></div>
-            <div id="progress-modal-content" class="flex-grow overflow-y-auto custom-scrollbar pr-4"></div>
+            <div class="border-b border-gray-200 mb-4"><nav class="-mb-px flex space-x-8" aria-label="Tabs"><button id="tab-ot" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm tab-active">구약</button><button id="tab-nt" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">신약</button></nav></div>
+            <div id="progress-modal-content" class="flex-grow overflow-y-auto custom-scrollbar pr-4">
+                <div id="content-ot"></div><div id="content-nt" class="hidden"></div>
+            </div>
         </div>
     </div>
 
 <script>
-// --- 구글 시트 API 클래스 ---
 class GoogleSheetsAPI {
-    constructor() {
-        this.scriptUrl = 'https://script.google.com/macros/s/AKfycbwrqnyK-9Ft64KN0ecWv8_XaOoZyaBQf8CLYmDgvJjjpcuqLl8dzE0UM1SFsBp8zq7pkA/exec';
-        this.isConnected = false;
-    }
-    async _request(action, params = {}) {
-        const url = new URL(this.scriptUrl);
-        url.searchParams.set('action', action);
-        for (const key in params) { url.searchParams.set(key, params[key]); }
-        try {
-            const response = await fetch(url.toString());
-            if (!response.ok) throw new Error(`Server Error: ${response.status}`);
-            const result = await response.json();
-            if (!result.success) throw new Error(result.error || 'API 요청 실패');
-            this.isConnected = true;
-            return result;
-        } catch (error) {
-            this.isConnected = false;
-            updateConnectionStatus('disconnected');
-            console.error(`API Error (${action}):`, error);
-            throw error;
-        }
-    }
+    constructor() { this.scriptUrl = 'https://script.google.com/macros/s/AKfycbwrqnyK-9Ft64KN0ecWv8_XaOoZyaBQf8CLYmDgvJjjpcuqLl8dzE0UM1SFsBp8zq7pkA/exec'; this.isConnected = false; }
+    async _request(action, params = {}) { const url = new URL(this.scriptUrl); url.searchParams.set('action', action); for (const key in params) { url.searchParams.set(key, params[key]); } try { const response = await fetch(url.toString()); if (!response.ok) throw new Error(`Server Error: ${response.status}`); const result = await response.json(); if (!result.success) throw new Error(result.error || 'API 요청 실패'); this.isConnected = true; return result; } catch (error) { this.isConnected = false; updateConnectionStatus('disconnected'); console.error(`API Error (${action}):`, error); throw error; } }
     async testConnection() { await this._request('test'); return true; }
-    async loadAllData() {
-        const result = await this._request('loadAll');
-        for (const sheetName in result.data) {
-            localStorage.setItem(`bible_${sheetName}`, JSON.stringify(result.data[sheetName]));
-        }
-        return result.data;
-    }
+    async loadAllData() { const result = await this._request('loadAll'); for (const sheetName in result.data) { localStorage.setItem(`bible_${sheetName}`, JSON.stringify(result.data[sheetName])); } return result.data; }
     async saveData(params) { return this._request('save', params); }
     async deleteData(params) { return this._request('delete', params); }
     async editData(params) { return this._request('edit', params); }
 }
 
-// --- 데이터 및 설정 ---
 const BIBLE_BOOKS = { old: [ { name: '창세기', chapters: 50 }, { name: '출애굽기', chapters: 40 }, { name: '레위기', chapters: 27 }, { name: '민수기', chapters: 36 }, { name: '신명기', chapters: 34 }, { name: '여호수아', chapters: 24 }, { name: '사사기', chapters: 21 }, { name: '룻기', chapters: 4 }, { name: '사무엘상', chapters: 31 }, { name: '사무엘하', chapters: 24 }, { name: '열왕기상', chapters: 22 }, { name: '열왕기하', chapters: 25 }, { name: '역대상', chapters: 29 }, { name: '역대하', chapters: 36 }, { name: '에스라', chapters: 10 }, { name: '느헤미야', chapters: 13 }, { name: '에스더', chapters: 10 }, { name: '욥기', chapters: 42 }, { name: '시편', chapters: 150 }, { name: '잠언', chapters: 31 }, { name: '전도서', chapters: 12 }, { name: '아가', chapters: 8 }, { name: '이사야', chapters: 66 }, { name: '예레미야', chapters: 52 }, { name: '예레미야애가', chapters: 5 }, { name: '에스겔', chapters: 48 }, { name: '다니엘', chapters: 12 }, { name: '호세아', chapters: 14 }, { name: '요엘', chapters: 3 }, { name: '아모스', chapters: 9 }, { name: '오바댜', chapters: 1 }, { name: '요나', chapters: 4 }, { name: '미가', chapters: 7 }, { name: '나훔', chapters: 3 }, { name: '하박국', chapters: 3 }, { name: '스바냐', chapters: 3 }, { name: '학개', chapters: 2 }, { name: '스가랴', chapters: 14 }, { name: '말라기', chapters: 4 } ], new: [ { name: '마태복음', chapters: 28 }, { name: '마가복음', chapters: 16 }, { name: '누가복음', chapters: 24 }, { name: '요한복음', chapters: 21 }, { name: '사도행전', chapters: 28 }, { name: '로마서', chapters: 16 }, { name: '고린도전서', chapters: 16 }, { name: '고린도후서', chapters: 13 }, { name: '갈라디아서', chapters: 6 }, { name: '에베소서', chapters: 6 }, { name: '빌립보서', chapters: 4 }, { name: '골로새서', chapters: 4 }, { name: '데살로니가전서', chapters: 5 }, { name: '데살로니가후서', chapters: 3 }, { name: '디모데전서', chapters: 6 }, { name: '디모데후서', chapters: 4 }, { name: '디도서', chapters: 3 }, { name: '빌레몬서', chapters: 1 }, { name: '히브리서', chapters: 13 }, { name: '야고보서', chapters: 5 }, { name: '베드로전서', chapters: 5 }, { name: '베드로후서', chapters: 3 }, { name: '요한1서', chapters: 5 }, { name: '요한2서', chapters: 1 }, { name: '요한3서', chapters: 1 }, { name: '유다서', chapters: 1 }, { name: '요한계시록', chapters: 22 } ] };
+const TOTAL_OT_CHAPTERS = BIBLE_BOOKS.old.reduce((s, b) => s + b.chapters, 0);
+const TOTAL_NT_CHAPTERS = BIBLE_BOOKS.new.reduce((s, b) => s + b.chapters, 0);
 let gapi = new GoogleSheetsAPI();
 let db = { family: [], readRecords: {}, badges: {}, meditations: [], prayers: [] };
 let currentUserForModal = null;
 let currentBook = null;
 
-// --- 앱 초기화 및 렌더링 ---
-document.addEventListener('DOMContentLoaded', async () => {
-    setupEventListeners();
-    renderWisdomVerse();
-    renderBibleBooks();
-    await initializeApp();
-});
+document.addEventListener('DOMContentLoaded', async () => { setupEventListeners(); renderWisdomVerse(); renderBibleBooks(); await initializeApp(); });
+async function initializeApp() { updateConnectionStatus('loading'); try { await gapi.testConnection(); updateConnectionStatus('connected'); await loadAllDataAndRender(); } catch (error) { updateConnectionStatus('disconnected'); alert("서버에 연결할 수 없습니다. 오프라인 모드로 표시됩니다."); } }
+async function loadAllDataAndRender() { try { const allData = await gapi.loadAllData(); db.family = allData.family_members || []; db.readRecords = allData.reading_records || {}; db.badges = allData.badges || {}; db.meditations = allData.meditations || []; db.prayers = allData.prayers || []; if (db.family && db.family.length > 0) { currentUserForModal = db.family[0].id; populateUserDropdowns(); renderAll(); } else if (gapi.isConnected) { alert("가족 정보가 없습니다. 구글 시트의 'family_members' 시트에 데이터를 추가해주세요."); } } catch (error) { console.error('전체 데이터 로드 실패:', error); } }
+function renderAll() { renderFamilyDashboard(); renderMeditations(); renderPrayers(); }
+function updateConnectionStatus(status) { const indicator = document.getElementById('status-indicator'); const text = document.getElementById('status-text'); const syncBtn = document.getElementById('sync-btn'); indicator.classList.remove('loading'); switch (status) { case 'connected': indicator.className = 'w-3 h-3 rounded-full bg-green-500'; text.textContent = '온라인'; syncBtn.classList.remove('hidden'); break; case 'disconnected': indicator.className = 'w-3 h-3 rounded-full bg-red-500'; text.textContent = '오프라인'; syncBtn.classList.add('hidden'); break; case 'loading': indicator.className = 'w-3 h-3 rounded-full bg-yellow-500 loading'; text.textContent = '연결 중...'; syncBtn.classList.add('hidden'); break; } }
 
-async function initializeApp() {
-    updateConnectionStatus('loading');
-    try {
-        await gapi.testConnection();
-        updateConnectionStatus('connected');
-        await loadAllDataAndRender();
-    } catch (error) {
-        updateConnectionStatus('disconnected');
-        alert("서버에 연결할 수 없습니다. 오프라인 모드로 표시됩니다.");
-    }
-}
-
-// [버그 수정] 데이터 로드 로직 수정
-async function loadAllDataAndRender() {
-    try {
-        const allData = await gapi.loadAllData();
-        // API에서 받은 이름(예: family_members)을 앱 내부에서 사용하는 이름(예: family)으로 정확히 매칭
-        db.family = allData.family_members || [];
-        db.readRecords = allData.reading_records || {};
-        db.badges = allData.badges || {};
-        db.meditations = allData.meditations || [];
-        db.prayers = allData.prayers || [];
-
-        if (db.family && db.family.length > 0) {
-            currentUserForModal = db.family[0].id;
-            populateUserDropdowns();
-            renderAll();
-        } else if (gapi.isConnected) {
-            alert("가족 정보가 없습니다. 구글 시트의 'family_members' 시트에 데이터를 추가해주세요.");
-        }
-    } catch (error) { console.error('전체 데이터 로드 실패:', error); }
-}
-
-function renderAll() {
-    renderFamilyDashboard();
-    renderMeditations();
-    renderPrayers();
-}
-
-function updateConnectionStatus(status) {
-    const indicator = document.getElementById('status-indicator');
-    const text = document.getElementById('status-text');
-    const syncBtn = document.getElementById('sync-btn');
-    indicator.classList.remove('loading');
-    switch (status) {
-        case 'connected': indicator.className = 'w-3 h-3 rounded-full bg-green-500'; text.textContent = '온라인'; syncBtn.classList.remove('hidden'); break;
-        case 'disconnected': indicator.className = 'w-3 h-3 rounded-full bg-red-500'; text.textContent = '오프라인'; syncBtn.classList.add('hidden'); break;
-        case 'loading': indicator.className = 'w-3 h-3 rounded-full bg-yellow-500 loading'; text.textContent = '연결 중...'; syncBtn.classList.add('hidden'); break;
-    }
-}
-
+// [UI 개선] 대시보드 렌더링 함수 수정
 function renderFamilyDashboard() {
     const dashboard = document.getElementById('family-dashboard');
     dashboard.innerHTML = '';
     if (!db.family || db.family.length === 0) return;
-    const totalChapters = BIBLE_BOOKS.old.reduce((s, b) => s + b.chapters, 0) + BIBLE_BOOKS.new.reduce((s, b) => s + b.chapters, 0);
     db.family.forEach(member => {
         const userRecords = db.readRecords[member.id] || {};
-        const chaptersRead = Object.values(userRecords).reduce((sum, chapters) => sum + chapters.length, 0);
-        const progress = totalChapters > 0 ? (chaptersRead / totalChapters) * 100 : 0;
+        const otRead = BIBLE_BOOKS.old.reduce((sum, book) => sum + (userRecords[book.name]?.length || 0), 0);
+        const ntRead = BIBLE_BOOKS.new.reduce((sum, book) => sum + (userRecords[book.name]?.length || 0), 0);
+        const totalRead = otRead + ntRead;
+        const totalChapters = TOTAL_OT_CHAPTERS + TOTAL_NT_CHAPTERS;
+        
         const memberDiv = document.createElement('div');
         memberDiv.className = 'flex flex-col items-center cursor-pointer hover:opacity-80 transition';
         memberDiv.onclick = () => openProgressModal(member.id);
-        memberDiv.innerHTML = `<img src="${member.photo || 'https://placehold.co/80x80/cccccc/FFFFFF?text=?'}" alt="${member.name}" class="w-16 h-16 md:w-20 md:h-20 rounded-full border-4 border-white/50 object-cover shadow-md"><div class="font-bold mt-2">${member.title} (${member.name})</div><div class="w-full bg-white/30 rounded-full h-2.5 mt-1"><div class="progress-bar-fill h-2.5 rounded-full" style="width: ${progress.toFixed(2)}%"></div></div><div class="text-xs mt-1">${chaptersRead} / ${totalChapters} 장</div>`;
+        // 막대그래프 제거, 텍스트 정보 강화
+        memberDiv.innerHTML = `
+            <img src="${member.photo || 'https://placehold.co/80x80/cccccc/FFFFFF?text=?'}" alt="${member.name}" class="w-16 h-16 md:w-20 md:h-20 rounded-full border-4 border-white/50 object-cover shadow-md" referrerpolicy="no-referrer">
+            <div class="font-bold mt-2">${member.title} (${member.name})</div>
+            <div class="text-sm mt-2 space-y-1">
+                <div><strong>총:</strong> ${totalRead} / ${totalChapters}</div>
+                <div class="text-xs"><strong>구약:</strong> ${otRead}/${TOTAL_OT_CHAPTERS} | <strong>신약:</strong> ${ntRead}/${TOTAL_NT_CHAPTERS}</div>
+            </div>`;
         dashboard.appendChild(memberDiv);
     });
 }
 
-function renderWisdomVerse() {
-    const verses = [ "태초에 하나님이 천지를 창조하시니라 (창 1:1)", "항상 기뻐하라 쉬지 말고 기도하라 범사에 감사하라 (살전 5:16-18)" ];
-    document.getElementById('wisdom-verse').textContent = verses[Math.floor(Math.random() * verses.length)];
-}
-function renderBibleBooks() {
-    const oldDiv = document.getElementById('old-testament');
-    const newDiv = document.getElementById('new-testament');
-    oldDiv.innerHTML = ''; newDiv.innerHTML = '';
-    const createEl = (book) => {
-        const el = document.createElement('button');
-        el.className = 'p-2 text-sm rounded-md shadow-sm transition-all duration-200 accent-bg hover:shadow-lg hover:-translate-y-1';
-        el.textContent = book.name;
-        el.onclick = () => openChapterModal(book);
-        return el;
-    };
-    BIBLE_BOOKS.old.forEach(book => oldDiv.appendChild(createEl(book)));
-    BIBLE_BOOKS.new.forEach(book => newDiv.appendChild(createEl(book)));
-}
+function renderWisdomVerse() { const verses = [ "태초에 하나님이 천지를 창조하시니라 (창 1:1)", "항상 기뻐하라 쉬지 말고 기도하라 범사에 감사하라 (살전 5:16-18)" ]; document.getElementById('wisdom-verse').textContent = verses[Math.floor(Math.random() * verses.length)]; }
+function renderBibleBooks() { const oldDiv = document.getElementById('old-testament'); const newDiv = document.getElementById('new-testament'); oldDiv.innerHTML = ''; newDiv.innerHTML = ''; const createEl = (book) => { const el = document.createElement('button'); el.className = 'p-2 text-sm rounded-md shadow-sm transition-all duration-200 accent-bg hover:shadow-lg hover:-translate-y-1'; el.textContent = book.name; el.onclick = () => openChapterModal(book); return el; }; BIBLE_BOOKS.old.forEach(book => oldDiv.appendChild(createEl(book))); BIBLE_BOOKS.new.forEach(book => newDiv.appendChild(createEl(book))); }
+function populateUserDropdowns() { const meditationUser = document.getElementById('meditation-user'); const prayerUser = document.getElementById('prayer-user'); const modalUser = document.getElementById('modal-user-selector'); meditationUser.innerHTML = ''; prayerUser.innerHTML = ''; modalUser.innerHTML = ''; db.family.forEach(member => { const option = `<option value="${member.id}">${member.name}</option>`; meditationUser.innerHTML += option; prayerUser.innerHTML += option; modalUser.innerHTML += option; }); }
+function renderMeditations() { const list = document.getElementById('meditation-list'); list.innerHTML = ''; const currentUserId = document.getElementById('meditation-user').value; db.meditations.forEach(item => { const user = db.family.find(u => u.id === item.userId); const itemEl = document.createElement('div'); itemEl.className = 'p-2 mb-2 rounded bg-white/70 text-sm'; let buttons = (item.userId === currentUserId) ? `<div class="inline-block ml-2"><button onclick="editMeditation('${item.id}')" class="text-xs text-blue-600 hover:underline">수정</button> <button onclick="deleteMeditation('${item.id}')" class="text-xs text-red-600 hover:underline">삭제</button></div>` : ''; itemEl.innerHTML = `<div><strong class="accent-text">${user ? user.name : '?'}:</strong> ${item.content}</div><div class="text-right text-gray-500 text-xs">${new Date(parseInt(item.id)).toLocaleDateString()} ${buttons}</div>`; list.appendChild(itemEl); }); list.scrollTop = list.scrollHeight; }
+function renderPrayers() { const list = document.getElementById('prayer-list'); list.innerHTML = ''; const currentUserId = document.getElementById('prayer-user').value; db.prayers.forEach(item => { const user = db.family.find(u => u.id === item.userId); const itemEl = document.createElement('div'); itemEl.className = 'p-2 mb-2 rounded bg-white/70 text-sm'; let buttons = (item.userId === currentUserId) ? `<div class="inline-block ml-2"><button onclick="editPrayer('${item.id}')" class="text-xs text-blue-600 hover:underline">수정</button> <button onclick="deletePrayer('${item.id}')" class="text-xs text-red-600 hover:underline">삭제</button></div>` : ''; itemEl.innerHTML = `<div><strong class="accent-text">${user ? user.name : '?'}:</strong> ${item.content}</div><div class="text-right text-gray-500 text-xs">${new Date(parseInt(item.id)).toLocaleDateString()} ${buttons}</div>`; list.appendChild(itemEl); }); list.scrollTop = list.scrollHeight; }
+function setupEventListeners() { document.getElementById('theme-select').addEventListener('change', (e) => { document.body.className = e.target.value; }); document.getElementById('add-meditation').addEventListener('click', addMeditation); document.getElementById('meditation-input').addEventListener('keypress', (e) => { if (e.key === 'Enter') addMeditation(); }); document.getElementById('meditation-user').addEventListener('change', renderMeditations); document.getElementById('add-prayer').addEventListener('click', addPrayer); document.getElementById('prayer-input').addEventListener('keypress', (e) => { if (e.key === 'Enter') addPrayer(); }); document.getElementById('prayer-user').addEventListener('change', renderPrayers); document.getElementById('badges-btn').addEventListener('click', openBadgesModal); document.getElementById('close-badges-modal').addEventListener('click', closeBadgesModal); document.getElementById('sync-btn').addEventListener('click', () => { initializeApp(); alert('동기화 완료!'); }); document.getElementById('close-modal').onclick = closeChapterModal; document.getElementById('modal-user-selector').addEventListener('change', (e) => { currentUserForModal = e.target.value; updateModalForCurrentUser(); }); document.getElementById('close-progress-modal').onclick = closeProgressModal; document.getElementById('tab-ot').onclick = () => switchProgressTab('ot'); document.getElementById('tab-nt').onclick = () => switchProgressTab('nt'); }
+async function addMeditation() { const userInput = document.getElementById('meditation-user'); const textInput = document.getElementById('meditation-input'); if (textInput.value.trim() === '') return; try { const result = await gapi.saveData({ type: 'meditation', userId: userInput.value, content: textInput.value.trim() }); db.meditations.push(result.data); textInput.value = ''; renderMeditations(); } catch (error) { alert('묵상 저장 실패: ' + error.message); } }
+async function deleteMeditation(id) { if (!confirm('정말로 삭제하시겠습니까?')) return; try { await gapi.deleteData({ type: 'meditation', id: id }); db.meditations = db.meditations.filter(item => item.id !== id); renderMeditations(); } catch (error) { alert('묵상 삭제 실패: ' + error.message); } }
+async function editMeditation(id) { const item = db.meditations.find(item => item.id === id); const newContent = prompt('묵상 내용 수정:', item.content); if (newContent === null || newContent.trim() === '' || newContent.trim() === item.content) return; try { await gapi.editData({ type: 'meditation', id: id, content: newContent.trim() }); item.content = newContent.trim(); renderMeditations(); } catch (error) { alert('묵상 수정 실패: ' + error.message); } }
+async function addPrayer() { const userInput = document.getElementById('prayer-user'); const textInput = document.getElementById('prayer-input'); if (textInput.value.trim() === '') return; try { const result = await gapi.saveData({ type: 'prayer', userId: userInput.value, content: textInput.value.trim() }); db.prayers.push(result.data); textInput.value = ''; renderPrayers(); } catch (error) { alert('기도제목 저장 실패: ' + error.message); } }
+async function deletePrayer(id) { if (!confirm('정말로 삭제하시겠습니까?')) return; try { await gapi.deleteData({ type: 'prayer', id: id }); db.prayers = db.prayers.filter(item => item.id !== id); renderPrayers(); } catch (error) { alert('기도제목 삭제 실패: ' + error.message); } }
+async function editPrayer(id) { const item = db.prayers.find(item => item.id === id); const newContent = prompt('기도제목 수정:', item.content); if (newContent === null || newContent.trim() === '' || newContent.trim() === item.content) return; try { await gapi.editData({ type: 'prayer', id: id, content: newContent.trim() }); item.content = newContent.trim(); renderPrayers(); } catch (error) { alert('기도제목 수정 실패: ' + error.message); } }
+function openBadgesModal() { document.getElementById('badges-modal').classList.remove('hidden'); }
+function closeBadgesModal() { document.getElementById('badges-modal').classList.add('hidden'); }
 
-function populateUserDropdowns() {
-    const meditationUser = document.getElementById('meditation-user');
-    const prayerUser = document.getElementById('prayer-user');
-    const modalUser = document.getElementById('modal-user-selector');
-    meditationUser.innerHTML = ''; prayerUser.innerHTML = ''; modalUser.innerHTML = '';
-    db.family.forEach(member => {
-        const option = `<option value="${member.id}">${member.name}</option>`;
-        meditationUser.innerHTML += option;
-        prayerUser.innerHTML += option;
-        modalUser.innerHTML += option;
-    });
-}
-
-function renderMeditations() {
-    const list = document.getElementById('meditation-list');
-    list.innerHTML = '';
-    const currentUserId = document.getElementById('meditation-user').value;
-    db.meditations.forEach(item => {
-        const user = db.family.find(u => u.id === item.userId);
-        const itemEl = document.createElement('div');
-        itemEl.className = 'p-2 mb-2 rounded bg-white/70 text-sm';
-        let buttons = (item.userId === currentUserId) ? `<div class="inline-block ml-2"><button onclick="editMeditation('${item.id}')" class="text-xs text-blue-600 hover:underline">수정</button> <button onclick="deleteMeditation('${item.id}')" class="text-xs text-red-600 hover:underline">삭제</button></div>` : '';
-        itemEl.innerHTML = `<div><strong class="accent-text">${user ? user.name : '?'}:</strong> ${item.content}</div><div class="text-right text-gray-500 text-xs">${new Date(parseInt(item.id)).toLocaleDateString()} ${buttons}</div>`;
-        list.appendChild(itemEl);
-    });
-    list.scrollTop = list.scrollHeight;
-}
-function renderPrayers() {
-    const list = document.getElementById('prayer-list');
-    list.innerHTML = '';
-    const currentUserId = document.getElementById('prayer-user').value;
-    db.prayers.forEach(item => {
-        const user = db.family.find(u => u.id === item.userId);
-        const itemEl = document.createElement('div');
-        itemEl.className = 'p-2 mb-2 rounded bg-white/70 text-sm';
-        let buttons = (item.userId === currentUserId) ? `<div class="inline-block ml-2"><button onclick="editPrayer('${item.id}')" class="text-xs text-blue-600 hover:underline">수정</button> <button onclick="deletePrayer('${item.id}')" class="text-xs text-red-600 hover:underline">삭제</button></div>` : '';
-        itemEl.innerHTML = `<div><strong class="accent-text">${user ? user.name : '?'}:</strong> ${item.content}</div><div class="text-right text-gray-500 text-xs">${new Date(parseInt(item.id)).toLocaleDateString()} ${buttons}</div>`;
-        list.appendChild(itemEl);
-    });
-    list.scrollTop = list.scrollHeight;
-}
-
-function setupEventListeners() {
-    document.getElementById('theme-select').addEventListener('change', (e) => { document.body.className = e.target.value; });
-    document.getElementById('add-meditation').addEventListener('click', addMeditation);
-    document.getElementById('meditation-input').addEventListener('keypress', (e) => { if (e.key === 'Enter') addMeditation(); });
-    document.getElementById('meditation-user').addEventListener('change', renderMeditations);
-    document.getElementById('add-prayer').addEventListener('click', addPrayer);
-    document.getElementById('prayer-input').addEventListener('keypress', (e) => { if (e.key === 'Enter') addPrayer(); });
-    document.getElementById('prayer-user').addEventListener('change', renderPrayers);
-    document.getElementById('badges-btn').addEventListener('click', openBadgesModal);
-    document.getElementById('close-badges-modal').addEventListener('click', closeBadgesModal);
-    document.getElementById('sync-btn').addEventListener('click', () => { initializeApp(); alert('동기화 완료!'); });
-    document.getElementById('close-modal').onclick = closeChapterModal;
-    document.getElementById('modal-user-selector').addEventListener('change', (e) => { currentUserForModal = e.target.value; updateModalForCurrentUser(); });
-    document.getElementById('close-progress-modal').onclick = closeProgressModal;
-}
-
-async function addMeditation() {
-    const userInput = document.getElementById('meditation-user');
-    const textInput = document.getElementById('meditation-input');
-    if (textInput.value.trim() === '') return;
-    try {
-        const result = await gapi.saveData({ type: 'meditation', userId: userInput.value, content: textInput.value.trim() });
-        db.meditations.push(result.data);
-        textInput.value = '';
-        renderMeditations();
-    } catch (error) { alert('묵상 저장 실패: ' + error.message); }
-}
-async function deleteMeditation(id) {
-    if (!confirm('정말로 삭제하시겠습니까?')) return;
-    try {
-        await gapi.deleteData({ type: 'meditation', id: id });
-        db.meditations = db.meditations.filter(item => item.id !== id);
-        renderMeditations();
-    } catch (error) { alert('묵상 삭제 실패: ' + error.message); }
-}
-async function editMeditation(id) {
-    const item = db.meditations.find(item => item.id === id);
-    const newContent = prompt('묵상 내용 수정:', item.content);
-    if (newContent === null || newContent.trim() === '' || newContent.trim() === item.content) return;
-    try {
-        await gapi.editData({ type: 'meditation', id: id, content: newContent.trim() });
-        item.content = newContent.trim();
-        renderMeditations();
-    } catch (error) { alert('묵상 수정 실패: ' + error.message); }
-}
-async function addPrayer() {
-    const userInput = document.getElementById('prayer-user');
-    const textInput = document.getElementById('prayer-input');
-    if (textInput.value.trim() === '') return;
-    try {
-        const result = await gapi.saveData({ type: 'prayer', userId: userInput.value, content: textInput.value.trim() });
-        db.prayers.push(result.data);
-        textInput.value = '';
-        renderPrayers();
-    } catch (error) { alert('기도제목 저장 실패: ' + error.message); }
-}
-async function deletePrayer(id) {
-    if (!confirm('정말로 삭제하시겠습니까?')) return;
-    try {
-        await gapi.deleteData({ type: 'prayer', id: id });
-        db.prayers = db.prayers.filter(item => item.id !== id);
-        renderPrayers();
-    } catch (error) { alert('기도제목 삭제 실패: ' + error.message); }
-}
-async function editPrayer(id) {
-    const item = db.prayers.find(item => item.id === id);
-    const newContent = prompt('기도제목 수정:', item.content);
-    if (newContent === null || newContent.trim() === '' || newContent.trim() === item.content) return;
-    try {
-        await gapi.editData({ type: 'prayer', id: id, content: newContent.trim() });
-        item.content = newContent.trim();
-        renderPrayers();
-    } catch (error) { alert('기도제목 수정 실패: ' + error.message); }
-}
-
-function openBadgesModal() {
-    document.getElementById('badges-modal').classList.remove('hidden');
-    // renderBadges('all');
-}
-function closeBadgesModal() {
-    document.getElementById('badges-modal').classList.add('hidden');
-}
-
+// [UI 개선] 상세 진행 현황 모달 제어 함수
 function openProgressModal(userId) {
     const user = db.family.find(u => u.id === userId);
-    const userRecords = db.readRecords[userId] || {};
     if (!user) return;
     document.getElementById('progress-modal-title').textContent = `${user.name}님의 진행 현황`;
-    const contentDiv = document.getElementById('progress-modal-content');
-    contentDiv.innerHTML = '';
-    const allBooks = [...BIBLE_BOOKS.old, ...BIBLE_BOOKS.new];
-    allBooks.forEach(book => {
+    
+    const contentOT = document.getElementById('content-ot');
+    const contentNT = document.getElementById('content-nt');
+    contentOT.innerHTML = '';
+    contentNT.innerHTML = '';
+    
+    const userRecords = db.readRecords[userId] || {};
+    const createProgressHTML = (book) => {
         const readChapters = userRecords[book.name] || [];
         const progress = book.chapters > 0 ? (readChapters.length / book.chapters) * 100 : 0;
-        const bookDiv = document.createElement('div');
-        bookDiv.className = 'mb-3';
-        bookDiv.innerHTML = `<div class="flex justify-between items-center mb-1"><span class="font-bold">${book.name}</span><span class="text-sm text-gray-600">${readChapters.length} / ${book.chapters} 장</span></div><div class="w-full bg-gray-200 rounded-full h-2.5"><div class="progress-bar-fill h-2.5 rounded-full" style="width: ${progress.toFixed(2)}%"></div></div>`;
-        contentDiv.appendChild(bookDiv);
-    });
+        return `<div class="mb-3"><div class="flex justify-between items-center mb-1"><span class="font-bold">${book.name}</span><span class="text-sm text-gray-600">${readChapters.length}/${book.chapters} 장</span></div><div class="w-full bg-gray-200 rounded-full h-2.5"><div class="progress-bar-fill h-2.5 rounded-full" style="width: ${progress.toFixed(2)}%"></div></div></div>`;
+    };
+
+    BIBLE_BOOKS.old.forEach(book => contentOT.innerHTML += createProgressHTML(book));
+    BIBLE_BOOKS.new.forEach(book => contentNT.innerHTML += createProgressHTML(book));
+    
+    switchProgressTab('ot'); // 기본으로 구약 탭을 보여줌
     document.getElementById('progress-modal').classList.remove('hidden');
 }
-function closeProgressModal() {
-    document.getElementById('progress-modal').classList.add('hidden');
+function closeProgressModal() { document.getElementById('progress-modal').classList.add('hidden'); }
+function switchProgressTab(tab) {
+    const tabOT = document.getElementById('tab-ot');
+    const tabNT = document.getElementById('tab-nt');
+    const contentOT = document.getElementById('content-ot');
+    const contentNT = document.getElementById('content-nt');
+
+    if (tab === 'ot') {
+        tabOT.classList.add('tab-active');
+        tabOT.classList.remove('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
+        tabNT.classList.remove('tab-active');
+        tabNT.classList.add('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
+        contentOT.classList.remove('hidden');
+        contentNT.classList.add('hidden');
+    } else {
+        tabNT.classList.add('tab-active');
+        tabNT.classList.remove('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
+        tabOT.classList.remove('tab-active');
+        tabOT.classList.add('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
+        contentNT.classList.remove('hidden');
+        contentOT.classList.add('hidden');
+    }
 }
 
-function openChapterModal(book) {
-    if (!db.family || db.family.length === 0) return;
-    currentBook = book;
-    document.getElementById('modal-title').textContent = book.name;
-    document.getElementById('modal-user-selector').value = currentUserForModal;
-    updateModalForCurrentUser();
-    document.getElementById('chapter-modal').classList.remove('hidden');
-}
-function updateModalForCurrentUser() {
-    const modalChapters = document.getElementById('modal-chapters');
-    modalChapters.innerHTML = '';
-    const userRecordsForBook = (db.readRecords[currentUserForModal] && db.readRecords[currentUserForModal][currentBook.name]) || [];
-    for (let i = 1; i <= currentBook.chapters; i++) {
-        const btn = document.createElement('button');
-        btn.textContent = i;
-        btn.className = `p-2 rounded border transition-colors duration-200 ${userRecordsForBook.includes(i) ? 'bg-green-500 text-white border-green-500' : 'bg-white hover:bg-green-100'}`;
-        btn.onclick = () => toggleChapterRead(i, btn);
-        modalChapters.appendChild(btn);
-    }
-}
-function toggleChapterRead(chapterNumber, buttonElement) {
-    if (!db.readRecords[currentUserForModal]) db.readRecords[currentUserForModal] = {};
-    if (!db.readRecords[currentUserForModal][currentBook.name]) db.readRecords[currentUserForModal][currentBook.name] = [];
-    const readList = db.readRecords[currentUserForModal][currentBook.name];
-    const chapterIndex = readList.indexOf(chapterNumber);
-    const params = { type: 'reading', userId: currentUserForModal, bookName: currentBook.name, chapter: chapterNumber };
-    if (chapterIndex > -1) {
-        readList.splice(chapterIndex, 1);
-        buttonElement.className = 'p-2 rounded border transition-colors duration-200 bg-white hover:bg-green-100';
-    } else {
-        readList.push(chapterNumber);
-        buttonElement.className = 'p-2 rounded border transition-colors duration-200 bg-green-500 text-white border-green-500';
-    }
-    renderFamilyDashboard();
-    const apiCall = (chapterIndex > -1) ? gapi.deleteData(params) : gapi.saveData(params);
-    apiCall.catch(error => {
-        alert(`오류가 발생하여 읽기 상태를 저장하지 못했습니다. 다시 시도해주세요.`);
-        const originalIndex = readList.indexOf(chapterNumber);
-        if (originalIndex > -1) { readList.splice(originalIndex, 1); } else { readList.push(chapterNumber); }
-        buttonElement.className = `p-2 rounded border transition-colors duration-200 ${readList.includes(chapterNumber) ? 'bg-green-500 text-white border-green-500' : 'bg-white hover:bg-green-100'}`;
-        renderFamilyDashboard();
-    });
-}
+function openChapterModal(book) { if (!db.family || db.family.length === 0) return; currentBook = book; document.getElementById('modal-title').textContent = book.name; document.getElementById('modal-user-selector').value = currentUserForModal; updateModalForCurrentUser(); document.getElementById('chapter-modal').classList.remove('hidden'); }
+function updateModalForCurrentUser() { const modalChapters = document.getElementById('modal-chapters'); modalChapters.innerHTML = ''; const userRecordsForBook = (db.readRecords[currentUserForModal] && db.readRecords[currentUserForModal][currentBook.name]) || []; for (let i = 1; i <= currentBook.chapters; i++) { const btn = document.createElement('button'); btn.textContent = i; btn.className = `p-2 rounded border transition-colors duration-200 ${userRecordsForBook.includes(i) ? 'bg-green-500 text-white border-green-500' : 'bg-white hover:bg-green-100'}`; btn.onclick = () => toggleChapterRead(i, btn); modalChapters.appendChild(btn); } }
+function toggleChapterRead(chapterNumber, buttonElement) { if (!db.readRecords[currentUserForModal]) db.readRecords[currentUserForModal] = {}; if (!db.readRecords[currentUserForModal][currentBook.name]) db.readRecords[currentUserForModal][currentBook.name] = []; const readList = db.readRecords[currentUserForModal][currentBook.name]; const chapterIndex = readList.indexOf(chapterNumber); const params = { type: 'reading', userId: currentUserForModal, bookName: currentBook.name, chapter: chapterNumber }; if (chapterIndex > -1) { readList.splice(chapterIndex, 1); buttonElement.className = 'p-2 rounded border transition-colors duration-200 bg-white hover:bg-green-100'; } else { readList.push(chapterNumber); buttonElement.className = 'p-2 rounded border transition-colors duration-200 bg-green-500 text-white border-green-500'; } renderFamilyDashboard(); const apiCall = (chapterIndex > -1) ? gapi.deleteData(params) : gapi.saveData(params); apiCall.catch(error => { alert(`오류가 발생하여 읽기 상태를 저장하지 못했습니다.`); const originalIndex = readList.indexOf(chapterNumber); if (originalIndex > -1) { readList.splice(originalIndex, 1); } else { readList.push(chapterNumber); } buttonElement.className = `p-2 rounded border transition-colors duration-200 ${readList.includes(chapterNumber) ? 'bg-green-500 text-white border-green-500' : 'bg-white hover:bg-green-100'}`; renderFamilyDashboard(); }); }
 function closeChapterModal() { document.getElementById('chapter-modal').classList.add('hidden'); }
 </script>
 </body>
