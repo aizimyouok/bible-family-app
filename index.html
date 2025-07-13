@@ -133,7 +133,7 @@
 // --- 구글 시트 API 클래스 ---
 class GoogleSheetsAPI {
     constructor() {
-        this.scriptUrl = 'https://script.google.com/macros/s/AKfycbwFr9_uvJGG8Xs-IvS2bQt5-kPb1O-aIhz-m1SeQLCGFBLKOm_ma4pWJ1tpVOXLsIGF6w/exec';
+        this.scriptUrl = 'https://script.google.com/macros/s/AKfycbwrqnyK-9Ft64KN0ecWv8_XaOoZyaBQf8CLYmDgvJjjpcuqLl8dzE0UM1SFsBp8zq7pkA/exec';
         this.isConnected = false;
     }
     async _request(action, params = {}) {
@@ -194,10 +194,17 @@ async function initializeApp() {
     }
 }
 
+// [버그 수정] 데이터 로드 로직 수정
 async function loadAllDataAndRender() {
     try {
         const allData = await gapi.loadAllData();
-        db = { ...db, ...allData };
+        // API에서 받은 이름(예: family_members)을 앱 내부에서 사용하는 이름(예: family)으로 정확히 매칭
+        db.family = allData.family_members || [];
+        db.readRecords = allData.reading_records || {};
+        db.badges = allData.badges || {};
+        db.meditations = allData.meditations || [];
+        db.prayers = allData.prayers || [];
+
         if (db.family && db.family.length > 0) {
             currentUserForModal = db.family[0].id;
             populateUserDropdowns();
@@ -381,12 +388,11 @@ async function editPrayer(id) {
 
 function openBadgesModal() {
     document.getElementById('badges-modal').classList.remove('hidden');
-    renderBadges('all');
+    // renderBadges('all');
 }
 function closeBadgesModal() {
     document.getElementById('badges-modal').classList.add('hidden');
 }
-function renderBadges(userId = 'all') { /* 뱃지 렌더링 로직 */ }
 
 function openProgressModal(userId) {
     const user = db.family.find(u => u.id === userId);
