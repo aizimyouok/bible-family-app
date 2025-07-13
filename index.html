@@ -430,33 +430,23 @@ class GoogleSheetsAPI {
     }
 
     async loadAllData() {
-        if (!this.isConnected) {
-            return {
-                family: this.loadFromLocalStorage('family_members'),
-                reading: this.loadFromLocalStorage('reading_records'),
-                badges: this.loadFromLocalStorage('badges'),
-                meditations: this.loadFromLocalStorage('meditations'),
-                prayers: this.loadFromLocalStorage('prayers')
-            };
-        }
-
+        // 개별 시트를 하나씩 로드하는 방식으로 변경
         try {
-            const response = await fetch(this.scriptUrl + `?action=load_all`);
-            const result = await response.json();
+            const familyData = await this.loadData('family_members');
+            const readingData = await this.loadData('reading_records');
+            const badgesData = await this.loadData('badges');
+            const meditationsData = await this.loadData('meditations');
+            const prayersData = await this.loadData('prayers');
             
-            if (result.success) {
-                // 각 데이터를 로컬에도 저장
-                Object.entries(result.data).forEach(([key, data]) => {
-                    const sheetName = key === 'reading' ? 'reading_records' : 
-                                    key === 'family' ? 'family_members' : key;
-                    this.saveToLocalStorage(sheetName, data);
-                });
-                return result.data;
-            } else {
-                throw new Error(result.error);
-            }
+            return {
+                family: familyData,
+                reading: readingData,
+                badges: badgesData,
+                meditations: meditationsData,
+                prayers: prayersData
+            };
         } catch (error) {
-            console.warn('전체 데이터 로드 실패, 로컬 데이터 사용:', error);
+            console.warn('개별 데이터 로드 실패:', error);
             return {
                 family: this.loadFromLocalStorage('family_members'),
                 reading: this.loadFromLocalStorage('reading_records'),
