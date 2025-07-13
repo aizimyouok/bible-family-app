@@ -89,7 +89,61 @@ document.addEventListener('DOMContentLoaded', async () => { setupEventListeners(
 async function initializeApp() { updateConnectionStatus('loading'); try { await gapi.testConnection(); updateConnectionStatus('connected'); await loadAllDataAndRender(); } catch (error) { updateConnectionStatus('disconnected'); } }
 async function loadAllDataAndRender() { try { const allData = await gapi.loadAllData(); db.family = allData.family_members || []; db.readRecords = allData.reading_records || {}; db.badges = allData.badges || {}; db.meditations = allData.meditations || []; db.prayers = allData.prayers || []; if (db.family?.length > 0) { currentUserForModal = db.family[0].id; populateUserDropdowns(); renderAll(); } else if (gapi.isConnected) { alert("가족 정보가 없습니다. 구글 시트의 'family_members' 시트에 데이터를 추가해주세요."); } } catch (error) { console.error('전체 데이터 로드 실패:', error); } }
 function renderAll() { renderLeaderboard(); renderFamilyDashboard(); renderMeditations(); renderPrayers(); }
-function renderLeaderboard() { const board = document.getElementById('leaderboard'); if (!db.family || db.family.length === 0) { board.innerHTML = ''; return; } const rankedUsers = db.family.map(member => { const userRecords = db.readRecords[member.id] || {}; const chaptersRead = Object.values(userRecords).reduce((sum, chapters) => sum + chapters.length, 0); return { ...member, chaptersRead }; }).sort((a, b) => b.chaptersRead - a.chaptersRead); const winner = rankedUsers[0]; if (!winner || winner.chaptersRead === 0) { board.innerHTML = `<div class="text-center p-4 accent-bg rounded-lg"><p>아직 성경 읽기 기록이 없습니다. 함께 시작해볼까요?</p></div>`; return; } board.innerHTML = ` <div class="text-center p-4 accent-bg rounded-lg"><h3 class="text-xl font-bold accent-text mb-2">🏆 말씀 읽기 1등! 🏆</h3><div class="flex items-center justify-center gap-4"><img src="${winner.photo || 'https://placehold.co/80x80/cccccc/FFFFFF?text=?'}" alt="${winner.name}" class="w-16 h-16 rounded-full border-4 border-yellow-400 object-cover" referrerpolicy="no-referrer"><div><p class="text-2xl font-bold">${winner.name}</p><p class="text-lg">${winner.chaptersRead}장</p></div></div></div>`; }
+
+// [리더보드 개선] 공동 순위 및 전체 순위 표시
+function renderLeaderboard() {
+    const board = document.getElementById('leaderboard');
+    if (!db.family || db.family.length === 0) { board.innerHTML = ''; return; }
+
+    const rankedUsers = db.family.map(member => {
+        const chaptersRead = Object.values(db.readRecords[member.id] || {}).reduce((sum, chapters) => sum + chapters.length, 0);
+        return { ...member, chaptersRead };
+    }).sort((a, b) => b.chaptersRead - a.chaptersRead);
+
+    if (rankedUsers.length === 0 || rankedUsers[0].chaptersRead === 0) {
+        board.innerHTML = `<div class="text-center p-4 accent-bg rounded-lg"><p>아직 성경 읽기 기록이 없습니다. 함께 시작해볼까요?</p></div>`;
+        return;
+    }
+
+    const topScore = rankedUsers[0].chaptersRead;
+    const winners = rankedUsers.filter(user => user.chaptersRead === topScore);
+    const others = rankedUsers.filter(user => user.chaptersRead < topScore);
+
+    const winnersHTML = `
+        <div class="flex-shrink-0 w-full md:w-1/2 text-center md:text-left">
+            <h3 class="text-xl font-bold accent-text mb-2">${winners.length > 1 ? '🏆 공동 1등! 🏆' : '🏆 말씀 읽기 1등! 🏆'}</h3>
+            <div class="flex items-center justify-center md:justify-start gap-4">
+                <div class="flex -space-x-4">
+                    ${winners.map(winner => `<img src="${winner.photo || 'https://placehold.co/80x80/cccccc/FFFFFF?text=?'}" alt="${winner.name}" class="w-16 h-16 rounded-full border-4 border-yellow-400 object-cover" referrerpolicy="no-referrer">`).join('')}
+                </div>
+                <div>
+                    <p class="text-xl font-bold">${winners.map(w => w.name).join(', ')}</p>
+                    <p class="text-lg">${topScore}장</p>
+                </div>
+            </div>
+        </div>`;
+
+    let othersHTML = '<div class="flex-grow pt-4 md:pt-0 md:pl-6 w-full md:w-1/2">';
+    if (others.length > 0) {
+        let currentRank = winners.length + 1;
+        others.slice(0, 3).forEach(user => { // 1등 제외 최대 3명
+            othersHTML += `
+                <div class="flex items-center justify-between text-sm mb-2">
+                    <div class="flex items-center">
+                        <span class="font-bold w-8 text-left">${currentRank}.</span>
+                        <img src="${user.photo || 'https://placehold.co/40x40/cccccc/FFFFFF?text=?'}" alt="${user.name}" class="w-8 h-8 rounded-full mr-2 object-cover" referrerpolicy="no-referrer">
+                        <span>${user.name}</span>
+                    </div>
+                    <span class="font-semibold">${user.chaptersRead}장</span>
+                </div>`;
+            currentRank++;
+        });
+    }
+    othersHTML += '</div>';
+
+    board.innerHTML = `<div class="p-4 accent-bg rounded-lg flex flex-col md:flex-row items-center">${winnersHTML}${othersHTML}</div>`;
+}
+
 function updateConnectionStatus(status) { const indicator = document.getElementById('status-indicator'); const text = document.getElementById('status-text'); const syncBtn = document.getElementById('sync-btn'); indicator.classList.remove('loading'); switch (status) { case 'connected': indicator.className = 'w-3 h-3 rounded-full bg-green-500'; text.textContent = '온라인'; syncBtn.classList.remove('hidden'); break; case 'disconnected': indicator.className = 'w-3 h-3 rounded-full bg-red-500'; text.textContent = '오프라인'; syncBtn.classList.add('hidden'); break; case 'loading': indicator.className = 'w-3 h-3 rounded-full bg-yellow-500 loading'; text.textContent = '연결 중...'; syncBtn.classList.add('hidden'); break; } }
 function renderFamilyDashboard() { const dashboard = document.getElementById('family-dashboard'); dashboard.innerHTML = ''; if (!db.family || db.family.length === 0) return; db.family.forEach(member => { const userRecords = db.readRecords[member.id] || {}; const otRead = BIBLE_BOOKS.old.reduce((sum, book) => sum + (userRecords[book.name]?.length || 0), 0); const ntRead = BIBLE_BOOKS.new.reduce((sum, book) => sum + (userRecords[book.name]?.length || 0), 0); const totalRead = otRead + ntRead; const totalChapters = TOTAL_OT_CHAPTERS + TOTAL_NT_CHAPTERS; const memberDiv = document.createElement('div'); memberDiv.className = 'flex flex-col items-center cursor-pointer hover:opacity-80 transition'; memberDiv.onclick = () => openProgressModal(member.id); memberDiv.innerHTML = `<img src="${member.photo || 'https://placehold.co/80x80/cccccc/FFFFFF?text=?'}" alt="${member.name}" class="w-16 h-16 md:w-20 md:h-20 rounded-full border-4 border-white/50 object-cover shadow-md" referrerpolicy="no-referrer"><div class="font-bold mt-2">${member.title} (${member.name})</div><div class="text-sm mt-2 space-y-1"><div><strong>총:</strong> ${totalRead} / ${totalChapters}</div><div class="text-xs"><strong>구약:</strong> ${otRead}/${TOTAL_OT_CHAPTERS} | <strong>신약:</strong> ${ntRead}/${TOTAL_NT_CHAPTERS}</div></div>`; dashboard.appendChild(memberDiv); }); }
 function renderWisdomVerse() { const verses = [ "자녀들아 주 안에서 너희 부모에게 순종하라 이것이 옳으니라 (에베소서 6:1)","여호와는 나의 목자시니 내게 부족함이 없으리로다 (시편 23:1)","주 너의 하나님을 사랑하고 또한 네 이웃을 네 자신 같이 사랑하라 (마태복음 22:37-39)","항상 기뻐하라 쉬지 말고 기도하라 범사에 감사하라 (데살로니가전서 5:16-18)","수고하고 무거운 짐 진 자들아 다 내게로 오라 내가 너희를 쉬게 하리라 (마태복음 11:28)","두려워하지 말라 내가 너와 함께 함이라 놀라지 말라 나는 네 하나님이 됨이라 (이사야 41:10)","사람이 마음으로 자기의 길을 계획할지라도 그의 걸음을 인도하시는 이는 여호와시니라 (잠언 16:9)","그런즉 너희는 먼저 그의 나라와 그의 의를 구하라 그리하면 이 모든 것을 너희에게 더하시리라 (마태복음 6:33)","내게 능력 주시는 자 안에서 내가 모든 것을 할 수 있느니라 (빌립보서 4:13)","내가 너희에게 분부한 모든 것을 가르쳐 지키게 하라 볼지어다 내가 세상 끝날까지 너희와 항상 함께 있으리라 (마태복음 28:20)","사랑은 오래 참고 사랑은 온유하며 시기하지 아니하며 (고린도전서 13:4)","하나님이 세상을 이처럼 사랑하사 독생자를 주셨으니 이는 그를 믿는 자마다 멸망하지 않고 영생을 얻게 하려 하심이라 (요한복음 3:16)","그런즉 너희가 먹든지 마시든지 무엇을 하든지 다 하나님의 영광을 위하여 하라 (고린도전서 10:31)" ]; document.getElementById('wisdom-verse').textContent = verses[Math.floor(Math.random() * verses.length)]; }
@@ -111,7 +165,7 @@ function closeProgressModal() { document.getElementById('progress-modal').classL
 function switchProgressTab(tab) { const tabOT = document.getElementById('tab-ot'); const tabNT = document.getElementById('tab-nt'); const contentOT = document.getElementById('content-ot'); const contentNT = document.getElementById('content-nt'); if (tab === 'ot') { tabOT.classList.add('tab-active'); tabOT.classList.remove('border-transparent', 'text-gray-500'); tabNT.classList.remove('tab-active'); tabNT.classList.add('border-transparent', 'text-gray-500'); contentOT.classList.remove('hidden'); contentNT.classList.add('hidden'); } else { tabNT.classList.add('tab-active'); tabNT.classList.remove('border-transparent', 'text-gray-500'); tabOT.classList.remove('tab-active'); tabOT.classList.add('border-transparent', 'text-gray-500'); contentNT.classList.remove('hidden'); contentOT.classList.add('hidden'); } }
 function toggleChapterRead(chapterNumber, buttonElement, context) { const userId = context.userId; const bookName = context.bookName; if (!db.readRecords[userId]) db.readRecords[userId] = {}; if (!db.readRecords[userId][bookName]) db.readRecords[userId][bookName] = []; const readList = db.readRecords[userId][bookName]; const chapterIndex = readList.indexOf(chapterNumber); const params = { type: 'reading', userId, bookName, chapter: chapterNumber }; if (chapterIndex > -1) { readList.splice(chapterIndex, 1); buttonElement.className = 'p-2 rounded border transition-colors duration-200 bg-white hover:bg-green-100'; } else { readList.push(chapterNumber); buttonElement.className = 'p-2 rounded border transition-colors duration-200 bg-green-500 text-white border-green-500'; } renderAll(); const detail = document.querySelector(`#progress-modal details[data-book-name="${bookName}"]`); if(detail) updateProgressInModal(detail, userId); const apiCall = (chapterIndex > -1) ? gapi.deleteData(params) : gapi.saveData(params); apiCall.catch(error => { alert(`읽기 상태 저장에 실패했습니다.`); const originalIndex = readList.indexOf(chapterNumber); if (originalIndex > -1) { readList.splice(originalIndex, 1); } else { readList.push(chapterNumber); } buttonElement.className = `p-2 rounded border transition-colors duration-200 ${readList.includes(chapterNumber) ? 'bg-green-500 text-white border-green-500' : 'bg-white hover:bg-green-100'}`; renderAll(); if(detail) updateProgressInModal(detail, userId); }); }
 function openChapterModal(book) { if (!db.family || db.family.length === 0) return; currentBook = book; document.getElementById('modal-title').textContent = book.name; document.getElementById('modal-user-selector').value = currentUserForModal; updateModalForCurrentUser(); document.getElementById('chapter-modal').classList.remove('hidden'); }
-function updateModalForCurrentUser() { const modalChapters = document.getElementById('modal-chapters'); modalChapters.innerHTML = ''; const userRecordsForBook = (db.readRecords[currentUserForModal]?.[currentBook.name]) || []; for (let i = 1; i <= book.chapters; i++) { const btn = document.createElement('button'); btn.textContent = i; btn.className = `p-2 rounded border transition-colors duration-200 ${userRecordsForBook.includes(i) ? 'bg-green-500 text-white border-green-500' : 'bg-white hover:bg-green-100'}`; btn.onclick = () => toggleChapterRead(i, btn, {bookName: currentBook.name, userId: currentUserForModal}); modalChapters.appendChild(btn); } }
+function updateModalForCurrentUser() { const modalChapters = document.getElementById('modal-chapters'); modalChapters.innerHTML = ''; const userRecordsForBook = (db.readRecords[currentUserForModal]?.[currentBook.name]) || []; for (let i = 1; i <= currentBook.chapters; i++) { const btn = document.createElement('button'); btn.textContent = i; btn.className = `p-2 rounded border transition-colors duration-200 ${userRecordsForBook.includes(i) ? 'bg-green-500 text-white border-green-500' : 'bg-white hover:bg-green-100'}`; btn.onclick = () => toggleChapterRead(i, btn, {bookName: currentBook.name, userId: currentUserForModal}); modalChapters.appendChild(btn); } }
 function closeChapterModal() { document.getElementById('chapter-modal').classList.add('hidden'); }
 </script>
 </body>
