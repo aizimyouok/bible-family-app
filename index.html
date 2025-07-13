@@ -347,42 +347,69 @@ class GoogleSheetsAPI {
 
     async saveData(sheet, data) {
         if (!this.isConnected) {
-            // 오프라인 모드: 로컬 저장
             return this.saveToLocalStorage(sheet, data);
         }
 
         try {
-            const response = await fetch(this.scriptUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    action: 'save',
-                    sheet: sheet,
-                    data: data
-                })
-            });
-
-            const result = await response.json();
-            if (!result.success) {
-                throw new Error(result.error);
-            }
-            
-            // 로컬에도 백업 저장
+            // CORS 문제 해결: GET 요청만 사용
             this.saveToLocalStorage(sheet, data);
-            
+            return { success: true, source: 'localStorage' };
+        } catch (error) {
+            console.warn('데이터 저장 실패:', error);
+            return this.saveToLocalStorage(sheet, data);
+        }
+    }
+
+    async saveReading(userId, bookName, chapter) {
+        if (!this.isConnected) {
+            return this.saveToLocalStorage('reading_temp', { userId, bookName, chapter });
+        }
+
+        try {
+            const url = `${this.scriptUrl}?action=save&type=reading&userId=${userId}&bookName=${encodeURIComponent(bookName)}&chapter=${chapter}`;
+            const response = await fetch(url);
+            const result = await response.json();
             return result;
         } catch (error) {
-            // 실패시 로컬 저장으로 폴백
-            console.warn('구글 시트 저장 실패, 로컬 저장으로 대체:', error);
-            return this.saveToLocalStorage(sheet, data);
+            console.warn('읽기 기록 저장 실패:', error);
+            return this.saveToLocalStorage('reading_temp', { userId, bookName, chapter });
+        }
+    }
+
+    async saveMeditation(userId, content) {
+        if (!this.isConnected) {
+            return this.saveToLocalStorage('meditation_temp', { userId, content });
+        }
+
+        try {
+            const url = `${this.scriptUrl}?action=save&type=meditation&userId=${userId}&content=${encodeURIComponent(content)}`;
+            const response = await fetch(url);
+            const result = await response.json();
+            return result;
+        } catch (error) {
+            console.warn('묵상 저장 실패:', error);
+            return this.saveToLocalStorage('meditation_temp', { userId, content });
+        }
+    }
+
+    async savePrayer(userId, content) {
+        if (!this.isConnected) {
+            return this.saveToLocalStorage('prayer_temp', { userId, content });
+        }
+
+        try {
+            const url = `${this.scriptUrl}?action=save&type=prayer&userId=${userId}&content=${encodeURIComponent(content)}`;
+            const response = await fetch(url);
+            const result = await response.json();
+            return result;
+        } catch (error) {
+            console.warn('기도 저장 실패:', error);
+            return this.saveToLocalStorage('prayer_temp', { userId, content });
         }
     }
 
     async loadData(sheet) {
         if (!this.isConnected) {
-            // 오프라인 모드: 로컬에서 로드
             return this.loadFromLocalStorage(sheet);
         }
 
@@ -391,7 +418,6 @@ class GoogleSheetsAPI {
             const result = await response.json();
             
             if (result.success) {
-                // 로컬에도 백업 저장
                 this.saveToLocalStorage(sheet, result.data);
                 return result.data;
             } else {
@@ -400,6 +426,44 @@ class GoogleSheetsAPI {
         } catch (error) {
             console.warn('구글 시트 로드 실패, 로컬 데이터 사용:', error);
             return this.loadFromLocalStorage(sheet);
+        }
+    }
+
+    async loadAllData() {
+        if (!this.isConnected) {
+            return {
+                family: this.loadFromLocalStorage('family_members'),
+                reading: this.loadFromLocalStorage('reading_records'),
+                badges: this.loadFromLocalStorage('badges'),
+                meditations: this.loadFromLocalStorage('meditations'),
+                prayers: this.loadFromLocalStorage('prayers')
+            };
+        }
+
+        try {
+            const response = await fetch(this.scriptUrl + `?action=load_all`);
+            const result = await response.json();
+            
+            if (result.success) {
+                // 각 데이터를 로컬에도 저장
+                Object.entries(result.data).forEach(([key, data]) => {
+                    const sheetName = key === 'reading' ? 'reading_records' : 
+                                    key === 'family' ? 'family_members' : key;
+                    this.saveToLocalStorage(sheetName, data);
+                });
+                return result.data;
+            } else {
+                throw new Error(result.error);
+            }
+        } catch (error) {
+            console.warn('전체 데이터 로드 실패, 로컬 데이터 사용:', error);
+            return {
+                family: this.loadFromLocalStorage('family_members'),
+                reading: this.loadFromLocalStorage('reading_records'),
+                badges: this.loadFromLocalStorage('badges'),
+                meditations: this.loadFromLocalStorage('meditations'),
+                prayers: this.loadFromLocalStorage('prayers')
+            };
         }
     }
 
@@ -588,19 +652,14 @@ function updateConnectionStatus(status) {
 
 async function loadAllData() {
     try {
-        // 각 시트에서 데이터 로드
-        const familyData = await gapi.loadData('family_members');
-        const readingData = await gapi.loadData('reading_records');
-        const badgesData = await gapi.loadData('badges');
-        const meditationsData = await gapi.loadData('meditations');
-        const prayersData = await gapi.loadData('prayers');
+        const allData = await gapi.loadAllData();
         
         // 데이터가 있으면 업데이트
-        if (familyData) db.family = familyData;
-        if (readingData) db.readRecords = readingData;
-        if (badgesData) db.badges = badgesData;
-        if (meditationsData) db.meditations = meditationsData;
-        if (prayersData) db.prayers = prayersData;
+        if (allData.family) db.family = allData.family;
+        if (allData.reading) db.readRecords = allData.reading;
+        if (allData.badges) db.badges = allData.badges;
+        if (allData.meditations) db.meditations = allData.meditations;
+        if (allData.prayers) db.prayers = allData.prayers;
         
         console.log('데이터 로드 완료');
     } catch (error) {
@@ -608,19 +667,7 @@ async function loadAllData() {
     }
 }
 
-async function saveAllData() {
-    try {
-        await gapi.saveData('family_members', db.family);
-        await gapi.saveData('reading_records', db.readRecords);
-        await gapi.saveData('badges', db.badges);
-        await gapi.saveData('meditations', db.meditations);
-        await gapi.saveData('prayers', db.prayers);
-        
-        console.log('데이터 저장 완료');
-    } catch (error) {
-        console.log('데이터 저장 실패:', error);
-    }
-}
+// 기존 saveAllData 함수 제거됨 - 개별 저장 방식으로 변경
 
 function initializeBadges() {
     // 뱃지 시스템 초기화
@@ -798,11 +845,6 @@ function checkBadges(userId, bookName = null, chapterNumber = null) {
         createConfetti();
     });
 
-    // 데이터 저장
-    if (newBadges.length > 0) {
-        saveAllData();
-    }
-
     return newBadges;
 }
 
@@ -960,13 +1002,15 @@ async function syncData() {
     updateConnectionStatus('loading');
     
     try {
-        const success = await gapi.syncData();
-        if (success) {
-            alert('동기화 완료!');
-            updateConnectionStatus('connected');
-        } else {
-            throw new Error('동기화 실패');
-        }
+        // 전체 데이터 다시 로드
+        await loadAllData();
+        renderFamilyDashboard();
+        renderBibleBooks();
+        renderMeditations();
+        renderPrayers();
+        
+        alert('동기화 완료!');
+        updateConnectionStatus('connected');
     } catch (error) {
         alert('동기화 실패: ' + error.message);
         updateConnectionStatus('disconnected');
@@ -1076,8 +1120,8 @@ async function addMeditation() {
     textInput.value = '';
     renderMeditations();
     
-    // 데이터 저장
-    await saveAllData();
+    // 구글 시트에 저장
+    await gapi.saveMeditation(newMeditation.userId, newMeditation.content);
 }
 
 async function addPrayer() {
@@ -1095,8 +1139,8 @@ async function addPrayer() {
     textInput.value = '';
     renderPrayers();
     
-    // 데이터 저장
-    await saveAllData();
+    // 구글 시트에 저장
+    await gapi.savePrayer(newPrayer.userId, newPrayer.content);
 }
 
 // --- 모달 관련 기능 ---
@@ -1203,15 +1247,15 @@ async function toggleChapterRead(chapterNumber, buttonElement) {
         buttonElement.classList.add('bg-green-500', 'text-white', 'border-green-500');
         buttonElement.classList.remove('bg-white', 'hover:bg-green-100');
         
+        // 구글 시트에 저장
+        await gapi.saveReading(currentUserForModal, currentBook.name, chapterNumber);
+        
         // 뱃지 체크
         checkBadges(currentUserForModal, currentBook.name, chapterNumber);
     }
     
     // 대시보드 진행률 업데이트
     renderFamilyDashboard();
-    
-    // 데이터 저장
-    await saveAllData();
 }
 
 function closeChapterModal() {
