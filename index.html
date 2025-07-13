@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bible Time for Family</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Nanum+Myeongjo:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+        }
+        .font-myeongjo {
+            font-family: 'Nanum Myeongjo', serif;
+        }
+        /* 스크롤바 디자인 */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #c5a992;
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #a88d76;
+        }
+        /* 테마 전환을 위한 스타일 */
+        .theme-creation {
+            --bg-main: #f0f4f8; /* 하늘 */
+            --bg-container: #ffffff;
+            --bg-accent: #e6f0e6; /* 초록 */
+            --text-primary: #2c3e50;
+            --text-accent: #1e8449;
+            --border-color: #d4e6d4;
+        }
+        .theme-jerusalem {
+            --bg-main: #fdfaf6; /* 모래 */
+            --bg-container: #ffffff;
+            --bg-accent: #f8f1e9; /* 옅은 흙 */
+            --text-primary: #5a4b42;
+            --text-accent: #8d6e63;
+            --border-color: #d7ccc8;
+        }
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-primary);
+            transition: background-color 0.5s, color 0.5s;
+        }
+        .main-container {
+            background-color: var(--bg-container);
+            transition: background-color 0.5s;
+        }
+        .accent-bg {
+            background-color: var(--bg-accent);
+            transition: background-color 0.5s;
+        }
+        .accent-text {
+            color: var(--text-accent);
+            transition: color 0.5s;
+        }
+        .border-custom {
+            border-color: var(--border-color);
+            transition: border-color 0.5s;
+        }
+        .progress-bar-fill {
+            background-color: var(--text-accent);
+            transition: background-color 0.5s;
+        }
+
+        /* 뱃지 애니메이션 */
+        @keyframes badgeGlow {
+            0% { box-shadow: 0 0 5px rgba(255, 215, 0, 0.5); }
+            50% { box-shadow: 0 0 20px rgba(255, 215, 0, 0.8), 0 0 30px rgba(255, 215, 0, 0.6); }
+            100% { box-shadow: 0 0 5px rgba(255, 215, 0, 0.5); }
+        }
+        
+        @keyframes badgePop {
+            0% { transform: scale(0.8); opacity: 0; }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        .badge-earned {
+            animation: badgeGlow 2s infinite, badgePop 0.6s ease-out;
+        }
+        
+        .badge-locked {
+            filter: grayscale(100%) opacity(0.3);
+        }
+
+        /* 축하 모달 애니메이션 */
+        @keyframes celebrate {
+            0% { transform: scale(0.5) rotate(-180deg); opacity: 0; }
+            50% { transform: scale(1.1) rotate(0deg); }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+        
+        .celebration-modal {
+            animation: celebrate 0.8s ease-out;
+        }
+
+        /* 파티클 효과 */
+        @keyframes confetti {
+            0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(360deg); opacity: 0; }
+        }
+        
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            z-index: 1000;
+            animation: confetti 3s linear infinite;
+        }
+    </style>
+</head>
+<body class="theme-jerusalem">
+
+    <div id="app" class="p-4 md:p-8 max-w-6xl mx-auto">
+        <!-- 헤더 및 테마 선택 -->
+        <header class="text-center mb-8">
+            <h1 class="text-4xl md:text-5xl font-myeongjo font-bold accent-text">Bible Time for Family</h1>
+            <p class="mt-2 text-lg">우리가족, 말씀으로 하나되는 시간</p>
+            <div class="mt-4 flex justify-center items-center gap-4">
+                <div>
+                    <label for="theme-select" class="mr-2">테마 선택:</label>
+                    <select id="theme-select" class="p-1 rounded border-custom border-2 accent-bg">
+                        <option value="theme-jerusalem">예루살렘 (흙과 돌)</option>
+                        <option value="theme-creation">천지창조 (하늘과 풀)</option>
+                    </select>
+                </div>
+                <button id="badges-btn" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg font-bold shadow-lg transition-all">
+                    🏆 뱃지 컬렉션
+                </button>
+            </div>
+        </header>
+
+        <!-- 메인 컨테이너 -->
+        <div class="main-container shadow-xl rounded-2xl p-4 md:p-6">
+            
+            <!-- 가족 대시보드 -->
+            <section id="family-dashboard" class="mb-8 accent-bg rounded-lg p-4 grid grid-cols-2 md:grid-cols-4 gap-4 items-center text-center">
+                <!-- 가족 멤버 프로필이 여기에 동적으로 추가됩니다 -->
+            </section>
+
+            <!-- 오늘의 지혜 말씀 -->
+            <section class="mb-8 text-center p-6 border-2 border-dashed border-custom rounded-lg">
+                <h2 class="text-xl font-bold font-myeongjo accent-text mb-2">오늘의 지혜 말씀</h2>
+                <p id="wisdom-verse" class="text-lg"></p>
+            </section>
+
+            <!-- 성경 읽기표 -->
+            <section class="mb-8">
+                <h2 class="text-2xl font-bold mb-4 text-center">📖 성경 읽기표 (66권)</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <h3 class="text-xl font-semibold mb-3 text-center accent-text">구약 (39권)</h3>
+                        <div id="old-testament" class="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2"></div>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-semibold mb-3 text-center accent-text">신약 (27권)</h3>
+                        <div id="new-testament" class="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 가족 나눔 공간 -->
+            <section class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- 묵상 나눔 -->
+                <div class="accent-bg rounded-lg p-4">
+                    <h3 class="text-xl font-bold mb-3">💬 가족 묵상 나눔</h3>
+                    <div id="meditation-list" class="h-48 overflow-y-auto custom-scrollbar pr-2 mb-3 bg-white/50 rounded p-2">
+                        <!-- 묵상 내용이 여기에 동적으로 추가됩니다 -->
+                    </div>
+                    <div class="flex gap-2">
+                        <select id="meditation-user" class="p-2 border-custom border rounded-md"></select>
+                        <input type="text" id="meditation-input" class="flex-grow p-2 border-custom border rounded-md" placeholder="오늘의 묵상을 나눠보세요...">
+                        <button id="add-meditation" class="bg-white/80 hover:bg-white p-2 rounded-md shadow">등록</button>
+                    </div>
+                </div>
+                <!-- 기도 노트 -->
+                <div class="accent-bg rounded-lg p-4">
+                    <h3 class="text-xl font-bold mb-3">🙏 가족 기도 노트</h3>
+                    <div id="prayer-list" class="h-48 overflow-y-auto custom-scrollbar pr-2 mb-3 bg-white/50 rounded p-2">
+                        <!-- 기도 제목이 여기에 동적으로 추가됩니다 -->
+                    </div>
+                    <div class="flex gap-2">
+                        <select id="prayer-user" class="p-2 border-custom border rounded-md"></select>
+                        <input type="text" id="prayer-input" class="flex-grow p-2 border-custom border rounded-md" placeholder="함께 기도할 제목을 나눠요...">
+                        <button id="add-prayer" class="bg-white/80 hover:bg-white p-2 rounded-md shadow">등록</button>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <!-- 성경 장 선택 모달 -->
+    <div id="chapter-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-lg shadow-2xl p-6 w-full max-w-2xl max-h-[80vh] flex flex-col">
+            <div class="flex justify-between items-center mb-4">
+                <h2 id="modal-title" class="text-2xl font-bold"></h2>
+                <button id="close-modal" class="text-3xl">&times;</button>
+            </div>
+            <p class="mb-2">읽기를 완료한 장을 체크해주세요. (체크한 사람은 <span id="modal-user-name" class="font-bold"></span>)</p>
+            <div id="modal-chapters" class="flex-grow overflow-y-auto grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 gap-2 p-2 accent-bg rounded custom-scrollbar">
+                <!-- 장 버튼이 여기에 동적으로 추가됩니다 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 뱃지 컬렉션 모달 -->
+    <div id="badges-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-lg shadow-2xl p-6 w-full max-w-4xl max-h-[80vh] flex flex-col">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold">🏆 우리 가족 뱃지 컬렉션</h2>
+                <button id="close-badges-modal" class="text-3xl">&times;</button>
+            </div>
+            
+            <!-- 가족별 뱃지 탭 -->
+            <div class="flex mb-4 border-b">
+                <button class="badge-tab px-4 py-2 font-bold text-blue-600 border-b-2 border-blue-600" data-user="all">전체</button>
+                <button class="badge-tab px-4 py-2 hover:text-blue-600" data-user="user01">아빠</button>
+                <button class="badge-tab px-4 py-2 hover:text-blue-600" data-user="user02">엄마</button>
+                <button class="badge-tab px-4 py-2 hover:text-blue-600" data-user="user03">하율</button>
+                <button class="badge-tab px-4 py-2 hover:text-blue-600" data-user="user04">하준</button>
+            </div>
+            
+            <!-- 뱃지 목록 -->
+            <div id="badges-content" class="flex-grow overflow-y-auto custom-scrollbar">
+                <!-- 뱃지들이 여기에 동적으로 추가됩니다 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 축하 모달 -->
+    <div id="celebration-modal" class="fixed inset-0 bg-black bg-opacity-70 hidden items-center justify-center p-4 z-50">
+        <div class="celebration-modal bg-white rounded-lg shadow-2xl p-8 text-center max-w-md">
+            <div class="text-6xl mb-4">🎉</div>
+            <h2 class="text-2xl font-bold mb-2" id="celebration-title">축하합니다!</h2>
+            <p class="text-lg mb-4" id="celebration-message">새로운 뱃지를 획득했습니다!</p>
+            <div class="text-4xl mb-4" id="celebration-badge"></div>
+            <button id="close-celebration" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg font-bold">확인</button>
+        </div>
+    </div>
+
+<script>
+// --- 데이터베이스 시뮬레이션 ---
+const BIBLE_BOOKS = {
+    old: [
+        { name: '창세기', chapters: 50 }, { name: '출애굽기', chapters: 40 }, { name: '레위기', chapters: 27 },
+        { name: '민수기', chapters: 36 }, { name: '신명기', chapters: 34 }, { name: '여호수아', chapters: 24 },
+        { name: '사사기', chapters: 21 }, { name: '룻기', chapters: 4 }, { name: '사무엘상', chapters: 31 },
+        { name: '사무엘하', chapters: 24 }, { name: '열왕기상', chapters: 22 }, { name: '열왕기하', chapters: 25 },
+        { name: '역대상', chapters: 29 }, { name: '역대하', chapters: 36 }, { name: '에스라', chapters: 10 },
+        { name: '느헤미야', chapters: 13 }, { name: '에스더', chapters: 10 }, { name: '욥기', chapters: 42 },
+        { name: '시편', chapters: 150 }, { name: '잠언', chapters: 31 }, { name: '전도서', chapters: 12 },
+        { name: '아가', chapters: 8 }, { name: '이사야', chapters: 66 }, { name: '예레미야', chapters: 52 },
+        { name: '예레미야애가', chapters: 5 }, { name: '에스겔', chapters: 48 }, { name: '다니엘', chapters: 12 },
+        { name: '호세아', chapters: 14 }, { name: '요엘', chapters: 3 }, { name: '아모스', chapters: 9 },
+        { name: '오바댜', chapters: 1 }, { name: '요나', chapters: 4 }, { name: '미가', chapters: 7 },
+        { name: '나훔', chapters: 3 }, { name: '하박국', chapters: 3 }, { name: '스바냐', chapters: 3 },
+        { name: '학개', chapters: 2 }, { name: '스가랴', chapters: 14 }, { name: '말라기', chapters: 4 }
+    ],
+    new: [
+        { name: '마태복음', chapters: 28 }, { name: '마가복음', chapters: 16 }, { name: '누가복음', chapters: 24 },
+        { name: '요한복음', chapters: 21 }, { name: '사도행전', chapters: 28 }, { name: '로마서', chapters: 16 },
+        { name: '고린도전서', chapters: 16 }, { name: '고린도후서', chapters: 13 }, { name: '갈라디아서', chapters: 6 },
+        { name: '에베소서', chapters: 6 }, { name: '빌립보서', chapters: 4 }, { name: '골로새서', chapters: 4 },
+        { name: '데살로니가전서', chapters: 5 }, { name: '데살로니가후서', chapters: 3 }, { name: '디모데전서', chapters: 6 },
+        { name: '디모데후서', chapters: 4 }, { name: '디도서', chapters: 3 }, { name: '빌레몬서', chapters: 1 },
+        { name: '히브리서', chapters: 13 }, { name: '야고보서', chapters: 5 }, { name: '베드로전서', chapters: 5 },
+        { name: '베드로후서', chapters: 3 }, { name: '요한1서', chapters: 5 }, { name: '요한2서', chapters: 1 },
+        { name: '요한3서', chapters: 1 }, { name: '유다서', chapters: 1 }, { name: '요한계시록', chapters: 22 }
+    ]
+};
+
+const TOTAL_CHAPTERS = BIBLE_BOOKS.old.reduce((s, b) => s + b.chapters, 0) + BIBLE_BOOKS.new.reduce((s, b) => s + b.chapters, 0);
+
+// 뱃지 정의
+const BADGE_DEFINITIONS = {
+    // 연속 읽기 뱃지
+    'streak_3': { emoji: '🔥', name: '불타는 열정', description: '3일 연속 읽기', condition: 'streak', value: 3 },
+    'streak_5': { emoji: '⚡', name: '꾸준한 믿음', description: '5일 연속 읽기', condition: 'streak', value: 5 },
+    'streak_10': { emoji: '💎', name: '다이아몬드 신앙', description: '10일 연속 읽기', condition: 'streak', value: 10 },
+    'streak_30': { emoji: '👑', name: '왕관의 영광', description: '30일 연속 읽기', condition: 'streak', value: 30 },
+    
+    // 장 읽기 뱃지
+    'chapters_10': { emoji: '📚', name: '말씀 사랑', description: '총 10장 읽기', condition: 'chapters', value: 10 },
+    'chapters_50': { emoji: '📖', name: '성경 박사', description: '총 50장 읽기', condition: 'chapters', value: 50 },
+    'chapters_100': { emoji: '🎓', name: '말씀 석사', description: '총 100장 읽기', condition: 'chapters', value: 100 },
+    'chapters_200': { emoji: '🏆', name: '성경 전문가', description: '총 200장 읽기', condition: 'chapters', value: 200 },
+    
+    // 성경 완독 뱃지
+    'book_genesis': { emoji: '🌟', name: '창조의 시작', description: '창세기 완독', condition: 'book', value: '창세기' },
+    'book_psalms': { emoji: '🎵', name: '찬양의 마음', description: '시편 완독', condition: 'book', value: '시편' },
+    'book_proverbs': { emoji: '🦉', name: '지혜의 샘', description: '잠언 완독', condition: 'book', value: '잠언' },
+    'book_matthew': { emoji: '✝️', name: '복음의 빛', description: '마태복음 완독', condition: 'book', value: '마태복음' },
+    'book_john': { emoji: '❤️', name: '사랑의 복음', description: '요한복음 완독', condition: 'book', value: '요한복음' },
+    
+    // 특별 뱃지
+    'first_read': { emoji: '🌅', name: '첫 걸음', description: '첫 성경 읽기', condition: 'first', value: 1 },
+    'early_bird': { emoji: '🐦', name: '새벽 기도', description: '아침 일찍 읽기', condition: 'special', value: 'early' },
+    'family_unity': { emoji: '👨‍👩‍👧‍👦', name: '가족 화합', description: '온 가족이 같은 날 읽기', condition: 'special', value: 'family' }
+};
+
+let db = {
+    family: [
+        { id: 'user01', name: '송혜성', title: '아빠', photo: 'https://placehold.co/80x80/665A5A/FFFFFF?text=아빠' },
+        { id: 'user02', name: '오윤정', title: '엄마', photo: 'https://placehold.co/80x80/A48A79/FFFFFF?text=엄마' },
+        { id: 'user03', name: '송하율', title: '하율', photo: 'https://placehold.co/80x80/D4AC94/FFFFFF?text=하율' },
+        { id: 'user04', name: '송하준', title: '하준', photo: 'https://placehold.co/80x80/E8C3A4/FFFFFF?text=하준' },
+    ],
+    readRecords: {
+        // 'user01': { '창세기': [1, 2, 3], '마태복음': [1] },
+    },
+    readingHistory: {
+        // 'user01': [{ date: '2025-07-13', book: '창세기', chapter: 1 }]
+    },
+    badges: {
+        // 'user01': ['first_read', 'chapters_10']
+    },
+    meditations: [
+        { userId: 'user01', date: '2025-07-13', content: '빛이 있으라 하시니 빛이 있었고... 말씀의 능력을 다시 묵상합니다.' },
+        { userId: 'user03', date: '2025-07-13', content: '하나님이 만드신 세상이 예뻐요.' },
+    ],
+    prayers: [
+        { userId: 'user02', date: '2025-07-14', content: '우리 가족 모두 건강하게 해주세요.' },
+        { userId: 'user04', date: '2025-07-15', content: '학교에서 친구랑 사이좋게 지내게 해주세요.' },
+    ],
+    wisdomVerses: [
+        "태초에 하나님이 천지를 창조하시니라 (창 1:1)",
+        "항상 기뻐하라 쉬지 말고 기도하라 범사에 감사하라 (살전 5:16-18)",
+        "네 마음을 다하고 목숨을 다하고 뜻을 다하여 주 너의 하나님을 사랑하라 (마 22:37)",
+        "내가 너희에게 분부한 모든 것을 가르쳐 지키게 하라 (마 28:20)",
+        "두려워하지 말라 내가 너와 함께 함이라 (사 41:10)"
+    ]
+};
+
+// --- 앱 초기화 및 렌더링 ---
+document.addEventListener('DOMContentLoaded', () => {
+    setupThemeSwitcher();
+    renderWisdomVerse();
+    renderFamilyDashboard();
+    renderBibleBooks();
+    renderMeditations();
+    renderPrayers();
+    setupEventListeners();
+    populateUserDropdowns();
+    initializeBadges();
+});
+
+function initializeBadges() {
+    // 뱃지 시스템 초기화
+    db.family.forEach(member => {
+        if (!db.badges[member.id]) {
+            db.badges[member.id] = [];
+        }
+        if (!db.readingHistory[member.id]) {
+            db.readingHistory[member.id] = [];
+        }
+    });
+}
+
+function setupThemeSwitcher() {
+    const themeSelect = document.getElementById('theme-select');
+    themeSelect.addEventListener('change', (e) => {
+        document.body.className = e.target.value;
+    });
+}
+
+function renderWisdomVerse() {
+    const verseEl = document.getElementById('wisdom-verse');
+    const randomIndex = Math.floor(Math.random() * db.wisdomVerses.length);
+    verseEl.textContent = db.wisdomVerses[randomIndex];
+}
+
+function renderFamilyDashboard() {
+    const dashboard = document.getElementById('family-dashboard');
+    dashboard.innerHTML = '';
+    db.family.forEach(member => {
+        const userRecords = db.readRecords[member.id] || {};
+        const chaptersRead = Object.values(userRecords).reduce((sum, chapters) => sum + chapters.length, 0);
+        const progress = TOTAL_CHAPTERS > 0 ? (chaptersRead / TOTAL_CHAPTERS) * 100 : 0;
+        const userBadges = db.badges[member.id] || [];
+
+        const memberDiv = document.createElement('div');
+        memberDiv.className = 'flex flex-col items-center relative';
+        memberDiv.innerHTML = `
+            <img src="${member.photo}" alt="${member.name} 프로필 사진" class="w-16 h-16 md:w-20 md:h-20 rounded-full border-4 border-white/50 object-cover shadow-md">
+            <div class="font-bold mt-2">${member.title} (${member.name})</div>
+            <div class="w-full bg-white/30 rounded-full h-2.5 mt-1">
+                <div class="progress-bar-fill h-2.5 rounded-full" style="width: ${progress.toFixed(2)}%"></div>
+            </div>
+            <div class="text-xs mt-1">${chaptersRead} / ${TOTAL_CHAPTERS} 장</div>
+            <div class="flex gap-1 mt-1 flex-wrap justify-center">
+                ${userBadges.slice(-3).map(badgeId => {
+                    const badge = BADGE_DEFINITIONS[badgeId];
+                    return `<span title="${badge.name}" class="text-lg">${badge.emoji}</span>`;
+                }).join('')}
+                ${userBadges.length > 3 ? `<span class="text-xs text-gray-500">+${userBadges.length - 3}</span>` : ''}
+            </div>
+        `;
+        dashboard.appendChild(memberDiv);
+    });
+}
+
+function renderBibleBooks() {
+    const oldTestamentDiv = document.getElementById('old-testament');
+    const newTestamentDiv = document.getElementById('new-testament');
+    oldTestamentDiv.innerHTML = '';
+    newTestamentDiv.innerHTML = '';
+
+    BIBLE_BOOKS.old.forEach(book => oldTestamentDiv.appendChild(createBookElement(book)));
+    BIBLE_BOOKS.new.forEach(book => newTestamentDiv.appendChild(createBookElement(book)));
+}
+
+function createBookElement(book) {
+    const bookEl = document.createElement('button');
+    bookEl.className = 'p-2 text-sm rounded-md shadow-sm transition-all duration-200 accent-bg hover:shadow-lg hover:-translate-y-1';
+    bookEl.textContent = book.name;
+    bookEl.dataset.bookName = book.name;
+    bookEl.addEventListener('click', () => openChapterModal(book));
+    return bookEl;
+}
+
+function populateUserDropdowns() {
+    const meditationUser = document.getElementById('meditation-user');
+    const prayerUser = document.getElementById('prayer-user');
+    meditationUser.innerHTML = '';
+    prayerUser.innerHTML = '';
+    db.family.forEach(member => {
+        const option = `<option value="${member.id}">${member.name}</option>`;
+        meditationUser.innerHTML += option;
+        prayerUser.innerHTML += option;
+    });
+}
+
+function renderMeditations() {
+    const list = document.getElementById('meditation-list');
+    list.innerHTML = '';
+    db.meditations.forEach(item => {
+        const user = db.family.find(u => u.id === item.userId);
+        const itemEl = document.createElement('div');
+        itemEl.className = 'p-2 mb-2 rounded bg-white/70 text-sm';
+        itemEl.innerHTML = `<strong class="accent-text">${user.name}:</strong> ${item.content}`;
+        list.appendChild(itemEl);
+    });
+    list.scrollTop = list.scrollHeight;
+}
+
+function renderPrayers() {
+    const list = document.getElementById('prayer-list');
+    list.innerHTML = '';
+    db.prayers.forEach(item => {
+        const user = db.family.find(u => u.id === item.userId);
+        const itemEl = document.createElement('div');
+        itemEl.className = 'p-2 mb-2 rounded bg-white/70 text-sm';
+        itemEl.innerHTML = `<strong class="accent-text">${user.name}:</strong> ${item.content}`;
+        list.appendChild(itemEl);
+    });
+    list.scrollTop = list.scrollHeight;
+}
+
+// --- 뱃지 시스템 ---
+function checkBadges(userId, bookName = null, chapterNumber = null) {
+    const userBadges = db.badges[userId] || [];
+    const newBadges = [];
+
+    // 읽기 기록 및 히스토리 업데이트
+    if (bookName && chapterNumber) {
+        const today = new Date().toISOString().slice(0, 10);
+        if (!db.readingHistory[userId]) {
+            db.readingHistory[userId] = [];
+        }
+        db.readingHistory[userId].push({
+            date: today,
+            book: bookName,
+            chapter: chapterNumber
+        });
+    }
+
+    const userRecords = db.readRecords[userId] || {};
+    const userHistory = db.readingHistory[userId] || [];
+    const totalChapters = Object.values(userRecords).reduce((sum, chapters) => sum + chapters.length, 0);
+
+    // 첫 읽기 뱃지
+    if (!userBadges.includes('first_read') && totalChapters >= 1) {
+        newBadges.push('first_read');
+    }
+
+    // 장 수 뱃지
+    Object.entries(BADGE_DEFINITIONS).forEach(([badgeId, badge]) => {
+        if (badge.condition === 'chapters' && !userBadges.includes(badgeId)) {
+            if (totalChapters >= badge.value) {
+                newBadges.push(badgeId);
+            }
+        }
+    });
+
+    // 성경 완독 뱃지
+    Object.entries(BADGE_DEFINITIONS).forEach(([badgeId, badge]) => {
+        if (badge.condition === 'book' && !userBadges.includes(badgeId)) {
+            const bookChapters = userRecords[badge.value] || [];
+            const totalBookChapters = [...BIBLE_BOOKS.old, ...BIBLE_BOOKS.new].find(b => b.name === badge.value)?.chapters || 0;
+            if (bookChapters.length === totalBookChapters && totalBookChapters > 0) {
+                newBadges.push(badgeId);
+            }
+        }
+    });
+
+    // 연속 읽기 뱃지
+    const streak = calculateStreak(userId);
+    Object.entries(BADGE_DEFINITIONS).forEach(([badgeId, badge]) => {
+        if (badge.condition === 'streak' && !userBadges.includes(badgeId)) {
+            if (streak >= badge.value) {
+                newBadges.push(badgeId);
+            }
+        }
+    });
+
+    // 새 뱃지 추가 및 축하
+    newBadges.forEach(badgeId => {
+        db.badges[userId].push(badgeId);
+        showCelebration(userId, badgeId);
+        createConfetti();
+    });
+
+    return newBadges;
+}
+
+function calculateStreak(userId) {
+    const history = db.readingHistory[userId] || [];
+    if (history.length === 0) return 0;
+
+    // 날짜별로 그룹핑
+    const dateGroups = {};
+    history.forEach(record => {
+        if (!dateGroups[record.date]) {
+            dateGroups[record.date] = true;
+        }
+    });
+
+    const dates = Object.keys(dateGroups).sort().reverse();
+    let streak = 0;
+    const today = new Date().toISOString().slice(0, 10);
+
+    for (let i = 0; i < dates.length; i++) {
+        const date = dates[i];
+        const expectedDate = new Date();
+        expectedDate.setDate(expectedDate.getDate() - i);
+        const expectedDateStr = expectedDate.toISOString().slice(0, 10);
+
+        if (date === expectedDateStr) {
+            streak++;
+        } else {
+            break;
+        }
+    }
+
+    return streak;
+}
+
+function showCelebration(userId, badgeId) {
+    const user = db.family.find(u => u.id === userId);
+    const badge = BADGE_DEFINITIONS[badgeId];
+    
+    const modal = document.getElementById('celebration-modal');
+    const title = document.getElementById('celebration-title');
+    const message = document.getElementById('celebration-message');
+    const badgeDisplay = document.getElementById('celebration-badge');
+
+    title.textContent = `축하합니다, ${user.name}님!`;
+    message.textContent = `"${badge.name}" 뱃지를 획득했습니다!`;
+    badgeDisplay.textContent = badge.emoji;
+
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+}
+
+function createConfetti() {
+    const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff'];
+    for (let i = 0; i < 30; i++) {
+        setTimeout(() => {
+            const confetti = document.createElement('div');
+            confetti.className = 'confetti';
+            confetti.style.left = Math.random() * 100 + 'vw';
+            confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+            confetti.style.animationDelay = Math.random() * 3 + 's';
+            document.body.appendChild(confetti);
+
+            setTimeout(() => {
+                confetti.remove();
+            }, 3000);
+        }, i * 100);
+    }
+}
+
+// --- 이벤트 리스너 설정 ---
+function setupEventListeners() {
+    document.getElementById('add-meditation').addEventListener('click', addMeditation);
+    document.getElementById('meditation-input').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') addMeditation();
+    });
+
+    document.getElementById('add-prayer').addEventListener('click', addPrayer);
+    document.getElementById('prayer-input').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') addPrayer();
+    });
+
+    // 뱃지 모달 이벤트
+    document.getElementById('badges-btn').addEventListener('click', openBadgesModal);
+    document.getElementById('close-badges-modal').addEventListener('click', closeBadgesModal);
+    document.getElementById('close-celebration').addEventListener('click', () => {
+        document.getElementById('celebration-modal').classList.add('hidden');
+        document.getElementById('celebration-modal').classList.remove('flex');
+    });
+
+    // 뱃지 탭 이벤트
+    document.querySelectorAll('.badge-tab').forEach(tab => {
+        tab.addEventListener('click', (e) => {
+            document.querySelectorAll('.badge-tab').forEach(t => {
+                t.classList.remove('text-blue-600', 'border-b-2', 'border-blue-600');
+            });
+            e.target.classList.add('text-blue-600', 'border-b-2', 'border-blue-600');
+            renderBadges(e.target.dataset.user);
+        });
+    });
+}
+
+function openBadgesModal() {
+    document.getElementById('badges-modal').classList.remove('hidden');
+    document.getElementById('badges-modal').classList.add('flex');
+    renderBadges('all');
+}
+
+function closeBadgesModal() {
+    document.getElementById('badges-modal').classList.add('hidden');
+    document.getElementById('badges-modal').classList.remove('flex');
+}
+
+function renderBadges(userId = 'all') {
+    const content = document.getElementById('badges-content');
+    content.innerHTML = '';
+
+    if (userId === 'all') {
+        // 모든 뱃지 카테고리별로 표시
+        const categories = {
+            '연속 읽기': ['streak_3', 'streak_5', 'streak_10', 'streak_30'],
+            '장 읽기': ['chapters_10', 'chapters_50', 'chapters_100', 'chapters_200'],
+            '성경 완독': ['book_genesis', 'book_psalms', 'book_proverbs', 'book_matthew', 'book_john'],
+            '특별 뱃지': ['first_read', 'early_bird', 'family_unity']
+        };
+
+        Object.entries(categories).forEach(([categoryName, badgeIds]) => {
+            const categoryDiv = document.createElement('div');
+            categoryDiv.className = 'mb-6';
+            categoryDiv.innerHTML = `<h3 class="text-lg font-bold mb-3">${categoryName}</h3>`;
+            
+            const badgesGrid = document.createElement('div');
+            badgesGrid.className = 'grid grid-cols-2 md:grid-cols-4 gap-4';
+            
+            badgeIds.forEach(badgeId => {
+                const badge = BADGE_DEFINITIONS[badgeId];
+                const earnedBy = [];
+                db.family.forEach(member => {
+                    if (db.badges[member.id] && db.badges[member.id].includes(badgeId)) {
+                        earnedBy.push(member.name);
+                    }
+                });
+
+                const badgeEl = document.createElement('div');
+                badgeEl.className = `p-4 border rounded-lg text-center ${earnedBy.length > 0 ? 'bg-yellow-50 border-yellow-300' : 'bg-gray-50 border-gray-300 badge-locked'}`;
+                badgeEl.innerHTML = `
+                    <div class="text-3xl mb-2">${badge.emoji}</div>
+                    <div class="font-bold">${badge.name}</div>
+                    <div class="text-sm text-gray-600">${badge.description}</div>
+                    <div class="text-xs mt-2 ${earnedBy.length > 0 ? 'text-green-600' : 'text-gray-400'}">
+                        ${earnedBy.length > 0 ? `획득: ${earnedBy.join(', ')}` : '미획득'}
+                    </div>
+                `;
+                badgesGrid.appendChild(badgeEl);
+            });
+            
+            categoryDiv.appendChild(badgesGrid);
+            content.appendChild(categoryDiv);
+        });
+    } else {
+        // 특정 사용자의 뱃지만 표시
+        const user = db.family.find(u => u.id === userId);
+        const userBadges = db.badges[userId] || [];
+        
+        const userDiv = document.createElement('div');
+        userDiv.innerHTML = `<h3 class="text-lg font-bold mb-4">${user.name}님의 뱃지 (${userBadges.length}개)</h3>`;
+        
+        const badgesGrid = document.createElement('div');
+        badgesGrid.className = 'grid grid-cols-2 md:grid-cols-4 gap-4';
+        
+        Object.entries(BADGE_DEFINITIONS).forEach(([badgeId, badge]) => {
+            const hasEarned = userBadges.includes(badgeId);
+            const badgeEl = document.createElement('div');
+            badgeEl.className = `p-4 border rounded-lg text-center ${hasEarned ? 'bg-yellow-50 border-yellow-300 badge-earned' : 'bg-gray-50 border-gray-300 badge-locked'}`;
+            badgeEl.innerHTML = `
+                <div class="text-3xl mb-2">${badge.emoji}</div>
+                <div class="font-bold">${badge.name}</div>
+                <div class="text-sm text-gray-600">${badge.description}</div>
+                <div class="text-xs mt-2 ${hasEarned ? 'text-green-600' : 'text-gray-400'}">
+                    ${hasEarned ? '획득' : '미획득'}
+                </div>
+            `;
+            badgesGrid.appendChild(badgeEl);
+        });
+        
+        userDiv.appendChild(badgesGrid);
+        content.appendChild(userDiv);
+    }
+}
+
+function addMeditation() {
+    const userInput = document.getElementById('meditation-user');
+    const textInput = document.getElementById('meditation-input');
+    if (textInput.value.trim() === '') return;
+
+    db.meditations.push({
+        userId: userInput.value,
+        date: new Date().toISOString().slice(0, 10),
+        content: textInput.value.trim()
+    });
+    textInput.value = '';
+    renderMeditations();
+}
+
+function addPrayer() {
+    const userInput = document.getElementById('prayer-user');
+    const textInput = document.getElementById('prayer-input');
+    if (textInput.value.trim() === '') return;
+
+    db.prayers.push({
+        userId: userInput.value,
+        date: new Date().toISOString().slice(0, 10),
+        content: textInput.value.trim()
+    });
+    textInput.value = '';
+    renderPrayers();
+}
+
+// --- 모달 관련 기능 ---
+let currentBook = null;
+let currentUserForModal = null;
+
+function openChapterModal(book) {
+    currentBook = book;
+    currentUserForModal = db.family[0].id; 
+    
+    const modal = document.getElementById('chapter-modal');
+    const modalTitle = document.getElementById('modal-title');
+    
+    modalTitle.textContent = book.name;
+    
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    
+    createModalUserSelector();
+    updateModalForCurrentUser();
+
+    document.getElementById('close-modal').onclick = closeChapterModal;
+}
+
+function createModalUserSelector() {
+    const modalHeader = document.querySelector('#chapter-modal h2').parentElement;
+    let selectorContainer = document.getElementById('modal-user-selector-container');
+    if (!selectorContainer) {
+        selectorContainer = document.createElement('div');
+        selectorContainer.id = 'modal-user-selector-container';
+        selectorContainer.className = 'flex items-center gap-2 mb-4';
+        
+        const label = document.createElement('label');
+        label.textContent = '체크할 사람:';
+        
+        const select = document.createElement('select');
+        select.id = 'modal-user-selector';
+        select.className = 'p-1 border rounded';
+        
+        db.family.forEach(member => {
+            const option = document.createElement('option');
+            option.value = member.id;
+            option.textContent = member.name;
+            select.appendChild(option);
+        });
+        
+        select.addEventListener('change', (e) => {
+            currentUserForModal = e.target.value;
+            updateModalForCurrentUser();
+        });
+        
+        selectorContainer.appendChild(label);
+        selectorContainer.appendChild(select);
+        modalHeader.insertAdjacentElement('afterend', selectorContainer);
+    }
+    document.getElementById('modal-user-selector').value = currentUserForModal;
+}
+
+function updateModalForCurrentUser() {
+    const modalChapters = document.getElementById('modal-chapters');
+    const modalUserName = document.getElementById('modal-user-name');
+    const user = db.family.find(u => u.id === currentUserForModal);
+    
+    modalUserName.textContent = user.name;
+    modalChapters.innerHTML = '';
+
+    const userRecordsForBook = (db.readRecords[currentUserForModal] && db.readRecords[currentUserForModal][currentBook.name]) || [];
+
+    for (let i = 1; i <= currentBook.chapters; i++) {
+        const chapterBtn = document.createElement('button');
+        chapterBtn.textContent = i;
+        chapterBtn.className = 'p-2 rounded border transition-colors duration-200';
+        
+        if (userRecordsForBook.includes(i)) {
+            chapterBtn.classList.add('bg-green-500', 'text-white', 'border-green-500');
+        } else {
+            chapterBtn.classList.add('bg-white', 'hover:bg-green-100');
+        }
+
+        chapterBtn.onclick = () => toggleChapterRead(i, chapterBtn);
+        modalChapters.appendChild(chapterBtn);
+    }
+}
+
+function toggleChapterRead(chapterNumber, buttonElement) {
+    if (!db.readRecords[currentUserForModal]) {
+        db.readRecords[currentUserForModal] = {};
+    }
+    if (!db.readRecords[currentUserForModal][currentBook.name]) {
+        db.readRecords[currentUserForModal][currentBook.name] = [];
+    }
+
+    const readList = db.readRecords[currentUserForModal][currentBook.name];
+    const chapterIndex = readList.indexOf(chapterNumber);
+
+    if (chapterIndex > -1) {
+        // 이미 읽었으면, 읽기 취소
+        readList.splice(chapterIndex, 1);
+        buttonElement.classList.remove('bg-green-500', 'text-white', 'border-green-500');
+        buttonElement.classList.add('bg-white', 'hover:bg-green-100');
+    } else {
+        // 아직 안 읽었으면, 읽음 처리
+        readList.push(chapterNumber);
+        buttonElement.classList.add('bg-green-500', 'text-white', 'border-green-500');
+        buttonElement.classList.remove('bg-white', 'hover:bg-green-100');
+        
+        // 뱃지 체크
+        checkBadges(currentUserForModal, currentBook.name, chapterNumber);
+    }
+    
+    // 대시보드 진행률 업데이트
+    renderFamilyDashboard();
+}
+
+function closeChapterModal() {
+    const modal = document.getElementById('chapter-modal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+    currentBook = null;
+}
+
+</script>
+</body>
+</html>
