@@ -60,20 +60,8 @@
     </div>
 
     <div id="chapter-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-20"><div class="bg-white rounded-lg shadow-2xl p-6 w-full max-w-2xl max-h-[80vh] flex flex-col"><div class="flex justify-between items-center mb-4"><h2 id="modal-title" class="text-2xl font-bold"></h2><button id="close-modal" class="text-3xl">&times;</button></div><div id="modal-user-selector-container" class="flex items-center gap-2 mb-4"><label for="modal-user-selector">체크할 사람:</label><select id="modal-user-selector" class="p-1 border rounded"></select></div><div id="modal-chapters" class="flex-grow overflow-y-auto grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 gap-2 p-2 accent-bg rounded custom-scrollbar"></div></div></div>
-    
-    <div id="progress-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-30">
-        <div class="bg-white rounded-lg shadow-2xl p-6 w-full max-w-lg max-h-[80vh] flex flex-col">
-            <div class="flex items-center mb-4">
-                <img id="progress-modal-photo" class="w-16 h-16 rounded-full mr-4" src="" alt="프로필 사진" referrerpolicy="no-referrer">
-                <div class="flex-grow"><h2 id="progress-modal-title" class="text-2xl font-bold"></h2></div>
-                <button id="close-progress-modal" class="text-3xl">&times;</button>
-            </div>
-            <div class="border-b border-gray-200 mb-4"><nav class="-mb-px flex space-x-8" aria-label="Tabs"><button id="tab-ot" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm tab-active">구약</button><button id="tab-nt" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">신약</button></nav></div>
-            <div id="progress-modal-content" class="flex-grow overflow-y-auto custom-scrollbar pr-4">
-                <div id="content-ot"></div><div id="content-nt" class="hidden"></div>
-            </div>
-        </div>
-    </div>
+    <div id="badges-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-20"><div class="bg-white rounded-lg shadow-2xl p-6 w-full max-w-4xl max-h-[80vh] flex flex-col"><div class="flex justify-between items-center mb-4"><h2 class="text-2xl font-bold">🏆 우리 가족 뱃지 컬렉션</h2><button id="close-badges-modal" class="text-3xl">&times;</button></div><div id="badge-tabs" class="flex mb-4 border-b"></div><div id="badges-content" class="flex-grow overflow-y-auto custom-scrollbar"></div></div></div>
+    <div id="progress-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-30"><div class="bg-white rounded-lg shadow-2xl p-6 w-full max-w-lg max-h-[80vh] flex flex-col"><div class="flex items-center mb-4"><img id="progress-modal-photo" class="w-16 h-16 rounded-full mr-4" src="" alt="프로필 사진" referrerpolicy="no-referrer"><div class="flex-grow"><h2 id="progress-modal-title" class="text-2xl font-bold"></h2></div><button id="close-progress-modal" class="text-3xl">&times;</button></div><div class="border-b border-gray-200 mb-4"><nav class="-mb-px flex space-x-8" aria-label="Tabs"><button id="tab-ot" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm tab-active">구약</button><button id="tab-nt" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">신약</button></nav></div><div id="progress-modal-content" class="flex-grow overflow-y-auto custom-scrollbar pr-4"><div id="content-ot"></div><div id="content-nt" class="hidden"></div></div></div></div>
 
 <script>
 class GoogleSheetsAPI { constructor() { this.scriptUrl = 'https://script.google.com/macros/s/AKfycbwrqnyK-9Ft64KN0ecWv8_XaOoZyaBQf8CLYmDgvJjjpcuqLl8dzE0UM1SFsBp8zq7pkA/exec'; this.isConnected = false; } async _request(action, params = {}) { const url = new URL(this.scriptUrl); url.searchParams.set('action', action); for (const key in params) { url.searchParams.set(key, params[key]); } try { const response = await fetch(url.toString()); if (!response.ok) throw new Error(`Server Error: ${response.status}`); const result = await response.json(); if (!result.success) throw new Error(result.error || 'API 요청 실패'); this.isConnected = true; return result; } catch (error) { this.isConnected = false; updateConnectionStatus('disconnected'); console.error(`API Error (${action}):`, error); throw error; } } async testConnection() { await this._request('test'); return true; } async loadAllData() { const result = await this._request('loadAll'); for (const sheetName in result.data) { localStorage.setItem(`bible_${sheetName}`, JSON.stringify(result.data[sheetName])); } return result.data; } async saveData(params) { return this._request('save', params); } async deleteData(params) { return this._request('delete', params); } async editData(params) { return this._request('edit', params); } }
@@ -95,117 +83,26 @@ function renderFamilyDashboard() { const dashboard = document.getElementById('fa
 function renderWisdomVerse() { const verses = [ "태초에 하나님이 천지를 창조하시니라 (창 1:1)", "항상 기뻐하라 쉬지 말고 기도하라 범사에 감사하라 (살전 5:16-18)" ]; document.getElementById('wisdom-verse').textContent = verses[Math.floor(Math.random() * verses.length)]; }
 function renderBibleBooks() { const oldDiv = document.getElementById('old-testament'); const newDiv = document.getElementById('new-testament'); oldDiv.innerHTML = ''; newDiv.innerHTML = ''; const createEl = (book) => { const el = document.createElement('button'); el.className = 'p-2 text-sm rounded-md shadow-sm transition-all duration-200 accent-bg hover:shadow-lg hover:-translate-y-1'; el.textContent = book.name; el.onclick = () => openChapterModal(book); return el; }; BIBLE_BOOKS.old.forEach(book => oldDiv.appendChild(createEl(book))); BIBLE_BOOKS.new.forEach(book => newDiv.appendChild(createEl(book))); }
 function populateUserDropdowns() { const meditationUser = document.getElementById('meditation-user'); const prayerUser = document.getElementById('prayer-user'); const modalUser = document.getElementById('modal-user-selector'); meditationUser.innerHTML = ''; prayerUser.innerHTML = ''; modalUser.innerHTML = ''; db.family.forEach(member => { const option = `<option value="${member.id}">${member.name}</option>`; meditationUser.innerHTML += option; prayerUser.innerHTML += option; modalUser.innerHTML += option; }); }
-function renderMeditations() { /* 생략 */ }
-function renderPrayers() { /* 생략 */ }
 function setupEventListeners() { document.getElementById('theme-select').addEventListener('change', (e) => { document.body.className = e.target.value; }); document.getElementById('add-meditation').addEventListener('click', addMeditation); document.getElementById('meditation-input').addEventListener('keypress', (e) => { if (e.key === 'Enter') addMeditation(); }); document.getElementById('meditation-user').addEventListener('change', renderMeditations); document.getElementById('add-prayer').addEventListener('click', addPrayer); document.getElementById('prayer-input').addEventListener('keypress', (e) => { if (e.key === 'Enter') addPrayer(); }); document.getElementById('prayer-user').addEventListener('change', renderPrayers); document.getElementById('badges-btn').addEventListener('click', () => alert('뱃지 기능은 준비 중입니다.')); document.getElementById('sync-btn').addEventListener('click', () => { initializeApp(); }); document.getElementById('close-modal').onclick = closeChapterModal; document.getElementById('modal-user-selector').addEventListener('change', (e) => { currentUserForModal = e.target.value; updateModalForCurrentUser(); }); document.getElementById('close-progress-modal').onclick = closeProgressModal; document.getElementById('tab-ot').onclick = () => switchProgressTab('ot'); document.getElementById('tab-nt').onclick = () => switchProgressTab('nt'); }
 
-// [UI 개선] 상세 보기 팝업 관련 함수
-function openProgressModal(userId) {
-    currentProgressUserId = userId;
-    const user = db.family.find(u => u.id === userId);
-    if (!user) return;
-    
-    document.getElementById('progress-modal-photo').src = user.photo || 'https://placehold.co/80x80/cccccc/FFFFFF?text=?';
-    document.getElementById('progress-modal-title').textContent = `${user.name}님의 진행 현황`;
-    
-    const contentOT = document.getElementById('content-ot');
-    const contentNT = document.getElementById('content-nt');
-    contentOT.innerHTML = ''; contentNT.innerHTML = '';
-    
-    const createBookHTML = (book) => {
-        const readChapters = db.readRecords[userId]?.[book.name] || [];
-        const isReading = readChapters.length > 0;
-        // 읽고 있는 성경은 다른 배경색 적용
-        return `<details class="group border-b border-gray-200 rounded-md overflow-hidden mb-1 ${isReading ? 'highlight-bg' : ''}" data-book-name="${book.name}">
-                    <summary class="flex justify-between items-center p-2 cursor-pointer hover:bg-gray-50/50"></summary>
-                    <div class="chapter-grid p-2 grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 gap-2 bg-gray-50 border-t"></div>
-                </details>`;
-    };
-
-    BIBLE_BOOKS.old.forEach(book => contentOT.innerHTML += createBookHTML(book));
-    BIBLE_BOOKS.new.forEach(book => contentNT.innerHTML += createBookHTML(book));
-    
-    document.querySelectorAll('#progress-modal details').forEach(detail => {
-        updateProgressInModal(detail);
-        detail.querySelector('summary').addEventListener('click', populateChaptersForBook);
-    });
-
-    switchProgressTab('ot'); 
-    document.getElementById('progress-modal').classList.remove('hidden');
-}
-
-function populateChaptersForBook(event) {
-    const detail = event.currentTarget.parentElement;
-    const grid = detail.querySelector('.chapter-grid');
-    if (grid.childElementCount > 0) return; 
-
-    const bookName = detail.dataset.bookName;
-    const book = [...BIBLE_BOOKS.old, ...BIBLE_BOOKS.new].find(b => b.name === bookName);
-    const userRecordsForBook = (db.readRecords[currentProgressUserId]?.[bookName]) || [];
-    
-    for (let i = 1; i <= book.chapters; i++) {
-        const btn = document.createElement('button');
-        btn.textContent = i;
-        btn.className = `p-2 rounded border transition-colors duration-200 ${userRecordsForBook.includes(i) ? 'bg-green-500 text-white border-green-500' : 'bg-white hover:bg-green-100'}`;
-        btn.onclick = (e) => { e.stopPropagation(); toggleChapterRead(i, btn, { bookName: book.name, userId: currentProgressUserId }); };
-        grid.appendChild(btn);
-    }
-}
-
-function updateProgressInModal(detailElement) {
-    const summary = detailElement.querySelector('summary');
-    const bookName = detailElement.dataset.bookName;
-    const book = [...BIBLE_BOOKS.old, ...BIBLE_BOOKS.new].find(b => b.name === bookName);
-    const readChapters = (db.readRecords[currentProgressUserId]?.[bookName]) || [];
-    const progress = book.chapters > 0 ? (readChapters.length / book.chapters) * 100 : 0;
-    
-    const isReading = readChapters.length > 0;
-    detailElement.classList.toggle('highlight-bg', isReading);
-    
-    summary.innerHTML = `<div class="flex-grow font-bold">${book.name}</div><div class="text-sm text-gray-600 mr-4">${readChapters.length}/${book.chapters} 장</div><div class="w-24 bg-gray-200 rounded-full h-2.5"><div class="progress-bar-fill h-2.5 rounded-full" style="width: ${progress.toFixed(2)}%"></div></div><div class="w-4 ml-2 transform group-open:rotate-180 transition-transform">▼</div>`;
-}
-
+// --- [버그 수정] 필수 함수들 정의 ---
+function renderMeditations() { const list = document.getElementById('meditation-list'); list.innerHTML = ''; const currentUserId = document.getElementById('meditation-user').value; db.meditations.forEach(item => { const user = db.family.find(u => u.id === item.userId); const itemEl = document.createElement('div'); itemEl.className = 'p-2 mb-2 rounded bg-white/70 text-sm'; let buttons = (item.userId === currentUserId) ? `<div class="inline-block ml-2"><button onclick="editMeditation('${item.id}')" class="text-xs text-blue-600 hover:underline">수정</button> <button onclick="deleteMeditation('${item.id}')" class="text-xs text-red-600 hover:underline">삭제</button></div>` : ''; itemEl.innerHTML = `<div><strong class="accent-text">${user ? user.name : '?'}:</strong> ${item.content}</div><div class="text-right text-gray-500 text-xs">${new Date(parseInt(item.id)).toLocaleDateString()} ${buttons}</div>`; list.appendChild(itemEl); }); list.scrollTop = list.scrollHeight; }
+function renderPrayers() { const list = document.getElementById('prayer-list'); list.innerHTML = ''; const currentUserId = document.getElementById('prayer-user').value; db.prayers.forEach(item => { const user = db.family.find(u => u.id === item.userId); const itemEl = document.createElement('div'); itemEl.className = 'p-2 mb-2 rounded bg-white/70 text-sm'; let buttons = (item.userId === currentUserId) ? `<div class="inline-block ml-2"><button onclick="editPrayer('${item.id}')" class="text-xs text-blue-600 hover:underline">수정</button> <button onclick="deletePrayer('${item.id}')" class="text-xs text-red-600 hover:underline">삭제</button></div>` : ''; itemEl.innerHTML = `<div><strong class="accent-text">${user ? user.name : '?'}:</strong> ${item.content}</div><div class="text-right text-gray-500 text-xs">${new Date(parseInt(item.id)).toLocaleDateString()} ${buttons}</div>`; list.appendChild(itemEl); }); list.scrollTop = list.scrollHeight; }
+async function addMeditation() { const userInput = document.getElementById('meditation-user'); const textInput = document.getElementById('meditation-input'); if (textInput.value.trim() === '') return; try { const result = await gapi.saveData({ type: 'meditation', userId: userInput.value, content: textInput.value.trim() }); db.meditations.push(result.data); textInput.value = ''; renderMeditations(); } catch (error) { alert('묵상 저장 실패: ' + error.message); } }
+async function deleteMeditation(id) { if (!confirm('정말로 삭제하시겠습니까?')) return; try { await gapi.deleteData({ type: 'meditation', id: id }); db.meditations = db.meditations.filter(item => item.id !== id); renderMeditations(); } catch (error) { alert('묵상 삭제 실패: ' + error.message); } }
+async function editMeditation(id) { const item = db.meditations.find(item => item.id === id); const newContent = prompt('묵상 내용 수정:', item.content); if (newContent === null || newContent.trim() === '' || newContent.trim() === item.content) return; try { await gapi.editData({ type: 'meditation', id: id, content: newContent.trim() }); item.content = newContent.trim(); renderMeditations(); } catch (error) { alert('묵상 수정 실패: ' + error.message); } }
+async function addPrayer() { const userInput = document.getElementById('prayer-user'); const textInput = document.getElementById('prayer-input'); if (textInput.value.trim() === '') return; try { const result = await gapi.saveData({ type: 'prayer', userId: userInput.value, content: textInput.value.trim() }); db.prayers.push(result.data); textInput.value = ''; renderPrayers(); } catch (error) { alert('기도제목 저장 실패: ' + error.message); } }
+async function deletePrayer(id) { if (!confirm('정말로 삭제하시겠습니까?')) return; try { await gapi.deleteData({ type: 'prayer', id: id }); db.prayers = db.prayers.filter(item => item.id !== id); renderPrayers(); } catch (error) { alert('기도제목 삭제 실패: ' + error.message); } }
+async function editPrayer(id) { const item = db.prayers.find(item => item.id === id); const newContent = prompt('기도제목 수정:', item.content); if (newContent === null || newContent.trim() === '' || newContent.trim() === item.content) return; try { await gapi.editData({ type: 'prayer', id: id, content: newContent.trim() }); item.content = newContent.trim(); renderPrayers(); } catch (error) { alert('기도제목 수정 실패: ' + error.message); } }
+function openProgressModal(userId) { currentProgressUserId = userId; const user = db.family.find(u => u.id === userId); if (!user) return; document.getElementById('progress-modal-photo').src = user.photo || 'https://placehold.co/80x80/cccccc/FFFFFF?text=?'; document.getElementById('progress-modal-title').textContent = `${user.name}님의 진행 현황`; const contentOT = document.getElementById('content-ot'); const contentNT = document.getElementById('content-nt'); contentOT.innerHTML = ''; contentNT.innerHTML = ''; const createBookHTML = (book) => { const readChapters = db.readRecords[userId]?.[book.name] || []; const isReading = readChapters.length > 0; return `<details class="group border-b border-gray-200 rounded-md overflow-hidden mb-1 ${isReading ? 'highlight-bg' : ''}" data-book-name="${book.name}"><summary class="flex justify-between items-center p-2 cursor-pointer hover:bg-gray-50/50"></summary><div class="chapter-grid p-2 grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 gap-2 bg-gray-50 border-t"></div></details>`; }; BIBLE_BOOKS.old.forEach(book => contentOT.innerHTML += createBookHTML(book)); BIBLE_BOOKS.new.forEach(book => contentNT.innerHTML += createBookHTML(book)); document.querySelectorAll('#progress-modal details').forEach(detail => { updateProgressInModal(detail, userId); detail.querySelector('summary').addEventListener('click', populateChaptersForBook); }); switchProgressTab('ot'); document.getElementById('progress-modal').classList.remove('hidden'); }
+function populateChaptersForBook(event) { const detail = event.currentTarget.parentElement; const grid = detail.querySelector('.chapter-grid'); if (grid.childElementCount > 0) return; const bookName = detail.dataset.bookName; const book = [...BIBLE_BOOKS.old, ...BIBLE_BOOKS.new].find(b => b.name === bookName); const userRecordsForBook = (db.readRecords[currentProgressUserId]?.[bookName]) || []; for (let i = 1; i <= book.chapters; i++) { const btn = document.createElement('button'); btn.textContent = i; btn.className = `p-2 rounded border transition-colors duration-200 ${userRecordsForBook.includes(i) ? 'bg-green-500 text-white border-green-500' : 'bg-white hover:bg-green-100'}`; btn.onclick = (e) => { e.stopPropagation(); toggleChapterRead(i, btn, { bookName: book.name, userId: currentProgressUserId }); }; grid.appendChild(btn); } }
+function updateProgressInModal(detailElement, userId) { const summary = detailElement.querySelector('summary'); const bookName = detailElement.dataset.bookName; const book = [...BIBLE_BOOKS.old, ...BIBLE_BOOKS.new].find(b => b.name === bookName); const readChapters = (db.readRecords[userId]?.[bookName]) || []; const progress = book.chapters > 0 ? (readChapters.length / book.chapters) * 100 : 0; const isReading = readChapters.length > 0; detailElement.classList.toggle('highlight-bg', isReading); summary.innerHTML = `<div class="flex-grow font-bold">${book.name}</div><div class="text-sm text-gray-600 mr-4">${readChapters.length}/${book.chapters} 장</div><div class="w-24 bg-gray-200 rounded-full h-2.5"><div class="progress-bar-fill h-2.5 rounded-full" style="width: ${progress.toFixed(2)}%"></div></div><div class="w-4 ml-2 transform group-open:rotate-180 transition-transform">▼</div>`; }
 function closeProgressModal() { document.getElementById('progress-modal').classList.add('hidden'); }
 function switchProgressTab(tab) { const tabOT = document.getElementById('tab-ot'); const tabNT = document.getElementById('tab-nt'); const contentOT = document.getElementById('content-ot'); const contentNT = document.getElementById('content-nt'); if (tab === 'ot') { tabOT.classList.add('tab-active'); tabOT.classList.remove('border-transparent', 'text-gray-500'); tabNT.classList.remove('tab-active'); tabNT.classList.add('border-transparent', 'text-gray-500'); contentOT.classList.remove('hidden'); contentNT.classList.add('hidden'); } else { tabNT.classList.add('tab-active'); tabNT.classList.remove('border-transparent', 'text-gray-500'); tabOT.classList.remove('tab-active'); tabOT.classList.add('border-transparent', 'text-gray-500'); contentNT.classList.remove('hidden'); contentOT.classList.add('hidden'); } }
-
-function toggleChapterRead(chapterNumber, buttonElement, context) {
-    const userId = context.userId;
-    const bookName = context.bookName;
-    
-    if (!db.readRecords[userId]) db.readRecords[userId] = {};
-    if (!db.readRecords[userId][bookName]) db.readRecords[userId][bookName] = [];
-    
-    const readList = db.readRecords[userId][bookName];
-    const chapterIndex = readList.indexOf(chapterNumber);
-    
-    if (chapterIndex > -1) {
-        readList.splice(chapterIndex, 1);
-        buttonElement.className = 'p-2 rounded border transition-colors duration-200 bg-white hover:bg-green-100';
-    } else {
-        readList.push(chapterNumber);
-        buttonElement.className = 'p-2 rounded border transition-colors duration-200 bg-green-500 text-white border-green-500';
-    }
-    
-    renderFamilyDashboard();
-    
-    const detail = document.querySelector(`#progress-modal details[data-book-name="${bookName}"]`);
-    if(detail) updateProgressInModal(detail);
-
-    const params = { type: 'reading', userId, bookName, chapter: chapterNumber };
-    const apiCall = (chapterIndex > -1) ? gapi.deleteData(params) : gapi.saveData(params);
-    apiCall.catch(error => {
-        alert(`읽기 상태 저장에 실패했습니다. UI를 이전 상태로 되돌립니다.`);
-        const originalIndex = readList.indexOf(chapterNumber);
-        if (originalIndex > -1) { readList.splice(originalIndex, 1); } else { readList.push(chapterNumber); }
-        buttonElement.className = `p-2 rounded border transition-colors duration-200 ${readList.includes(chapterNumber) ? 'bg-green-500 text-white border-green-500' : 'bg-white hover:bg-green-100'}`;
-        renderFamilyDashboard();
-        if(detail) updateProgressInModal(detail);
-    });
-}
+function toggleChapterRead(chapterNumber, buttonElement, context) { const userId = context.userId; const bookName = context.bookName; if (!db.readRecords[userId]) db.readRecords[userId] = {}; if (!db.readRecords[userId][bookName]) db.readRecords[userId][bookName] = []; const readList = db.readRecords[userId][bookName]; const chapterIndex = readList.indexOf(chapterNumber); const params = { type: 'reading', userId: userId, bookName: bookName, chapter: chapterNumber }; if (chapterIndex > -1) { readList.splice(chapterIndex, 1); buttonElement.className = 'p-2 rounded border transition-colors duration-200 bg-white hover:bg-green-100'; } else { readList.push(chapterNumber); buttonElement.className = 'p-2 rounded border transition-colors duration-200 bg-green-500 text-white border-green-500'; } renderFamilyDashboard(); if (document.getElementById('progress-modal').classList.contains('items-center') && userId === currentProgressUserId) { const detail = document.querySelector(`#progress-modal details[data-book-name="${bookName}"]`); if(detail) updateProgressInModal(detail, userId); } const apiCall = (chapterIndex > -1) ? gapi.deleteData(params) : gapi.saveData(params); apiCall.catch(error => { alert(`읽기 상태 저장에 실패했습니다.`); const originalIndex = readList.indexOf(chapterNumber); if (originalIndex > -1) { readList.splice(originalIndex, 1); } else { readList.push(chapterNumber); } buttonElement.className = `p-2 rounded border transition-colors duration-200 ${readList.includes(chapterNumber) ? 'bg-green-500 text-white border-green-500' : 'bg-white hover:bg-green-100'}`; renderFamilyDashboard(); if (document.getElementById('progress-modal').classList.contains('items-center') && userId === currentProgressUserId) { const detail = document.querySelector(`#progress-modal details[data-book-name="${bookName}"]`); if(detail) updateProgressInModal(detail, userId); } }); }
 function openChapterModal(book) { if (!db.family || db.family.length === 0) return; currentBook = book; document.getElementById('modal-title').textContent = book.name; document.getElementById('modal-user-selector').value = currentUserForModal; updateModalForCurrentUser(); document.getElementById('chapter-modal').classList.remove('hidden'); }
 function updateModalForCurrentUser() { const modalChapters = document.getElementById('modal-chapters'); modalChapters.innerHTML = ''; const userRecordsForBook = (db.readRecords[currentUserForModal]?.[currentBook.name]) || []; for (let i = 1; i <= currentBook.chapters; i++) { const btn = document.createElement('button'); btn.textContent = i; btn.className = `p-2 rounded border transition-colors duration-200 ${userRecordsForBook.includes(i) ? 'bg-green-500 text-white border-green-500' : 'bg-white hover:bg-green-100'}`; btn.onclick = () => toggleChapterRead(i, btn, {bookName: currentBook.name, userId: currentUserForModal}); modalChapters.appendChild(btn); } }
 function closeChapterModal() { document.getElementById('chapter-modal').classList.add('hidden'); }
-// 다른 함수들은 공간 절약을 위해 생략
 </script>
 </body>
 </html>
