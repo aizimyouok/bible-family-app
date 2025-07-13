@@ -7,127 +7,30 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Nanum+Myeongjo:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: 'Noto Sans KR', sans-serif;
-        }
-        .font-myeongjo {
-            font-family: 'Nanum Myeongjo', serif;
-        }
-        /* 스크롤바 디자인 */
-        .custom-scrollbar::-webkit-scrollbar {
-            width: 8px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 10px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: #c5a992;
-            border-radius: 10px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background: #a88d76;
-        }
-        /* 테마 전환을 위한 스타일 */
-        .theme-creation {
-            --bg-main: #f0f4f8; /* 하늘 */
-            --bg-container: #ffffff;
-            --bg-accent: #e6f0e6; /* 초록 */
-            --text-primary: #2c3e50;
-            --text-accent: #1e8449;
-            --border-color: #d4e6d4;
-        }
-        .theme-jerusalem {
-            --bg-main: #fdfaf6; /* 모래 */
-            --bg-container: #ffffff;
-            --bg-accent: #f8f1e9; /* 옅은 흙 */
-            --text-primary: #5a4b42;
-            --text-accent: #8d6e63;
-            --border-color: #d7ccc8;
-        }
-        body {
-            background-color: var(--bg-main);
-            color: var(--text-primary);
-            transition: background-color 0.5s, color 0.5s;
-        }
-        .main-container {
-            background-color: var(--bg-container);
-            transition: background-color 0.5s;
-        }
-        .accent-bg {
-            background-color: var(--bg-accent);
-            transition: background-color 0.5s;
-        }
-        .accent-text {
-            color: var(--text-accent);
-            transition: color 0.5s;
-        }
-        .border-custom {
-            border-color: var(--border-color);
-            transition: border-color 0.5s;
-        }
-        .progress-bar-fill {
-            background-color: var(--text-accent);
-            transition: background-color 0.5s;
-        }
-
-        /* 뱃지 애니메이션 */
-        @keyframes badgeGlow {
-            0% { box-shadow: 0 0 5px rgba(255, 215, 0, 0.5); }
-            50% { box-shadow: 0 0 20px rgba(255, 215, 0, 0.8), 0 0 30px rgba(255, 215, 0, 0.6); }
-            100% { box-shadow: 0 0 5px rgba(255, 215, 0, 0.5); }
-        }
-        
-        @keyframes badgePop {
-            0% { transform: scale(0.8); opacity: 0; }
-            50% { transform: scale(1.1); }
-            100% { transform: scale(1); opacity: 1; }
-        }
-        
-        .badge-earned {
-            animation: badgeGlow 2s infinite, badgePop 0.6s ease-out;
-        }
-        
-        .badge-locked {
-            filter: grayscale(100%) opacity(0.3);
-        }
-
-        /* 축하 모달 애니메이션 */
-        @keyframes celebrate {
-            0% { transform: scale(0.5) rotate(-180deg); opacity: 0; }
-            50% { transform: scale(1.1) rotate(0deg); }
-            100% { transform: scale(1) rotate(0deg); opacity: 1; }
-        }
-        
-        .celebration-modal {
-            animation: celebrate 0.8s ease-out;
-        }
-
-        /* 파티클 효과 */
-        @keyframes confetti {
-            0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
-            100% { transform: translateY(100vh) rotate(360deg); opacity: 0; }
-        }
-        
-        .confetti {
-            position: fixed;
-            width: 10px;
-            height: 10px;
-            z-index: 1000;
-            animation: confetti 3s linear infinite;
-        }
-
-        /* 로딩 애니메이션 */
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        .loading {
-            animation: spin 1s linear infinite;
-        }
-
-        /* 연결 상태 표시 */
+        body { font-family: 'Noto Sans KR', sans-serif; }
+        .font-myeongjo { font-family: 'Nanum Myeongjo', serif; }
+        .custom-scrollbar::-webkit-scrollbar { width: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #c5a992; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #a88d76; }
+        .theme-creation { --bg-main: #f0f4f8; --bg-container: #ffffff; --bg-accent: #e6f0e6; --text-primary: #2c3e50; --text-accent: #1e8449; --border-color: #d4e6d4; }
+        .theme-jerusalem { --bg-main: #fdfaf6; --bg-container: #ffffff; --bg-accent: #f8f1e9; --text-primary: #5a4b42; --text-accent: #8d6e63; --border-color: #d7ccc8; }
+        body { background-color: var(--bg-main); color: var(--text-primary); transition: background-color 0.5s, color 0.5s; }
+        .main-container { background-color: var(--bg-container); transition: background-color 0.5s; }
+        .accent-bg { background-color: var(--bg-accent); transition: background-color 0.5s; }
+        .accent-text { color: var(--text-accent); transition: color 0.5s; }
+        .border-custom { border-color: var(--border-color); transition: border-color 0.5s; }
+        .progress-bar-fill { background-color: var(--text-accent); transition: background-color 0.5s; }
+        @keyframes badgeGlow { 0% { box-shadow: 0 0 5px rgba(255, 215, 0, 0.5); } 50% { box-shadow: 0 0 20px rgba(255, 215, 0, 0.8), 0 0 30px rgba(255, 215, 0, 0.6); } 100% { box-shadow: 0 0 5px rgba(255, 215, 0, 0.5); } }
+        @keyframes badgePop { 0% { transform: scale(0.8); opacity: 0; } 50% { transform: scale(1.1); } 100% { transform: scale(1); opacity: 1; } }
+        .badge-earned { animation: badgeGlow 2s infinite, badgePop 0.6s ease-out; }
+        .badge-locked { filter: grayscale(100%) opacity(0.3); }
+        @keyframes celebrate { 0% { transform: scale(0.5) rotate(-180deg); opacity: 0; } 50% { transform: scale(1.1) rotate(0deg); } 100% { transform: scale(1) rotate(0deg); opacity: 1; } }
+        .celebration-modal { animation: celebrate 0.8s ease-out; }
+        @keyframes confetti { 0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; } 100% { transform: translateY(100vh) rotate(360deg); opacity: 0; } }
+        .confetti { position: fixed; width: 10px; height: 10px; z-index: 1000; animation: confetti 3s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .loading { animation: spin 1s linear infinite; }
         .status-connected { color: #10b981; }
         .status-disconnected { color: #ef4444; }
         .status-loading { color: #f59e0b; }
@@ -139,15 +42,11 @@
         <header class="text-center mb-8">
             <h1 class="text-4xl md:text-5xl font-myeongjo font-bold accent-text">Bible Time for Family</h1>
             <p class="mt-2 text-lg">우리가족, 말씀으로 하나되는 시간</p>
-            
             <div id="connection-status" class="mt-2 flex items-center justify-center gap-2">
                 <div id="status-indicator" class="w-3 h-3 rounded-full bg-gray-400"></div>
                 <span id="status-text" class="text-sm">연결 확인 중...</span>
-                <button id="sync-btn" class="ml-2 px-2 py-1 bg-blue-500 text-white rounded text-xs hover:bg-blue-600 hidden">
-                    🔄 동기화
-                </button>
+                <button id="sync-btn" class="ml-2 px-2 py-1 bg-blue-500 text-white rounded text-xs hover:bg-blue-600 hidden">🔄 동기화</button>
             </div>
-            
             <div class="mt-4 flex justify-center items-center gap-4 flex-wrap">
                 <div>
                     <label for="theme-select" class="mr-2">테마 선택:</label>
@@ -156,25 +55,16 @@
                         <option value="theme-creation">천지창조 (하늘과 풀)</option>
                     </select>
                 </div>
-                <button id="badges-btn" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg font-bold shadow-lg transition-all">
-                    🏆 뱃지 컬렉션
-                </button>
-                <button id="settings-btn" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-bold shadow-lg transition-all">
-                    ⚙️ 설정
-                </button>
-            </div>
+                <button id="badges-btn" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg font-bold shadow-lg transition-all">🏆 뱃지 컬렉션</button>
+                </div>
         </header>
 
         <div class="main-container shadow-xl rounded-2xl p-4 md:p-6">
-            
-            <section id="family-dashboard" class="mb-8 accent-bg rounded-lg p-4 grid grid-cols-2 md:grid-cols-4 gap-4 items-center text-center">
-                </section>
-
+            <section id="family-dashboard" class="mb-8 accent-bg rounded-lg p-4 grid grid-cols-2 md:grid-cols-4 gap-4 items-center text-center"></section>
             <section class="mb-8 text-center p-6 border-2 border-dashed border-custom rounded-lg">
                 <h2 class="text-xl font-bold font-myeongjo accent-text mb-2">오늘의 지혜 말씀</h2>
                 <p id="wisdom-verse" class="text-lg"></p>
             </section>
-
             <section class="mb-8">
                 <h2 class="text-2xl font-bold mb-4 text-center">📖 성경 읽기표 (66권)</h2>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -188,12 +78,10 @@
                     </div>
                 </div>
             </section>
-
             <section class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="accent-bg rounded-lg p-4">
                     <h3 class="text-xl font-bold mb-3">💬 가족 묵상 나눔</h3>
-                    <div id="meditation-list" class="h-48 overflow-y-auto custom-scrollbar pr-2 mb-3 bg-white/50 rounded p-2">
-                        </div>
+                    <div id="meditation-list" class="h-64 overflow-y-auto custom-scrollbar pr-2 mb-3 bg-white/50 rounded p-2"></div>
                     <div class="flex gap-2">
                         <select id="meditation-user" class="p-2 border-custom border rounded-md"></select>
                         <input type="text" id="meditation-input" class="flex-grow p-2 border-custom border rounded-md" placeholder="오늘의 묵상을 나눠보세요...">
@@ -202,8 +90,7 @@
                 </div>
                 <div class="accent-bg rounded-lg p-4">
                     <h3 class="text-xl font-bold mb-3">🙏 가족 기도 노트</h3>
-                    <div id="prayer-list" class="h-48 overflow-y-auto custom-scrollbar pr-2 mb-3 bg-white/50 rounded p-2">
-                        </div>
+                    <div id="prayer-list" class="h-64 overflow-y-auto custom-scrollbar pr-2 mb-3 bg-white/50 rounded p-2"></div>
                     <div class="flex gap-2">
                         <select id="prayer-user" class="p-2 border-custom border rounded-md"></select>
                         <input type="text" id="prayer-input" class="flex-grow p-2 border-custom border rounded-md" placeholder="함께 기도할 제목을 나눠요...">
@@ -220,254 +107,123 @@
                 <h2 id="modal-title" class="text-2xl font-bold"></h2>
                 <button id="close-modal" class="text-3xl">&times;</button>
             </div>
-            <p class="mb-2">읽기를 완료한 장을 체크해주세요. (체크한 사람은 <span id="modal-user-name" class="font-bold"></span>)</p>
-            <div id="modal-chapters" class="flex-grow overflow-y-auto grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 gap-2 p-2 accent-bg rounded custom-scrollbar">
-                </div>
+            <p class="mb-2">읽기를 완료한 장을 체크해주세요. (다시 누르면 취소됩니다)</p>
+            <div id="modal-chapters" class="flex-grow overflow-y-auto grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 gap-2 p-2 accent-bg rounded custom-scrollbar"></div>
         </div>
     </div>
-
     <div id="badges-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4">
         <div class="bg-white rounded-lg shadow-2xl p-6 w-full max-w-4xl max-h-[80vh] flex flex-col">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-2xl font-bold">🏆 우리 가족 뱃지 컬렉션</h2>
                 <button id="close-badges-modal" class="text-3xl">&times;</button>
             </div>
-            
-            <div id="badge-tabs" class="flex mb-4 border-b">
-                </div>
-            
-            <div id="badges-content" class="flex-grow overflow-y-auto custom-scrollbar">
-                </div>
+            <div id="badge-tabs" class="flex mb-4 border-b"></div>
+            <div id="badges-content" class="flex-grow overflow-y-auto custom-scrollbar"></div>
         </div>
     </div>
-
-    <div id="settings-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4">
-        <div class="bg-white rounded-lg shadow-2xl p-6 w-full max-w-md">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-2xl font-bold">⚙️ 구글 시트 설정</h2>
-                <button id="close-settings-modal" class="text-3xl">&times;</button>
-            </div>
-            
-            <div class="space-y-4">
-                <div>
-                    <label class="block text-sm font-medium mb-2">Google Apps Script URL</label>
-                    <input type="text" id="script-url" class="w-full p-2 border rounded-md" 
-                           placeholder="https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec">
-                    <p class="text-xs text-gray-500 mt-1">Apps Script 배포 URL을 입력하세요</p>
-                </div>
-                
-                <div class="flex gap-2">
-                    <button id="test-connection" class="flex-1 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg">
-                        연결 테스트
-                    </button>
-                    <button id="save-settings" class="flex-1 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg">
-                        저장
-                    </button>
-                </div>
-                
-                <div class="text-sm">
-                    <h4 class="font-bold mb-2">설정 방법:</h4>
-                    <ol class="list-decimal list-inside space-y-1 text-xs">
-                        <li>구글 시트 생성 (6개 탭: family_members, reading_records, badges, meditations, prayers, settings)</li>
-                        <li>Google Apps Script 생성 및 코드 배포 (접근 권한: **누구나**)</li>
-                        <li>배포 URL을 위에 입력 후 저장</li>
-                        <li>**family_members 시트에 가족 정보를 직접 입력해주세요.**</li>
-                    </ol>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <div id="celebration-modal" class="fixed inset-0 bg-black bg-opacity-70 hidden items-center justify-center p-4 z-50">
         <div class="celebration-modal bg-white rounded-lg shadow-2xl p-8 text-center max-w-md">
             <div class="text-6xl mb-4">🎉</div>
             <h2 class="text-2xl font-bold mb-2" id="celebration-title">축하합니다!</h2>
-            <p class="text-lg mb-4" id="celebration-message">새로운 뱃지를 획득했습니다!</p>
+            <p class="text-lg mb-4" id="celebration-message"></p>
             <div class="text-4xl mb-4" id="celebration-badge"></div>
             <button id="close-celebration" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg font-bold">확인</button>
         </div>
     </div>
 
 <script>
-// --- 구글 시트 API 클래스 (수정됨) ---
+// --- 구글 시트 API 클래스 ---
 class GoogleSheetsAPI {
     constructor() {
-        this.scriptUrl = localStorage.getItem('bible_script_url') || '';
+        // URL을 코드에 직접 설정 (설정 화면 불필요)
+        this.scriptUrl = 'https://script.google.com/macros/s/AKfycbz553rsu5k8kZ0LeCiW6Q_QFSOyfnytgl8eCqsJmiv350WNj23PAjUQVzz-OWC550DS/exec';
         this.isConnected = false;
     }
-
     _getUrl() {
-        if (!this.scriptUrl) {
-            throw new Error('Apps Script URL이 설정되지 않았습니다.');
-        }
+        if (!this.scriptUrl) throw new Error('Apps Script URL이 설정되지 않았습니다.');
         return this.scriptUrl;
     }
-
-    async testConnection() {
-        const url = this._getUrl();
-        try {
-            const response = await fetch(`${url}?action=test`);
-            if (!response.ok) throw new Error(`Server Error: ${response.status}`);
-            const result = await response.json();
-            if (result.success) {
-                this.isConnected = true;
-                return true;
-            } else {
-                throw new Error(result.error || 'Connection test failed');
-            }
-        } catch (error) {
-            this.isConnected = false;
-            console.error('Test Connection Error:', error);
-            throw error;
+    async _request(action, params = {}) {
+        if (!this.isConnected && action !== 'test') {
+             throw new Error('오프라인 상태에서는 요청할 수 없습니다.');
         }
-    }
-
-    async loadData(sheet) {
-        if (!this.isConnected) {
-            return this.loadFromLocalStorage(sheet);
-        }
-
-        try {
-            const url = `${this._getUrl()}?action=load&sheet=${sheet}`;
-            const response = await fetch(url);
-            if (!response.ok) throw new Error(`Server Error: ${response.status}`);
-            const result = await response.json();
-
-            if (result.success) {
-                this.saveToLocalStorage(sheet, result.data); // Cache successful load
-                return result.data;
-            } else {
-                console.warn(`API Error loading '${sheet}', using local data:`, result.error);
-                return this.loadFromLocalStorage(sheet);
-            }
-        } catch (error) {
-            console.warn(`Network Error loading '${sheet}', using local data:`, error);
-            return this.loadFromLocalStorage(sheet);
-        }
-    }
-
-    async saveData(params) {
-        if (!this.isConnected) {
-            throw new Error('오프라인 상태에서는 저장할 수 없습니다.');
-        }
-
         const url = new URL(this._getUrl());
-        url.searchParams.set('action', 'save');
+        url.searchParams.set('action', action);
         for (const key in params) {
             url.searchParams.set(key, params[key]);
         }
-
         try {
             const response = await fetch(url.toString());
             if (!response.ok) throw new Error(`Server Error: ${response.status}`);
-            return await response.json();
+            const result = await response.json();
+            if (!result.success) throw new Error(result.error || 'API 요청 실패');
+            return result;
         } catch (error) {
-            console.error('Save Data Error:', error);
+            console.error(`API Error (${action}):`, error);
+            this.isConnected = false;
+            updateConnectionStatus('disconnected');
             throw error;
         }
     }
+    async testConnection() {
+        const url = this._getUrl();
+        const response = await fetch(`${url}?action=test`);
+        if (!response.ok) throw new Error(`Server Error: ${response.status}`);
+        const result = await response.json();
+        if (result.success) {
+            this.isConnected = true;
+            return true;
+        } else {
+            throw new Error(result.error || 'Connection test failed');
+        }
+    }
+    async loadData(sheet) {
+        if (!this.isConnected) return this.loadFromLocalStorage(sheet);
+        try {
+            const result = await this._request('load', { sheet });
+            this.saveToLocalStorage(sheet, result.data);
+            return result.data;
+        } catch (error) {
+            console.warn(`'${sheet}' 로드 실패, 로컬 데이터 사용:`, error);
+            return this.loadFromLocalStorage(sheet);
+        }
+    }
+    async saveData(params) { return this._request('save', params); }
+    async deleteData(params) { return this._request('delete', params); }
+    async editData(params) { return this._request('edit', params); }
     
-    // Specific save functions using the generic saveData
-    async saveReading(userId, bookName, chapter) {
-        return this.saveData({ type: 'reading', userId, bookName, chapter });
-    }
-
-    async saveMeditation(userId, content) {
-        return this.saveData({ type: 'meditation', userId, content });
-    }
-
-    async savePrayer(userId, content) {
-        return this.saveData({ type: 'prayer', userId, content });
-    }
-
-    // Local storage functions remain the same
     saveToLocalStorage(sheet, data) {
-        const key = `bible_${sheet}`;
-        localStorage.setItem(key, JSON.stringify(data));
+        localStorage.setItem(`bible_${sheet}`, JSON.stringify(data));
     }
-
     loadFromLocalStorage(sheet) {
-        const key = `bible_${sheet}`;
-        const data = localStorage.getItem(key);
-        // Return default empty structures if nothing in local storage
+        const data = localStorage.getItem(`bible_${sheet}`);
         if (!data) {
-            if (sheet === 'family_members' || sheet === 'meditations' || sheet === 'prayers') return [];
-            if (sheet === 'reading_records' || sheet === 'badges') return {};
+            if (['family_members', 'meditations', 'prayers'].includes(sheet)) return [];
+            if (['reading_records', 'badges'].includes(sheet)) return {};
             return null;
         }
         return JSON.parse(data);
     }
 }
 
-
-// --- 데이터베이스 및 설정 ---
+// --- 데이터 및 설정 ---
 const BIBLE_BOOKS = {
-    old: [
-        { name: '창세기', chapters: 50 }, { name: '출애굽기', chapters: 40 }, { name: '레위기', chapters: 27 },
-        { name: '민수기', chapters: 36 }, { name: '신명기', chapters: 34 }, { name: '여호수아', chapters: 24 },
-        { name: '사사기', chapters: 21 }, { name: '룻기', chapters: 4 }, { name: '사무엘상', chapters: 31 },
-        { name: '사무엘하', chapters: 24 }, { name: '열왕기상', chapters: 22 }, { name: '열왕기하', chapters: 25 },
-        { name: '역대상', chapters: 29 }, { name: '역대하', chapters: 36 }, { name: '에스라', chapters: 10 },
-        { name: '느헤미야', chapters: 13 }, { name: '에스더', chapters: 10 }, { name: '욥기', chapters: 42 },
-        { name: '시편', chapters: 150 }, { name: '잠언', chapters: 31 }, { name: '전도서', chapters: 12 },
-        { name: '아가', chapters: 8 }, { name: '이사야', chapters: 66 }, { name: '예레미야', chapters: 52 },
-        { name: '예레미야애가', chapters: 5 }, { name: '에스겔', chapters: 48 }, { name: '다니엘', chapters: 12 },
-        { name: '호세아', chapters: 14 }, { name: '요엘', chapters: 3 }, { name: '아모스', chapters: 9 },
-        { name: '오바댜', chapters: 1 }, { name: '요나', chapters: 4 }, { name: '미가', chapters: 7 },
-        { name: '나훔', chapters: 3 }, { name: '하박국', chapters: 3 }, { name: '스바냐', chapters: 3 },
-        { name: '학개', chapters: 2 }, { name: '스가랴', chapters: 14 }, { name: '말라기', chapters: 4 }
-    ],
-    new: [
-        { name: '마태복음', chapters: 28 }, { name: '마가복음', chapters: 16 }, { name: '누가복음', chapters: 24 },
-        { name: '요한복음', chapters: 21 }, { name: '사도행전', chapters: 28 }, { name: '로마서', chapters: 16 },
-        { name: '고린도전서', chapters: 16 }, { name: '고린도후서', chapters: 13 }, { name: '갈라디아서', chapters: 6 },
-        { name: '에베소서', chapters: 6 }, { name: '빌립보서', chapters: 4 }, { name: '골로새서', chapters: 4 },
-        { name: '데살로니가전서', chapters: 5 }, { name: '데살로니가후서', chapters: 3 }, { name: '디모데전서', chapters: 6 },
-        { name: '디모데후서', chapters: 4 }, { name: '디도서', chapters: 3 }, { name: '빌레몬서', chapters: 1 },
-        { name: '히브리서', chapters: 13 }, { name: '야고보서', chapters: 5 }, { name: '베드로전서', chapters: 5 },
-        { name: '베드로후서', chapters: 3 }, { name: '요한1서', chapters: 5 }, { name: '요한2서', chapters: 1 },
-        { name: '요한3서', chapters: 1 }, { name: '유다서', chapters: 1 }, { name: '요한계시록', chapters: 22 }
-    ]
+    old: [ { name: '창세기', chapters: 50 }, { name: '출애굽기', chapters: 40 }, { name: '레위기', chapters: 27 }, { name: '민수기', chapters: 36 }, { name: '신명기', chapters: 34 }, { name: '여호수아', chapters: 24 }, { name: '사사기', chapters: 21 }, { name: '룻기', chapters: 4 }, { name: '사무엘상', chapters: 31 }, { name: '사무엘하', chapters: 24 }, { name: '열왕기상', chapters: 22 }, { name: '열왕기하', chapters: 25 }, { name: '역대상', chapters: 29 }, { name: '역대하', chapters: 36 }, { name: '에스라', chapters: 10 }, { name: '느헤미야', chapters: 13 }, { name: '에스더', chapters: 10 }, { name: '욥기', chapters: 42 }, { name: '시편', chapters: 150 }, { name: '잠언', chapters: 31 }, { name: '전도서', chapters: 12 }, { name: '아가', chapters: 8 }, { name: '이사야', chapters: 66 }, { name: '예레미야', chapters: 52 }, { name: '예레미야애가', chapters: 5 }, { name: '에스겔', chapters: 48 }, { name: '다니엘', chapters: 12 }, { name: '호세아', chapters: 14 }, { name: '요엘', chapters: 3 }, { name: '아모스', chapters: 9 }, { name: '오바댜', chapters: 1 }, { name: '요나', chapters: 4 }, { name: '미가', chapters: 7 }, { name: '나훔', chapters: 3 }, { name: '하박국', chapters: 3 }, { name: '스바냐', chapters: 3 }, { name: '학개', chapters: 2 }, { name: '스가랴', chapters: 14 }, { name: '말라기', chapters: 4 } ],
+    new: [ { name: '마태복음', chapters: 28 }, { name: '마가복음', chapters: 16 }, { name: '누가복음', chapters: 24 }, { name: '요한복음', chapters: 21 }, { name: '사도행전', chapters: 28 }, { name: '로마서', chapters: 16 }, { name: '고린도전서', chapters: 16 }, { name: '고린도후서', chapters: 13 }, { name: '갈라디아서', chapters: 6 }, { name: '에베소서', chapters: 6 }, { name: '빌립보서', chapters: 4 }, { name: '골로새서', chapters: 4 }, { name: '데살로니가전서', chapters: 5 }, { name: '데살로니가후서', chapters: 3 }, { name: '디모데전서', chapters: 6 }, { name: '디모데후서', chapters: 4 }, { name: '디도서', chapters: 3 }, { name: '빌레몬서', chapters: 1 }, { name: '히브리서', chapters: 13 }, { name: '야고보서', chapters: 5 }, { name: '베드로전서', chapters: 5 }, { name: '베드로후서', chapters: 3 }, { name: '요한1서', chapters: 5 }, { name: '요한2서', chapters: 1 }, { name: '요한3서', chapters: 1 }, { name: '유다서', chapters: 1 }, { name: '요한계시록', chapters: 22 } ]
 };
 const TOTAL_CHAPTERS = BIBLE_BOOKS.old.reduce((s, b) => s + b.chapters, 0) + BIBLE_BOOKS.new.reduce((s, b) => s + b.chapters, 0);
-
-const BADGE_DEFINITIONS = {
-    'streak_3': { emoji: '🔥', name: '불타는 열정', description: '3일 연속 읽기', condition: 'streak', value: 3 },
-    'streak_7': { emoji: '⚡', name: '꾸준한 믿음', description: '7일 연속 읽기', condition: 'streak', value: 7 },
-    'streak_30': { emoji: '👑', name: '왕관의 영광', description: '30일 연속 읽기', condition: 'streak', value: 30 },
-    'chapters_100': { emoji: '📚', name: '말씀 사랑', description: '총 100장 읽기', condition: 'chapters', value: 100 },
-    'chapters_500': { emoji: '🎓', name: '말씀 석사', description: '총 500장 읽기', condition: 'chapters', value: 500 },
-    'book_genesis': { emoji: '🌟', name: '창조의 시작', description: '창세기 완독', condition: 'book', value: '창세기' },
-    'book_psalms': { emoji: '🎵', name: '찬양의 마음', description: '시편 완독', condition: 'book', value: '시편' },
-    'book_john': { emoji: '❤️', name: '사랑의 복음', description: '요한복음 완독', condition: 'book', value: '요한복음' },
-    'first_read': { emoji: '🌅', name: '첫 걸음', description: '첫 성경 읽기', condition: 'first', value: 1 },
-};
-
+const BADGE_DEFINITIONS = { 'first_read': { emoji: '🌅', name: '첫 걸음', description: '첫 성경 읽기' }, 'chapters_100': { emoji: '📚', name: '말씀 사랑', description: '총 100장 읽기' }, 'book_genesis': { emoji: '🌟', name: '창조의 시작', description: '창세기 완독' }, 'book_john': { emoji: '❤️', name: '사랑의 복음', description: '요한복음 완독' } };
 let gapi = null;
-let db = {
-    family: [],
-    readRecords: {},
-    readingHistory: {},
-    badges: {},
-    meditations: [],
-    prayers: [],
-    wisdomVerses: [
-        "태초에 하나님이 천지를 창조하시니라 (창 1:1)",
-        "항상 기뻐하라 쉬지 말고 기도하라 범사에 감사하라 (살전 5:16-18)",
-        "네 마음을 다하고 목숨을 다하고 뜻을 다하여 주 너의 하나님을 사랑하라 (마 22:37)",
-        "내가 너희에게 분부한 모든 것을 가르쳐 지키게 하라 (마 28:20)",
-        "두려워하지 말라 내가 너와 함께 함이라 (사 41:10)"
-    ]
-};
+let db = { family: [], readRecords: {}, badges: {}, meditations: [], prayers: [], wisdomVerses: [ "태초에 하나님이 천지를 창조하시니라 (창 1:1)", "항상 기뻐하라 쉬지 말고 기도하라 범사에 감사하라 (살전 5:16-18)", "네 마음을 다하고 목숨을 다하고 뜻을 다하여 주 너의 하나님을 사랑하라 (마 22:37)", "내가 너희에게 분부한 모든 것을 가르쳐 지키게 하라 (마 28:20)", "두려워하지 말라 내가 너와 함께 함이라 (사 41:10)" ] };
+let currentUserForModal = null;
+let currentBook = null;
 
 // --- 앱 초기화 및 렌더링 ---
 document.addEventListener('DOMContentLoaded', async () => {
     gapi = new GoogleSheetsAPI();
-    
     setupEventListeners();
     renderWisdomVerse();
     renderBibleBooks();
-
     await initializeApp();
 });
 
@@ -478,30 +234,47 @@ async function initializeApp() {
 
 async function initializeGoogleSheets() {
     updateConnectionStatus('loading');
-    if (!gapi.scriptUrl) {
-        updateConnectionStatus('disconnected');
-        console.log('구글 시트 URL이 설정되지 않았습니다. 설정 모달을 열어주세요.');
-        openSettingsModal(); // URL 없으면 설정창 바로 열기
-        return;
-    }
-
     try {
         await gapi.testConnection();
         updateConnectionStatus('connected');
-        console.log('구글 시트 연결 성공');
     } catch (error) {
         updateConnectionStatus('disconnected');
-        console.log('구글 시트 연결 실패, 오프라인 모드로 진행:', error.message);
     }
+}
+
+async function loadAllDataAndRender() {
+    try {
+        const [family, reading, badges, meditations, prayers] = await Promise.all([
+            gapi.loadData('family_members'), gapi.loadData('reading_records'),
+            gapi.loadData('badges'), gapi.loadData('meditations'), gapi.loadData('prayers')
+        ]);
+        db = { ...db, family: family || [], readRecords: reading || {}, badges: badges || {}, meditations: meditations || [], prayers: prayers || [] };
+        
+        if (db.family.length > 0) {
+            currentUserForModal = db.family[0].id;
+            populateUserDropdowns();
+            renderAll();
+        } else if (gapi.isConnected) {
+            console.warn("가족 정보가 비어있습니다. 구글 시트의 'family_members' 탭에 데이터를 추가해주세요.");
+            alert("가족 정보가 없습니다. 구글 시트의 'family_members' 시트에 데이터를 추가해주세요.");
+        }
+    } catch (error) {
+        console.error('전체 데이터 로드 실패:', error);
+    }
+}
+
+function renderAll() {
+    renderFamilyDashboard();
+    renderMeditations();
+    renderPrayers();
+    renderBadgeTabs();
 }
 
 function updateConnectionStatus(status) {
     const indicator = document.getElementById('status-indicator');
     const text = document.getElementById('status-text');
     const syncBtn = document.getElementById('sync-btn');
-    
     indicator.classList.remove('loading');
-
     switch (status) {
         case 'connected':
             indicator.className = 'w-3 h-3 rounded-full bg-green-500';
@@ -524,130 +297,47 @@ function updateConnectionStatus(status) {
     }
 }
 
-async function loadAllDataAndRender() {
-    try {
-        const [family, reading, badges, meditations, prayers] = await Promise.all([
-            gapi.loadData('family_members'),
-            gapi.loadData('reading_records'),
-            gapi.loadData('badges'),
-            gapi.loadData('meditations'),
-            gapi.loadData('prayers')
-        ]);
-
-        db.family = family || [];
-        db.readRecords = reading || {};
-        db.badges = badges || {};
-        db.meditations = meditations || [];
-        db.prayers = prayers || [];
-        
-        // 데이터 로드 후 필요한 렌더링 및 초기화 수행
-        if (db.family.length > 0) {
-            initializeDataStructures();
-            populateUserDropdowns();
-            renderAll();
-        } else if (gapi.isConnected) {
-            console.warn("가족 정보가 비어있습니다. 구글 시트의 'family_members' 탭에 데이터를 추가해주세요.");
-            alert("가족 정보가 없습니다. 구글 시트의 'family_members' 시트에 데이터를 추가해주세요.");
-        }
-
-    } catch (error) {
-        console.error('전체 데이터 로드 및 렌더링 실패:', error);
-        // 오프라인 데이터로 렌더링 시도
-        renderAll();
-    }
-}
-
-function initializeDataStructures() {
-    db.family.forEach(member => {
-        if (!db.badges[member.id]) db.badges[member.id] = [];
-        if (!db.readRecords[member.id]) db.readRecords[member.id] = {};
-        
-        // readingHistory는 readRecords 기반으로 재구성
-        if(!db.readingHistory[member.id]) db.readingHistory[member.id] = [];
-        // 이 부분은 더 정교한 기록이 필요하다면 확장해야 함 (현재는 날짜 기록이 없음)
-    });
-}
-
-function renderAll() {
-    renderFamilyDashboard();
-    renderMeditations();
-    renderPrayers();
-    renderBadgeTabs();
-    if(document.getElementById('badges-modal').classList.contains('flex')) {
-        const activeTab = document.querySelector('.badge-tab.border-blue-600');
-        renderBadges(activeTab ? activeTab.dataset.user : 'all');
-    }
-}
-
-
-function renderWisdomVerse() {
-    const verseEl = document.getElementById('wisdom-verse');
-    const randomIndex = Math.floor(Math.random() * db.wisdomVerses.length);
-    verseEl.textContent = db.wisdomVerses[randomIndex];
-}
-
 function renderFamilyDashboard() {
     const dashboard = document.getElementById('family-dashboard');
     dashboard.innerHTML = '';
-    if (!db.family || db.family.length === 0) {
-        dashboard.innerHTML = `<p class="col-span-full text-center">가족 정보를 불러오는 중이거나, 시트에 등록된 정보가 없습니다.</p>`;
-        return;
-    }
+    if (!db.family || db.family.length === 0) return;
     db.family.forEach(member => {
         const userRecords = db.readRecords[member.id] || {};
-        const chaptersRead = Object.values(userRecords).reduce((sum, bookData) => {
-             // bookData가 배열인지 확인 (이전 데이터 구조 호환)
-            return sum + (Array.isArray(bookData) ? bookData.length : (bookData.chapters ? bookData.chapters.length : 0));
-        }, 0);
-
+        const chaptersRead = Object.values(userRecords).reduce((sum, chapters) => sum + chapters.length, 0);
         const progress = TOTAL_CHAPTERS > 0 ? (chaptersRead / TOTAL_CHAPTERS) * 100 : 0;
         const userBadges = db.badges[member.id] || [];
-
         const memberDiv = document.createElement('div');
         memberDiv.className = 'flex flex-col items-center relative';
-        memberDiv.innerHTML = `
-            <img src="${member.photo || 'https://placehold.co/80x80/cccccc/FFFFFF?text=?'}" alt="${member.name} 프로필 사진" class="w-16 h-16 md:w-20 md:h-20 rounded-full border-4 border-white/50 object-cover shadow-md">
-            <div class="font-bold mt-2">${member.title} (${member.name})</div>
-            <div class="w-full bg-white/30 rounded-full h-2.5 mt-1">
-                <div class="progress-bar-fill h-2.5 rounded-full" style="width: ${progress.toFixed(2)}%"></div>
-            </div>
-            <div class="text-xs mt-1">${chaptersRead} / ${TOTAL_CHAPTERS} 장</div>
-            <div class="flex gap-1 mt-1 flex-wrap justify-center">
-                ${userBadges.slice(-3).map(badgeId => {
-                    const badge = BADGE_DEFINITIONS[badgeId];
-                    return badge ? `<span title="${badge.name}" class="text-lg">${badge.emoji}</span>` : '';
-                }).join('')}
-                ${userBadges.length > 3 ? `<span class="text-xs text-gray-500">+${userBadges.length - 3}</span>` : ''}
-            </div>
-        `;
+        const badgeHTML = userBadges.slice(-3).map(id => {
+            const badge = BADGE_DEFINITIONS[id];
+            return badge ? `<span title="${badge.name}" class="text-lg">${badge.emoji}</span>` : '';
+        }).join('');
+        const moreBadgesHTML = userBadges.length > 3 ? `<span class="text-xs text-gray-500">+${userBadges.length - 3}</span>` : '';
+        memberDiv.innerHTML = `<img src="${member.photo || 'https://placehold.co/80x80/cccccc/FFFFFF?text=?'}" alt="${member.name}" class="w-16 h-16 md:w-20 md:h-20 rounded-full border-4 border-white/50 object-cover shadow-md"><div class="font-bold mt-2">${member.title} (${member.name})</div><div class="w-full bg-white/30 rounded-full h-2.5 mt-1"><div class="progress-bar-fill h-2.5 rounded-full" style="width: ${progress.toFixed(2)}%"></div></div><div class="text-xs mt-1">${chaptersRead} / ${TOTAL_CHAPTERS} 장</div><div class="flex gap-1 mt-1 flex-wrap justify-center">${badgeHTML}${moreBadgesHTML}</div>`;
         dashboard.appendChild(memberDiv);
     });
 }
 
+function renderWisdomVerse() { document.getElementById('wisdom-verse').textContent = db.wisdomVerses[Math.floor(Math.random() * db.wisdomVerses.length)]; }
 function renderBibleBooks() {
-    const oldTestamentDiv = document.getElementById('old-testament');
-    const newTestamentDiv = document.getElementById('new-testament');
-    oldTestamentDiv.innerHTML = '';
-    newTestamentDiv.innerHTML = '';
-
-    BIBLE_BOOKS.old.forEach(book => oldTestamentDiv.appendChild(createBookElement(book)));
-    BIBLE_BOOKS.new.forEach(book => newTestamentDiv.appendChild(createBookElement(book)));
+    const oldDiv = document.getElementById('old-testament');
+    const newDiv = document.getElementById('new-testament');
+    oldDiv.innerHTML = ''; newDiv.innerHTML = '';
+    BIBLE_BOOKS.old.forEach(book => oldDiv.appendChild(createBookElement(book)));
+    BIBLE_BOOKS.new.forEach(book => newDiv.appendChild(createBookElement(book)));
 }
-
 function createBookElement(book) {
-    const bookEl = document.createElement('button');
-    bookEl.className = 'p-2 text-sm rounded-md shadow-sm transition-all duration-200 accent-bg hover:shadow-lg hover:-translate-y-1';
-    bookEl.textContent = book.name;
-    bookEl.dataset.bookName = book.name;
-    bookEl.addEventListener('click', () => openChapterModal(book));
-    return bookEl;
+    const el = document.createElement('button');
+    el.className = 'p-2 text-sm rounded-md shadow-sm transition-all duration-200 accent-bg hover:shadow-lg hover:-translate-y-1';
+    el.textContent = book.name;
+    el.onclick = () => openChapterModal(book);
+    return el;
 }
 
 function populateUserDropdowns() {
     const meditationUser = document.getElementById('meditation-user');
     const prayerUser = document.getElementById('prayer-user');
-    meditationUser.innerHTML = '';
-    prayerUser.innerHTML = '';
+    meditationUser.innerHTML = ''; prayerUser.innerHTML = '';
     db.family.forEach(member => {
         const option = `<option value="${member.id}">${member.name}</option>`;
         meditationUser.innerHTML += option;
@@ -658,11 +348,16 @@ function populateUserDropdowns() {
 function renderMeditations() {
     const list = document.getElementById('meditation-list');
     list.innerHTML = '';
+    const currentUserId = document.getElementById('meditation-user').value;
     db.meditations.forEach(item => {
         const user = db.family.find(u => u.id === item.userId);
         const itemEl = document.createElement('div');
         itemEl.className = 'p-2 mb-2 rounded bg-white/70 text-sm';
-        itemEl.innerHTML = `<strong class="accent-text">${user ? user.name : '알수없음'}:</strong> ${item.content}`;
+        let buttons = '';
+        if (item.userId === currentUserId) {
+            buttons = `<div class="inline-block ml-2"><button onclick="editMeditation('${item.id}')" class="text-xs text-blue-600 hover:underline">수정</button> <button onclick="deleteMeditation('${item.id}')" class="text-xs text-red-600 hover:underline">삭제</button></div>`;
+        }
+        itemEl.innerHTML = `<div><strong class="accent-text">${user ? user.name : '알수없음'}:</strong> ${item.content}</div><div class="text-right text-gray-500 text-xs">${new Date(parseInt(item.id)).toLocaleDateString()} ${buttons}</div>`;
         list.appendChild(itemEl);
     });
     list.scrollTop = list.scrollHeight;
@@ -671,165 +366,93 @@ function renderMeditations() {
 function renderPrayers() {
     const list = document.getElementById('prayer-list');
     list.innerHTML = '';
+    const currentUserId = document.getElementById('prayer-user').value;
     db.prayers.forEach(item => {
         const user = db.family.find(u => u.id === item.userId);
         const itemEl = document.createElement('div');
         itemEl.className = 'p-2 mb-2 rounded bg-white/70 text-sm';
-        itemEl.innerHTML = `<strong class="accent-text">${user ? user.name : '알수없음'}:</strong> ${item.content}`;
+        let buttons = '';
+        if (item.userId === currentUserId) {
+            buttons = `<div class="inline-block ml-2"><button onclick="editPrayer('${item.id}')" class="text-xs text-blue-600 hover:underline">수정</button> <button onclick="deletePrayer('${item.id}')" class="text-xs text-red-600 hover:underline">삭제</button></div>`;
+        }
+        itemEl.innerHTML = `<div><strong class="accent-text">${user ? user.name : '알수없음'}:</strong> ${item.content}</div><div class="text-right text-gray-500 text-xs">${new Date(parseInt(item.id)).toLocaleDateString()} ${buttons}</div>`;
         list.appendChild(itemEl);
     });
     list.scrollTop = list.scrollHeight;
 }
 
-
-// --- 뱃지 시스템 ---
-function checkAndAwardBadges(userId) {
-    const userBadges = db.badges[userId] || [];
-    const newBadges = [];
-
-    const userRecords = db.readRecords[userId] || {};
-    const totalChapters = Object.values(userRecords).reduce((sum, bookData) => sum + bookData.length, 0);
-
-    // 첫 읽기 뱃지
-    if (!userBadges.includes('first_read') && totalChapters >= 1) {
-        newBadges.push('first_read');
-    }
-
-    // 장 수 뱃지
-    Object.entries(BADGE_DEFINITIONS).forEach(([badgeId, badge]) => {
-        if (badge.condition === 'chapters' && !userBadges.includes(badgeId) && totalChapters >= badge.value) {
-            newBadges.push(badgeId);
-        }
-    });
-
-    // 성경 완독 뱃지
-    Object.entries(BADGE_DEFINITIONS).forEach(([badgeId, badge]) => {
-        if (badge.condition === 'book' && !userBadges.includes(badgeId)) {
-            const bookInfo = [...BIBLE_BOOKS.old, ...BIBLE_BOOKS.new].find(b => b.name === badge.value);
-            if (bookInfo && userRecords[badge.value] && userRecords[badge.value].length === bookInfo.chapters) {
-                newBadges.push(badgeId);
-            }
-        }
-    });
-
-    // TODO: 연속 읽기 뱃지 (readingHistory에 날짜 기록이 필요)
-
-    // 새 뱃지 추가 및 축하
-    if (newBadges.length > 0) {
-        newBadges.forEach(badgeId => {
-            db.badges[userId].push(badgeId);
-            showCelebration(userId, badgeId);
-            createConfetti();
-            // 뱃지 획득 정보 시트에도 저장 (개별 저장)
-            gapi.saveData({ type: 'badge', userId, badgeId }).catch(console.error);
-        });
-        renderAll(); // 뱃지 획득 후 화면 즉시 갱신
-    }
-}
-
-
-function showCelebration(userId, badgeId) {
-    const user = db.family.find(u => u.id === userId);
-    const badge = BADGE_DEFINITIONS[badgeId];
-    if (!user || !badge) return;
-
-    document.getElementById('celebration-title').textContent = `축하합니다, ${user.name}님!`;
-    document.getElementById('celebration-message').textContent = `"${badge.name}" 뱃지를 획득했습니다!`;
-    document.getElementById('celebration-badge').textContent = badge.emoji;
-
-    const modal = document.getElementById('celebration-modal');
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
-}
-
-function createConfetti() {
-    const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff'];
-    for (let i = 0; i < 30; i++) {
-        setTimeout(() => {
-            const confetti = document.createElement('div');
-            confetti.className = 'confetti';
-            confetti.style.left = Math.random() * 100 + 'vw';
-            confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-            document.body.appendChild(confetti);
-            setTimeout(() => confetti.remove(), 3000);
-        }, i * 50);
-    }
-}
-
-// --- 이벤트 리스너 설정 ---
 function setupEventListeners() {
-    document.getElementById('theme-select').addEventListener('change', (e) => {
-        document.body.className = e.target.value;
-    });
-
+    document.getElementById('theme-select').addEventListener('change', (e) => { document.body.className = e.target.value; });
     document.getElementById('add-meditation').addEventListener('click', addMeditation);
-    document.getElementById('meditation-input').addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') addMeditation();
-    });
-
+    document.getElementById('meditation-input').addEventListener('keypress', (e) => { if (e.key === 'Enter') addMeditation(); });
+    document.getElementById('meditation-user').addEventListener('change', renderMeditations);
     document.getElementById('add-prayer').addEventListener('click', addPrayer);
-    document.getElementById('prayer-input').addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') addPrayer();
-    });
-
+    document.getElementById('prayer-input').addEventListener('keypress', (e) => { if (e.key === 'Enter') addPrayer(); });
+    document.getElementById('prayer-user').addEventListener('change', renderPrayers);
     document.getElementById('badges-btn').addEventListener('click', openBadgesModal);
     document.getElementById('close-badges-modal').addEventListener('click', closeBadgesModal);
-    document.getElementById('close-celebration').addEventListener('click', () => {
-        document.getElementById('celebration-modal').classList.add('hidden');
-        document.getElementById('celebration-modal').classList.remove('flex');
-    });
-
-    document.getElementById('settings-btn').addEventListener('click', openSettingsModal);
-    document.getElementById('close-settings-modal').addEventListener('click', closeSettingsModal);
-    document.getElementById('test-connection').addEventListener('click', testAndSaveConnection);
-    document.getElementById('save-settings').addEventListener('click', saveSettings);
-    document.getElementById('sync-btn').addEventListener('click', () => {
-        console.log('동기화를 시작합니다...');
-        loadAllDataAndRender();
-        alert('동기화 완료!');
-    });
+    document.getElementById('close-celebration').addEventListener('click', () => document.getElementById('celebration-modal').classList.add('hidden'));
+    document.getElementById('sync-btn').addEventListener('click', async () => { await loadAllDataAndRender(); alert('동기화 완료!'); });
 }
 
-// --- 모달 및 UI 제어 ---
-function openSettingsModal() {
-    document.getElementById('script-url').value = gapi.scriptUrl;
-    document.getElementById('settings-modal').classList.add('flex');
-    document.getElementById('settings-modal').classList.remove('hidden');
-}
-
-function closeSettingsModal() {
-    document.getElementById('settings-modal').classList.add('hidden');
-    document.getElementById('settings-modal').classList.remove('flex');
-}
-
-async function testAndSaveConnection() {
-    const url = document.getElementById('script-url').value;
-    if (!url) {
-        alert('URL을 입력해주세요.');
-        return;
-    }
-    gapi.scriptUrl = url;
-    updateConnectionStatus('loading');
-
+async function addMeditation() {
+    const userInput = document.getElementById('meditation-user');
+    const textInput = document.getElementById('meditation-input');
+    if (textInput.value.trim() === '') return;
     try {
-        await gapi.testConnection();
-        updateConnectionStatus('connected');
-        alert('연결 성공!');
-        saveSettings(); // 성공하면 바로 저장
-    } catch (error) {
-        updateConnectionStatus('disconnected');
-        alert('연결 실패: ' + error.message);
-    }
+        const result = await gapi.saveData({ type: 'meditation', userId: userInput.value, content: textInput.value.trim() });
+        db.meditations.push(result.data);
+        textInput.value = '';
+        renderMeditations();
+    } catch (error) { alert('묵상 저장 실패: ' + error.message); }
+}
+async function deleteMeditation(id) {
+    if (!confirm('정말로 삭제하시겠습니까?')) return;
+    try {
+        await gapi.deleteData({ type: 'meditation', id: id });
+        db.meditations = db.meditations.filter(item => item.id !== id);
+        renderMeditations();
+    } catch (error) { alert('묵상 삭제 실패: ' + error.message); }
+}
+async function editMeditation(id) {
+    const item = db.meditations.find(item => item.id === id);
+    const newContent = prompt('묵상 내용 수정:', item.content);
+    if (newContent === null || newContent.trim() === '' || newContent.trim() === item.content) return;
+    try {
+        await gapi.editData({ type: 'meditation', id: id, content: newContent.trim() });
+        item.content = newContent.trim();
+        renderMeditations();
+    } catch (error) { alert('묵상 수정 실패: ' + error.message); }
 }
 
-function saveSettings() {
-    const url = document.getElementById('script-url').value;
-    localStorage.setItem('bible_script_url', url);
-    gapi.scriptUrl = url;
-    alert('설정이 저장되었습니다.');
-    closeSettingsModal();
-    // 설정 저장 후 앱 다시 초기화
-    initializeApp();
+async function addPrayer() {
+    const userInput = document.getElementById('prayer-user');
+    const textInput = document.getElementById('prayer-input');
+    if (textInput.value.trim() === '') return;
+    try {
+        const result = await gapi.saveData({ type: 'prayer', userId: userInput.value, content: textInput.value.trim() });
+        db.prayers.push(result.data);
+        textInput.value = '';
+        renderPrayers();
+    } catch (error) { alert('기도제목 저장 실패: ' + error.message); }
+}
+async function deletePrayer(id) {
+    if (!confirm('정말로 삭제하시겠습니까?')) return;
+    try {
+        await gapi.deleteData({ type: 'prayer', id: id });
+        db.prayers = db.prayers.filter(item => item.id !== id);
+        renderPrayers();
+    } catch (error) { alert('기도제목 삭제 실패: ' + error.message); }
+}
+async function editPrayer(id) {
+    const item = db.prayers.find(item => item.id === id);
+    const newContent = prompt('기도제목 수정:', item.content);
+    if (newContent === null || newContent.trim() === '' || newContent.trim() === item.content) return;
+    try {
+        await gapi.editData({ type: 'prayer', id: id, content: newContent.trim() });
+        item.content = newContent.trim();
+        renderPrayers();
+    } catch (error) { alert('기도제목 수정 실패: ' + error.message); }
 }
 
 function renderBadgeTabs() {
@@ -838,7 +461,6 @@ function renderBadgeTabs() {
     db.family.forEach(member => {
         tabsContainer.innerHTML += `<button class="badge-tab px-4 py-2 hover:text-blue-600" data-user="${member.id}">${member.name}</button>`;
     });
-
     document.querySelectorAll('.badge-tab').forEach(tab => {
         tab.addEventListener('click', (e) => {
             document.querySelectorAll('.badge-tab').forEach(t => t.classList.remove('text-blue-600', 'border-b-2', 'border-blue-600'));
@@ -847,25 +469,18 @@ function renderBadgeTabs() {
         });
     });
 }
-
 function openBadgesModal() {
-    document.getElementById('badges-modal').classList.add('flex');
     document.getElementById('badges-modal').classList.remove('hidden');
     renderBadges('all');
 }
-
-function closeBadgesModal() {
-    document.getElementById('badges-modal').classList.add('hidden');
-    document.getElementById('badges-modal').classList.remove('flex');
-}
+function closeBadgesModal() { document.getElementById('badges-modal').classList.add('hidden'); }
 
 function renderBadges(userId = 'all') {
     const content = document.getElementById('badges-content');
     content.innerHTML = '';
     const categories = {
-        '첫걸음 및 장 읽기': ['first_read', 'chapters_100', 'chapters_500'],
-        '성경 완독': ['book_genesis', 'book_psalms', 'book_john'],
-        '연속 읽기 (준비중)': ['streak_3', 'streak_7', 'streak_30']
+        '첫걸음 및 장 읽기': ['first_read', 'chapters_100'],
+        '성경 완독': ['book_genesis', 'book_john'],
     };
 
     if (userId === 'all') {
@@ -902,7 +517,7 @@ function renderBadges(userId = 'all') {
         Object.entries(BADGE_DEFINITIONS).forEach(([badgeId, badge]) => {
             const hasEarned = userBadges.includes(badgeId);
             const badgeEl = document.createElement('div');
-            badgeEl.className = `p-4 border rounded-lg text-center ${hasEarned ? 'bg-yellow-50 border-yellow-300' : 'bg-gray-50 border-gray-300 badge-locked'}`;
+            badgeEl.className = `p-4 border rounded-lg text-center ${hasEarned ? 'bg-yellow-50 border-yellow-300 badge-earned' : 'bg-gray-50 border-gray-300 badge-locked'}`;
             badgeEl.innerHTML = `
                 <div class="text-3xl mb-2">${badge.emoji}</div>
                 <div class="font-bold">${badge.name}</div>
@@ -916,169 +531,74 @@ function renderBadges(userId = 'all') {
     }
 }
 
-async function addMeditation() {
-    const userInput = document.getElementById('meditation-user');
-    const textInput = document.getElementById('meditation-input');
-    if (textInput.value.trim() === '') return;
-
-    const newMeditation = {
-        userId: userInput.value,
-        date: new Date().toISOString().slice(0, 10),
-        content: textInput.value.trim()
-    };
-
-    try {
-        await gapi.saveMeditation(newMeditation.userId, newMeditation.content);
-        db.meditations.push(newMeditation);
-        textInput.value = '';
-        renderMeditations();
-    } catch (error) {
-        alert('묵상 저장 실패: ' + error.message);
-    }
-}
-
-async function addPrayer() {
-    const userInput = document.getElementById('prayer-user');
-    const textInput = document.getElementById('prayer-input');
-    if (textInput.value.trim() === '') return;
-
-    const newPrayer = {
-        userId: userInput.value,
-        date: new Date().toISOString().slice(0, 10),
-        content: textInput.value.trim()
-    };
-
-    try {
-        await gapi.savePrayer(newPrayer.userId, newPrayer.content);
-        db.prayers.push(newPrayer);
-        textInput.value = '';
-        renderPrayers();
-    } catch (error) {
-        alert('기도제목 저장 실패: ' + error.message);
-    }
-}
-
-// --- 장 읽기 모달 관련 기능 ---
-let currentBook = null;
-let currentUserForModal = null;
-
 function openChapterModal(book) {
-    if (!db.family || db.family.length === 0) {
-        alert("가족 정보가 로드되지 않았습니다. 설정을 확인해주세요.");
-        return;
-    }
+    if (!db.family || db.family.length === 0) { alert("가족 정보가 로드되지 않았습니다."); return; }
     currentBook = book;
-    currentUserForModal = db.family[0].id; 
-    
     document.getElementById('modal-title').textContent = book.name;
-    
     const modal = document.getElementById('chapter-modal');
-    modal.classList.add('flex');
     modal.classList.remove('hidden');
-    
     createModalUserSelector();
     updateModalForCurrentUser();
-
     document.getElementById('close-modal').onclick = closeChapterModal;
 }
-
 function createModalUserSelector() {
-    const modalHeader = document.querySelector('#chapter-modal h2').parentElement;
-    let selectorContainer = document.getElementById('modal-user-selector-container');
-    if (!selectorContainer) {
-        selectorContainer = document.createElement('div');
-        selectorContainer.id = 'modal-user-selector-container';
-        selectorContainer.className = 'flex items-center gap-2 mb-4';
-        
-        selectorContainer.innerHTML = `
-            <label for="modal-user-selector">체크할 사람:</label>
-            <select id="modal-user-selector" class="p-1 border rounded"></select>
-        `;
-        
-        modalHeader.insertAdjacentElement('afterend', selectorContainer);
-
+    let container = document.getElementById('modal-user-selector-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'modal-user-selector-container';
+        container.className = 'flex items-center gap-2 mb-4';
+        container.innerHTML = `<label for="modal-user-selector">체크할 사람:</label><select id="modal-user-selector" class="p-1 border rounded"></select>`;
+        document.querySelector('#chapter-modal h2').parentElement.insertAdjacentElement('afterend', container);
         document.getElementById('modal-user-selector').addEventListener('change', (e) => {
             currentUserForModal = e.target.value;
             updateModalForCurrentUser();
         });
     }
-
     const select = document.getElementById('modal-user-selector');
     select.innerHTML = '';
     db.family.forEach(member => {
-        const option = document.createElement('option');
-        option.value = member.id;
-        option.textContent = member.name;
-        select.appendChild(option);
+        select.innerHTML += `<option value="${member.id}">${member.name}</option>`;
     });
     select.value = currentUserForModal;
 }
-
 function updateModalForCurrentUser() {
     const modalChapters = document.getElementById('modal-chapters');
-    const user = db.family.find(u => u.id === currentUserForModal);
-    
-    document.getElementById('modal-user-name').textContent = user.name;
     modalChapters.innerHTML = '';
-
     const userRecordsForBook = (db.readRecords[currentUserForModal] && db.readRecords[currentUserForModal][currentBook.name]) || [];
-
     for (let i = 1; i <= currentBook.chapters; i++) {
-        const chapterBtn = document.createElement('button');
-        chapterBtn.textContent = i;
-        chapterBtn.dataset.chapter = i;
-        chapterBtn.className = 'p-2 rounded border transition-colors duration-200';
-        
-        if (userRecordsForBook.includes(i)) {
-            chapterBtn.classList.add('bg-green-500', 'text-white', 'border-green-500');
-        } else {
-            chapterBtn.classList.add('bg-white', 'hover:bg-green-100');
-        }
-
-        chapterBtn.onclick = () => toggleChapterRead(i, chapterBtn);
-        modalChapters.appendChild(chapterBtn);
+        const btn = document.createElement('button');
+        btn.textContent = i;
+        btn.className = `p-2 rounded border transition-colors duration-200 ${userRecordsForBook.includes(i) ? 'bg-green-500 text-white border-green-500' : 'bg-white hover:bg-green-100'}`;
+        btn.onclick = () => toggleChapterRead(i, btn);
+        modalChapters.appendChild(btn);
     }
 }
-
 async function toggleChapterRead(chapterNumber, buttonElement) {
     if (!db.readRecords[currentUserForModal]) db.readRecords[currentUserForModal] = {};
     if (!db.readRecords[currentUserForModal][currentBook.name]) db.readRecords[currentUserForModal][currentBook.name] = [];
-
+    
     const readList = db.readRecords[currentUserForModal][currentBook.name];
     const chapterIndex = readList.indexOf(chapterNumber);
-
-    if (chapterIndex > -1) {
-        // 이미 읽었으면 취소 (삭제 로직은 현재 API에 없으므로 클라이언트에서만 처리)
-        // readList.splice(chapterIndex, 1);
-        // buttonElement.classList.remove('bg-green-500', 'text-white', 'border-green-500');
-        // buttonElement.classList.add('bg-white', 'hover:bg-green-100');
-        alert("읽기 취소 기능은 지원되지 않습니다.");
-        
-    } else {
-        // 읽음 처리
-        buttonElement.disabled = true; // 중복 클릭 방지
-        try {
-            await gapi.saveReading(currentUserForModal, currentBook.name, chapterNumber);
+    
+    buttonElement.disabled = true;
+    try {
+        if (chapterIndex > -1) {
+            await gapi.deleteData({ type: 'reading', userId: currentUserForModal, bookName: currentBook.name, chapter: chapterNumber });
+            readList.splice(chapterIndex, 1);
+            buttonElement.className = 'p-2 rounded border transition-colors duration-200 bg-white hover:bg-green-100';
+        } else {
+            await gapi.saveData({ type: 'reading', userId: currentUserForModal, bookName: currentBook.name, chapter: chapterNumber });
             readList.push(chapterNumber);
-            buttonElement.classList.add('bg-green-500', 'text-white', 'border-green-500');
-            buttonElement.classList.remove('bg-white', 'hover:bg-green-100');
-            
-            checkAndAwardBadges(currentUserForModal);
-            renderFamilyDashboard();
-        } catch(error) {
-            alert("읽기 기록 저장에 실패했습니다: " + error.message);
-        } finally {
-            buttonElement.disabled = false;
+            buttonElement.className = 'p-2 rounded border transition-colors duration-200 bg-green-500 text-white border-green-500';
         }
+        renderFamilyDashboard();
+    } catch (error) {
+        alert("읽기 상태 변경에 실패했습니다: " + error.message);
+    } finally {
+        buttonElement.disabled = false;
     }
 }
-
-function closeChapterModal() {
-    document.getElementById('chapter-modal').classList.add('hidden');
-    document.getElementById('chapter-modal').classList.remove('flex');
-    currentBook = null;
-}
-
+function closeChapterModal() { document.getElementById('chapter-modal').classList.add('hidden'); }
 </script>
 </body>
 </html>
