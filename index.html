@@ -116,6 +116,21 @@
             z-index: 1000;
             animation: confetti 3s linear infinite;
         }
+
+        /* 로딩 애니메이션 */
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .loading {
+            animation: spin 1s linear infinite;
+        }
+
+        /* 연결 상태 표시 */
+        .status-connected { color: #10b981; }
+        .status-disconnected { color: #ef4444; }
+        .status-loading { color: #f59e0b; }
     </style>
 </head>
 <body class="theme-jerusalem">
@@ -125,7 +140,17 @@
         <header class="text-center mb-8">
             <h1 class="text-4xl md:text-5xl font-myeongjo font-bold accent-text">Bible Time for Family</h1>
             <p class="mt-2 text-lg">우리가족, 말씀으로 하나되는 시간</p>
-            <div class="mt-4 flex justify-center items-center gap-4">
+            
+            <!-- 구글 시트 연결 상태 -->
+            <div id="connection-status" class="mt-2 flex items-center justify-center gap-2">
+                <div id="status-indicator" class="w-3 h-3 rounded-full bg-gray-400"></div>
+                <span id="status-text" class="text-sm">연결 확인 중...</span>
+                <button id="sync-btn" class="ml-2 px-2 py-1 bg-blue-500 text-white rounded text-xs hover:bg-blue-600 hidden">
+                    🔄 동기화
+                </button>
+            </div>
+            
+            <div class="mt-4 flex justify-center items-center gap-4 flex-wrap">
                 <div>
                     <label for="theme-select" class="mr-2">테마 선택:</label>
                     <select id="theme-select" class="p-1 rounded border-custom border-2 accent-bg">
@@ -135,6 +160,9 @@
                 </div>
                 <button id="badges-btn" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg font-bold shadow-lg transition-all">
                     🏆 뱃지 컬렉션
+                </button>
+                <button id="settings-btn" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-bold shadow-lg transition-all">
+                    ⚙️ 설정
                 </button>
             </div>
         </header>
@@ -236,6 +264,44 @@
         </div>
     </div>
 
+    <!-- 설정 모달 -->
+    <div id="settings-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-lg shadow-2xl p-6 w-full max-w-md">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold">⚙️ 구글 시트 설정</h2>
+                <button id="close-settings-modal" class="text-3xl">&times;</button>
+            </div>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium mb-2">Google Apps Script URL</label>
+                    <input type="text" id="script-url" class="w-full p-2 border rounded-md" 
+                           placeholder="https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec">
+                    <p class="text-xs text-gray-500 mt-1">Apps Script 배포 URL을 입력하세요</p>
+                </div>
+                
+                <div class="flex gap-2">
+                    <button id="test-connection" class="flex-1 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg">
+                        연결 테스트
+                    </button>
+                    <button id="save-settings" class="flex-1 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg">
+                        저장
+                    </button>
+                </div>
+                
+                <div class="text-sm">
+                    <h4 class="font-bold mb-2">설정 방법:</h4>
+                    <ol class="list-decimal list-inside space-y-1 text-xs">
+                        <li>구글 시트 생성 (6개 탭: family_members, reading_records, badges, meditations, prayers, settings)</li>
+                        <li>Google Apps Script 생성 및 코드 배포</li>
+                        <li>배포 URL을 위에 입력</li>
+                        <li>연결 테스트 후 저장</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- 축하 모달 -->
     <div id="celebration-modal" class="fixed inset-0 bg-black bg-opacity-70 hidden items-center justify-center p-4 z-50">
         <div class="celebration-modal bg-white rounded-lg shadow-2xl p-8 text-center max-w-md">
@@ -248,6 +314,129 @@
     </div>
 
 <script>
+// --- 구글 시트 API 클래스 ---
+class GoogleSheetsAPI {
+    constructor() {
+        this.scriptUrl = localStorage.getItem('bible_script_url') || '';
+        this.isConnected = false;
+        this.connectionStatus = 'disconnected';
+    }
+
+    async testConnection() {
+        if (!this.scriptUrl) {
+            throw new Error('Apps Script URL이 설정되지 않았습니다.');
+        }
+
+        try {
+            const response = await fetch(this.scriptUrl + '?action=test');
+            const result = await response.json();
+            
+            if (result.success) {
+                this.isConnected = true;
+                this.connectionStatus = 'connected';
+                return true;
+            } else {
+                throw new Error(result.error || '연결 실패');
+            }
+        } catch (error) {
+            this.isConnected = false;
+            this.connectionStatus = 'error';
+            throw error;
+        }
+    }
+
+    async saveData(sheet, data) {
+        if (!this.isConnected) {
+            // 오프라인 모드: 로컬 저장
+            return this.saveToLocalStorage(sheet, data);
+        }
+
+        try {
+            const response = await fetch(this.scriptUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    action: 'save',
+                    sheet: sheet,
+                    data: data
+                })
+            });
+
+            const result = await response.json();
+            if (!result.success) {
+                throw new Error(result.error);
+            }
+            
+            // 로컬에도 백업 저장
+            this.saveToLocalStorage(sheet, data);
+            
+            return result;
+        } catch (error) {
+            // 실패시 로컬 저장으로 폴백
+            console.warn('구글 시트 저장 실패, 로컬 저장으로 대체:', error);
+            return this.saveToLocalStorage(sheet, data);
+        }
+    }
+
+    async loadData(sheet) {
+        if (!this.isConnected) {
+            // 오프라인 모드: 로컬에서 로드
+            return this.loadFromLocalStorage(sheet);
+        }
+
+        try {
+            const response = await fetch(this.scriptUrl + `?action=load&sheet=${sheet}`);
+            const result = await response.json();
+            
+            if (result.success) {
+                // 로컬에도 백업 저장
+                this.saveToLocalStorage(sheet, result.data);
+                return result.data;
+            } else {
+                throw new Error(result.error);
+            }
+        } catch (error) {
+            console.warn('구글 시트 로드 실패, 로컬 데이터 사용:', error);
+            return this.loadFromLocalStorage(sheet);
+        }
+    }
+
+    saveToLocalStorage(sheet, data) {
+        const key = `bible_${sheet}`;
+        localStorage.setItem(key, JSON.stringify(data));
+        return { success: true, source: 'localStorage' };
+    }
+
+    loadFromLocalStorage(sheet) {
+        const key = `bible_${sheet}`;
+        const data = localStorage.getItem(key);
+        return data ? JSON.parse(data) : null;
+    }
+
+    async syncData() {
+        if (!this.isConnected) return false;
+
+        try {
+            // 로컬 데이터를 구글 시트에 업로드
+            const sheets = ['family_members', 'reading_records', 'badges', 'meditations', 'prayers'];
+            
+            for (const sheet of sheets) {
+                const localData = this.loadFromLocalStorage(sheet);
+                if (localData) {
+                    await this.saveData(sheet, localData);
+                }
+            }
+            
+            return true;
+        } catch (error) {
+            console.error('동기화 실패:', error);
+            return false;
+        }
+    }
+}
+
 // --- 데이터베이스 시뮬레이션 ---
 const BIBLE_BOOKS = {
     old: [
@@ -307,6 +496,8 @@ const BADGE_DEFINITIONS = {
     'family_unity': { emoji: '👨‍👩‍👧‍👦', name: '가족 화합', description: '온 가족이 같은 날 읽기', condition: 'special', value: 'family' }
 };
 
+// 전역 변수
+let gapi = null; // 구글 시트 API 인스턴스
 let db = {
     family: [
         { id: 'user01', name: '송혜성', title: '아빠', photo: 'https://placehold.co/80x80/665A5A/FFFFFF?text=아빠' },
@@ -314,15 +505,9 @@ let db = {
         { id: 'user03', name: '송하율', title: '하율', photo: 'https://placehold.co/80x80/D4AC94/FFFFFF?text=하율' },
         { id: 'user04', name: '송하준', title: '하준', photo: 'https://placehold.co/80x80/E8C3A4/FFFFFF?text=하준' },
     ],
-    readRecords: {
-        // 'user01': { '창세기': [1, 2, 3], '마태복음': [1] },
-    },
-    readingHistory: {
-        // 'user01': [{ date: '2025-07-13', book: '창세기', chapter: 1 }]
-    },
-    badges: {
-        // 'user01': ['first_read', 'chapters_10']
-    },
+    readRecords: {},
+    readingHistory: {},
+    badges: {},
     meditations: [
         { userId: 'user01', date: '2025-07-13', content: '빛이 있으라 하시니 빛이 있었고... 말씀의 능력을 다시 묵상합니다.' },
         { userId: 'user03', date: '2025-07-13', content: '하나님이 만드신 세상이 예뻐요.' },
@@ -341,17 +526,101 @@ let db = {
 };
 
 // --- 앱 초기화 및 렌더링 ---
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+    gapi = new GoogleSheetsAPI();
+    
     setupThemeSwitcher();
     renderWisdomVerse();
+    setupEventListeners();
+    populateUserDropdowns();
+    initializeBadges();
+    
+    // 구글 시트 연결 시도
+    await initializeGoogleSheets();
+    
+    // 데이터 로드 및 렌더링
+    await loadAllData();
     renderFamilyDashboard();
     renderBibleBooks();
     renderMeditations();
     renderPrayers();
-    setupEventListeners();
-    populateUserDropdowns();
-    initializeBadges();
 });
+
+async function initializeGoogleSheets() {
+    updateConnectionStatus('loading');
+    
+    try {
+        await gapi.testConnection();
+        updateConnectionStatus('connected');
+        console.log('구글 시트 연결 성공');
+    } catch (error) {
+        updateConnectionStatus('disconnected');
+        console.log('구글 시트 연결 실패, 오프라인 모드로 진행:', error.message);
+    }
+}
+
+function updateConnectionStatus(status) {
+    const indicator = document.getElementById('status-indicator');
+    const text = document.getElementById('status-text');
+    const syncBtn = document.getElementById('sync-btn');
+    
+    switch (status) {
+        case 'connected':
+            indicator.className = 'w-3 h-3 rounded-full bg-green-500';
+            text.textContent = '구글 시트 연결됨';
+            text.className = 'text-sm status-connected';
+            syncBtn.classList.remove('hidden');
+            break;
+        case 'disconnected':
+            indicator.className = 'w-3 h-3 rounded-full bg-red-500';
+            text.textContent = '오프라인 모드';
+            text.className = 'text-sm status-disconnected';
+            syncBtn.classList.add('hidden');
+            break;
+        case 'loading':
+            indicator.className = 'w-3 h-3 rounded-full bg-yellow-500 loading';
+            text.textContent = '연결 확인 중...';
+            text.className = 'text-sm status-loading';
+            syncBtn.classList.add('hidden');
+            break;
+    }
+}
+
+async function loadAllData() {
+    try {
+        // 각 시트에서 데이터 로드
+        const familyData = await gapi.loadData('family_members');
+        const readingData = await gapi.loadData('reading_records');
+        const badgesData = await gapi.loadData('badges');
+        const meditationsData = await gapi.loadData('meditations');
+        const prayersData = await gapi.loadData('prayers');
+        
+        // 데이터가 있으면 업데이트
+        if (familyData) db.family = familyData;
+        if (readingData) db.readRecords = readingData;
+        if (badgesData) db.badges = badgesData;
+        if (meditationsData) db.meditations = meditationsData;
+        if (prayersData) db.prayers = prayersData;
+        
+        console.log('데이터 로드 완료');
+    } catch (error) {
+        console.log('데이터 로드 실패, 기본 데이터 사용:', error);
+    }
+}
+
+async function saveAllData() {
+    try {
+        await gapi.saveData('family_members', db.family);
+        await gapi.saveData('reading_records', db.readRecords);
+        await gapi.saveData('badges', db.badges);
+        await gapi.saveData('meditations', db.meditations);
+        await gapi.saveData('prayers', db.prayers);
+        
+        console.log('데이터 저장 완료');
+    } catch (error) {
+        console.log('데이터 저장 실패:', error);
+    }
+}
 
 function initializeBadges() {
     // 뱃지 시스템 초기화
@@ -529,6 +798,11 @@ function checkBadges(userId, bookName = null, chapterNumber = null) {
         createConfetti();
     });
 
+    // 데이터 저장
+    if (newBadges.length > 0) {
+        saveAllData();
+    }
+
     return newBadges;
 }
 
@@ -619,6 +893,13 @@ function setupEventListeners() {
         document.getElementById('celebration-modal').classList.remove('flex');
     });
 
+    // 설정 모달 이벤트
+    document.getElementById('settings-btn').addEventListener('click', openSettingsModal);
+    document.getElementById('close-settings-modal').addEventListener('click', closeSettingsModal);
+    document.getElementById('test-connection').addEventListener('click', testConnection);
+    document.getElementById('save-settings').addEventListener('click', saveSettings);
+    document.getElementById('sync-btn').addEventListener('click', syncData);
+
     // 뱃지 탭 이벤트
     document.querySelectorAll('.badge-tab').forEach(tab => {
         tab.addEventListener('click', (e) => {
@@ -629,6 +910,67 @@ function setupEventListeners() {
             renderBadges(e.target.dataset.user);
         });
     });
+}
+
+function openSettingsModal() {
+    document.getElementById('settings-modal').classList.remove('hidden');
+    document.getElementById('settings-modal').classList.add('flex');
+    document.getElementById('script-url').value = gapi.scriptUrl;
+}
+
+function closeSettingsModal() {
+    document.getElementById('settings-modal').classList.add('hidden');
+    document.getElementById('settings-modal').classList.remove('flex');
+}
+
+async function testConnection() {
+    const url = document.getElementById('script-url').value;
+    if (!url) {
+        alert('URL을 입력해주세요.');
+        return;
+    }
+
+    gapi.scriptUrl = url;
+    updateConnectionStatus('loading');
+
+    try {
+        await gapi.testConnection();
+        updateConnectionStatus('connected');
+        alert('연결 성공!');
+    } catch (error) {
+        updateConnectionStatus('disconnected');
+        alert('연결 실패: ' + error.message);
+    }
+}
+
+function saveSettings() {
+    const url = document.getElementById('script-url').value;
+    if (!url) {
+        alert('URL을 입력해주세요.');
+        return;
+    }
+
+    localStorage.setItem('bible_script_url', url);
+    gapi.scriptUrl = url;
+    alert('설정이 저장되었습니다.');
+    closeSettingsModal();
+}
+
+async function syncData() {
+    updateConnectionStatus('loading');
+    
+    try {
+        const success = await gapi.syncData();
+        if (success) {
+            alert('동기화 완료!');
+            updateConnectionStatus('connected');
+        } else {
+            throw new Error('동기화 실패');
+        }
+    } catch (error) {
+        alert('동기화 실패: ' + error.message);
+        updateConnectionStatus('disconnected');
+    }
 }
 
 function openBadgesModal() {
@@ -719,32 +1061,42 @@ function renderBadges(userId = 'all') {
     }
 }
 
-function addMeditation() {
+async function addMeditation() {
     const userInput = document.getElementById('meditation-user');
     const textInput = document.getElementById('meditation-input');
     if (textInput.value.trim() === '') return;
 
-    db.meditations.push({
+    const newMeditation = {
         userId: userInput.value,
         date: new Date().toISOString().slice(0, 10),
         content: textInput.value.trim()
-    });
+    };
+
+    db.meditations.push(newMeditation);
     textInput.value = '';
     renderMeditations();
+    
+    // 데이터 저장
+    await saveAllData();
 }
 
-function addPrayer() {
+async function addPrayer() {
     const userInput = document.getElementById('prayer-user');
     const textInput = document.getElementById('prayer-input');
     if (textInput.value.trim() === '') return;
 
-    db.prayers.push({
+    const newPrayer = {
         userId: userInput.value,
         date: new Date().toISOString().slice(0, 10),
         content: textInput.value.trim()
-    });
+    };
+
+    db.prayers.push(newPrayer);
     textInput.value = '';
     renderPrayers();
+    
+    // 데이터 저장
+    await saveAllData();
 }
 
 // --- 모달 관련 기능 ---
@@ -829,7 +1181,7 @@ function updateModalForCurrentUser() {
     }
 }
 
-function toggleChapterRead(chapterNumber, buttonElement) {
+async function toggleChapterRead(chapterNumber, buttonElement) {
     if (!db.readRecords[currentUserForModal]) {
         db.readRecords[currentUserForModal] = {};
     }
@@ -857,6 +1209,9 @@ function toggleChapterRead(chapterNumber, buttonElement) {
     
     // 대시보드 진행률 업데이트
     renderFamilyDashboard();
+    
+    // 데이터 저장
+    await saveAllData();
 }
 
 function closeChapterModal() {
