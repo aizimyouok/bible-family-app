@@ -467,12 +467,7 @@ class EnhancedGoogleSheetsAPI {
         this.pendingChanges.push(change);
         this.savePendingChangesToLocal();
         this.updatePendingCounter();
-        
-        // 로컬 데이터 즉시 업데이트
-        this.applyChangeLocally(change);
-        
-        return changeId;
-    }
+
     
     // 로컬에 변경사항 즉시 적용
 applyChangeLocally(change) {
