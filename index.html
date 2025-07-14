@@ -864,9 +864,24 @@ document.addEventListener('DOMContentLoaded', async () => {
     // 2. 이벤트 리스너 설정
     setupEventListeners(); 
     
-    // 3. 메인 탭 리스너 설정 (DOM이 준비된 후)
+    // 3. 메인 탭 리스너 직접 설정
     setTimeout(() => {
-        setupMainTabListeners();
+        console.log('메인 탭 리스너 설정 중...'); // 디버깅용
+        
+        // 메인 탭 전환 이벤트 리스너
+        document.querySelectorAll('.main-tab').forEach((tab, index) => {
+            console.log(`탭 ${index} 설정:`, tab.getAttribute('data-tab')); // 디버깅용
+            
+            tab.addEventListener('click', (e) => {
+                e.preventDefault(); // 기본 동작 방지
+                const tabName = e.target.getAttribute('data-tab');
+                console.log('탭 클릭됨:', tabName); // 디버깅용
+                
+                if (tabName) {
+                    switchMainTab(tabName);
+                }
+            });
+        });
         
         // 4. 기본 탭을 첫 번째 탭으로 설정
         switchMainTab('main');
@@ -1448,6 +1463,40 @@ function updateModalForCurrentUser() {
 
 function closeChapterModal() { 
     document.getElementById('chapter-modal').classList.add('hidden'); 
+}
+
+// === 메인 탭 전환 기능 ===
+function switchMainTab(tabName) {
+    console.log('탭 전환:', tabName); // 디버깅용
+    
+    // 모든 탭 버튼의 활성 상태 제거
+    document.querySelectorAll('.main-tab').forEach(tab => {
+        tab.classList.remove('tab-active');
+    });
+    
+    // 모든 탭 콘텐츠 숨기기
+    document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.add('hidden');
+    });
+    
+    // 선택된 탭 활성화
+    const selectedTab = document.getElementById(`tab-${tabName}`);
+    const selectedContent = document.getElementById(`content-${tabName}`);
+    
+    if (selectedTab && selectedContent) {
+        selectedTab.classList.add('tab-active');
+        selectedContent.classList.remove('hidden');
+        console.log('탭 전환 완료:', tabName); // 디버깅용
+    } else {
+        console.error('탭 요소를 찾을 수 없음:', tabName); // 디버깅용
+    }
+    
+    // 통계 탭이 선택되었을 때 차트 업데이트
+    if (tabName === 'stats' && statisticsManager && statisticsManager.progressChart) {
+        setTimeout(() => {
+            statisticsManager.updateCharts();
+        }, 100);
+    }
 }
 
 // === 메인 탭 전환 기능 ===
