@@ -855,13 +855,24 @@ let currentUserForModal = null, currentBook = null, currentProgressUserId = null
 
 // === 메인 초기화 ===
 document.addEventListener('DOMContentLoaded', async () => { 
-    setupEventListeners(); 
+    console.log('DOM 로드 완료'); // 디버깅용
+    
+    // 1. 기본 설정 먼저
     renderWisdomVerse(); 
     renderBibleBooks(); 
     
-    // 기본 탭을 첫 번째 탭으로 설정
-    switchMainTab('main');
+    // 2. 이벤트 리스너 설정
+    setupEventListeners(); 
     
+    // 3. 메인 탭 리스너 설정 (DOM이 준비된 후)
+    setTimeout(() => {
+        setupMainTabListeners();
+        
+        // 4. 기본 탭을 첫 번째 탭으로 설정
+        switchMainTab('main');
+    }, 100); // 약간의 지연을 두어 DOM이 완전히 준비되도록
+    
+    // 5. 데이터 초기화
     await initializeApp();
 });
 
