@@ -341,24 +341,6 @@
                     </button>
                     <div id="backup-result" class="mt-2 p-2 bg-gray-100 rounded text-sm hidden"></div>
                 </div>
-                <!-- 🆕 날짜 마이그레이션 섹션 -->
-            <div class="border border-orange-200 rounded-lg p-4 bg-orange-50">
-                <h3 class="text-lg font-bold mb-2 text-orange-700">⏰ 날짜 마이그레이션</h3>
-                <p class="text-sm text-gray-600 mb-3">기존 읽기 기록에 날짜를 자동으로 추가합니다. 읽은 장 수에 따라 지난 며칠에 걸쳐 자연스럽게 분산 배치됩니다.</p>
-                <div class="bg-white/70 p-3 rounded mb-3 text-xs">
-                    <div class="font-semibold mb-1">📋 마이그레이션 방식:</div>
-                    <ul class="space-y-1 text-gray-600">
-                        <li>• 30장 읽었다면 → 30일 전부터 오늘까지 분산</li>
-                        <li>• 하루 최대 2-3장씩 자연스럽게 배치</li>
-                        <li>• 최근 날짜에 더 많은 가중치 부여</li>
-                        <li>• 기존 날짜가 있는 장은 그대로 유지</li>
-                    </ul>
-                </div>
-                <button id="migrate-dates-btn" class="px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600 mr-2">
-                    날짜 마이그레이션 실행
-                </button>
-                <div id="migration-result" class="mt-2 p-2 bg-gray-100 rounded text-sm hidden"></div>
-            </div>
                 
                 <!-- 데이터 정리 섹션 -->
                 <div class="border border-gray-200 rounded-lg p-4">
@@ -467,40 +449,44 @@ class EnhancedGoogleSheetsAPI {
         this.pendingChanges.push(change);
         this.savePendingChangesToLocal();
         this.updatePendingCounter();
-
-    
-    // 로컬에 변경사항 즉시 적용
-applyChangeLocally(change) {
-    const { type, userId, bookName, chapter, content, readDate } = change; // ⭐ readDate 추가됨
-    
-    if (type === 'reading') {
-        if (!db.readRecords[userId]) db.readRecords[userId] = {};
-        if (!db.readRecords[userId][bookName]) {
-            db.readRecords[userId][bookName] = {
-                chapters: [],
-                readDates: {},
-                startDate: null,
-                endDate: null
-            };
-        }
         
-        const bookData = db.readRecords[userId][bookName];
-        const readList = bookData.chapters;
-        const chapterIndex = readList.indexOf(chapter);
+        // 로컬 데이터 즉시 업데이트
+        this.applyChangeLocally(change);
         
-        if (change.action === 'delete' && chapterIndex > -1) {
-            readList.splice(chapterIndex, 1);
-            delete bookData.readDates[chapter];
-        } else if (change.action === 'save' && chapterIndex === -1) {
-            readList.push(chapter);
-            // ⭐ 이 줄이 새로 수정됨: 실제 날짜 저장
-            bookData.readDates[chapter] = readDate || new Date().toISOString().split('T')[0];
-        }
+        return changeId;
     }
     
-    // 로컬 스토리지에 저장
-    this.saveToLocalStorage();
-}
+    // 로컬에 변경사항 즉시 적용
+    applyChangeLocally(change) {
+        const { type, userId, bookName, chapter, content } = change;
+        
+        if (type === 'reading') {
+            if (!db.readRecords[userId]) db.readRecords[userId] = {};
+            if (!db.readRecords[userId][bookName]) {
+                db.readRecords[userId][bookName] = {
+                    chapters: [],
+                    readDates: {},
+                    startDate: null,
+                    endDate: null
+                };
+            }
+            
+            const bookData = db.readRecords[userId][bookName];
+            const readList = bookData.chapters;
+            const chapterIndex = readList.indexOf(chapter);
+            
+            if (change.action === 'delete' && chapterIndex > -1) {
+                readList.splice(chapterIndex, 1);
+                delete bookData.readDates[chapter];
+            } else if (change.action === 'save' && chapterIndex === -1) {
+                readList.push(chapter);
+                bookData.readDates[chapter] = new Date().toISOString().split('T')[0];
+            }
+        }
+        
+        // 로컬 스토리지에 저장
+        this.saveToLocalStorage();
+    }
     
     savePendingChangesToLocal() {
         localStorage.setItem('bible_pending_changes', JSON.stringify(this.pendingChanges));
@@ -670,12 +656,12 @@ applyChangeLocally(change) {
         return this._request('backup', { adminPassword });
     }
     
-    // 🆕 날짜 마이그레이션 메서드 추가
-    async migrateDates(adminPassword) {
-        return this._request('migrateDates', { adminPassword });
+    async runDiagnostics() {
+        return this._request('debug');
     }
+}
 
-// === 통계 차트 시스템 ===
+// === 수정된 통계 차트 시스템 (Chart.js 오류 해결) ===
 class StatisticsManager {
     constructor() {
         this.weeklyChart = null;
@@ -686,11 +672,18 @@ class StatisticsManager {
     }
     
     createWeeklyChart() {
-        const ctx = document.getElementById('weeklyChart').getContext('2d');
+        const ctx = document.getElementById('weeklyChart');
+        if (!ctx) return;
+        
+        // 기존 차트가 있으면 먼저 파괴
+        if (this.weeklyChart) {
+            this.weeklyChart.destroy();
+            this.weeklyChart = null;
+        }
         
         const data = this.getWeeklyData();
         
-        this.weeklyChart = new Chart(ctx, {
+        this.weeklyChart = new Chart(ctx.getContext('2d'), {
             type: 'line',
             data: {
                 labels: data.labels,
@@ -733,7 +726,7 @@ class StatisticsManager {
             days.push({
                 date: date,
                 label: date.toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' }),
-                dateStr: date.toISOString().split('T')[0] // YYYY-MM-DD 형식
+                dateStr: date.toISOString().split('T')[0]
             });
         }
         
@@ -741,11 +734,11 @@ class StatisticsManager {
             const colors = ['#8d6e63', '#1e8449', '#a0522d', '#3f51b5', '#e91e63', '#ff9800'];
             
             const data = days.map(day => {
-                // 실제 읽기 기록에서 해당 날짜에 읽은 장 수 계산
                 let chaptersReadOnDay = 0;
                 const userRecords = db.readRecords[member.id] || {};
                 
                 Object.values(userRecords).forEach(bookData => {
+                    // 새로운 데이터 구조에 맞게 수정
                     if (bookData && bookData.readDates) {
                         Object.values(bookData.readDates).forEach(readDate => {
                             if (readDate === day.dateStr) {
@@ -878,9 +871,9 @@ let statisticsManager = new StatisticsManager();
 let db = { family: [], readRecords: {}, badges: {}, meditations: [], prayers: [] };
 let currentUserForModal = null, currentBook = null, currentProgressUserId = null;
 
-// === 메인 초기화 ===
+// === 메인 초기화 (수정됨) ===
 document.addEventListener('DOMContentLoaded', async () => { 
-    console.log('DOM 로드 완료'); // 디버깅용
+    console.log('DOM 로드 완료');
     
     // 1. 기본 설정 먼저
     renderWisdomVerse(); 
@@ -889,28 +882,29 @@ document.addEventListener('DOMContentLoaded', async () => {
     // 2. 이벤트 리스너 설정
     setupEventListeners(); 
     
-    // 3. 메인 탭 리스너 직접 설정
+    // 3. 메인 탭 리스너 직접 설정 (개선됨)
     setTimeout(() => {
-        console.log('메인 탭 리스너 설정 중...'); // 디버깅용
+        console.log('메인 탭 리스너 설정 중...');
         
         // 메인 탭 전환 이벤트 리스너
         document.querySelectorAll('.main-tab').forEach((tab, index) => {
-            console.log(`탭 ${index} 설정:`, tab.getAttribute('data-tab')); // 디버깅용
+            const tabName = tab.getAttribute('data-tab');
+            console.log(`탭 ${index} 설정:`, tabName);
             
             tab.addEventListener('click', (e) => {
-                e.preventDefault(); // 기본 동작 방지
-                const tabName = e.target.getAttribute('data-tab');
-                console.log('탭 클릭됨:', tabName); // 디버깅용
+                e.preventDefault();
+                const clickedTabName = e.currentTarget.getAttribute('data-tab'); // currentTarget 사용
+                console.log('탭 클릭됨:', clickedTabName);
                 
-                if (tabName) {
-                    switchMainTab(tabName);
+                if (clickedTabName) {
+                    switchMainTab(clickedTabName);
                 }
             });
         });
         
         // 4. 기본 탭을 첫 번째 탭으로 설정
         switchMainTab('main');
-    }, 100); // 약간의 지연을 두어 DOM이 완전히 준비되도록
+    }, 100);
     
     // 5. 데이터 초기화
     await initializeApp();
@@ -1020,7 +1014,7 @@ function updateConnectionStatus(status) {
     } 
 }
 
-// === 향상된 리더보드 (애니메이션 추가) ===
+// === 수정된 리더보드 렌더링 함수 ===
 function renderLeaderboard() {
     const board = document.getElementById('leaderboard');
     if (!db.family || db.family.length < 1) { 
@@ -1029,7 +1023,18 @@ function renderLeaderboard() {
     }
 
     const rankedUsers = db.family.map(member => {
-        const chaptersRead = Object.values(db.readRecords[member.id] || {}).reduce((sum, chapters) => sum + chapters.length, 0);
+        const userRecords = db.readRecords[member.id] || {};
+        const chaptersRead = Object.values(userRecords).reduce((sum, bookData) => {
+            // 새로운 데이터 구조에 맞게 수정
+            if (bookData && bookData.chapters && Array.isArray(bookData.chapters)) {
+                return sum + bookData.chapters.length;
+            }
+            // 이전 구조 호환성
+            if (Array.isArray(bookData)) {
+                return sum + bookData.length;
+            }
+            return sum;
+        }, 0);
         return { ...member, chaptersRead };
     }).sort((a, b) => b.chaptersRead - a.chaptersRead);
 
@@ -1077,7 +1082,7 @@ function renderLeaderboard() {
     board.innerHTML = `<div class="p-4 accent-bg rounded-lg flex flex-col md:flex-row items-center justify-center md:gap-8 lg:gap-16 slide-in">${winnersHTML}${othersHTML}</div>`;
 }
 
-// === 기존 함수들 (수정 없음) ===
+// === 수정된 가족 대시보드 렌더링 함수 ===
 function renderFamilyDashboard() { 
     const dashboard = document.getElementById('family-dashboard'); 
     dashboard.innerHTML = ''; 
@@ -1086,14 +1091,33 @@ function renderFamilyDashboard() {
     
     db.family.forEach(member => { 
         const userRecords = db.readRecords[member.id] || {}; 
+        
         const otRead = BIBLE_BOOKS.old.reduce((sum, book) => {
             const bookData = userRecords[book.name];
-            return sum + (bookData?.chapters?.length || 0);
-        }, 0); 
+            // 새로운 데이터 구조에 맞게 수정
+            if (bookData && bookData.chapters && Array.isArray(bookData.chapters)) {
+                return sum + bookData.chapters.length;
+            }
+            // 이전 구조 호환성
+            if (Array.isArray(bookData)) {
+                return sum + bookData.length;
+            }
+            return sum;
+        }, 0);
+        
         const ntRead = BIBLE_BOOKS.new.reduce((sum, book) => {
             const bookData = userRecords[book.name];
-            return sum + (bookData?.chapters?.length || 0);
-        }, 0); 
+            // 새로운 데이터 구조에 맞게 수정
+            if (bookData && bookData.chapters && Array.isArray(bookData.chapters)) {
+                return sum + bookData.chapters.length;
+            }
+            // 이전 구조 호환성
+            if (Array.isArray(bookData)) {
+                return sum + bookData.length;
+            }
+            return sum;
+        }, 0);
+        
         const totalRead = otRead + ntRead; 
         const totalChapters = TOTAL_OT_CHAPTERS + TOTAL_NT_CHAPTERS; 
         
@@ -1106,7 +1130,7 @@ function renderFamilyDashboard() {
 }
 
 function renderWisdomVerse() { 
-    const verses = [ "자녀들아 주 안에서 너희 부모에게 순종하라 이것이 옳으니라 (에베소서 6:1)","여호와는 나의 목자시니 내게 부족함이 없으리로다 (시편 23:1)","주 너의 하나님을 사랑하고 또한 네 이웃을 네 자신 같이 사랑하라 (마태복음 22:37-39)","항상 기뻐하라 쉬지 말고 기도하라 범사에 감사하라 (데살로니가전서 5:16-18)","수고하고 무거운 짐 진 자들아 다 내게로 오라 내가 너희를 쉬게 하리라 (마태복음 11:28)","두려워하지 말라 내가 너와 함께 함이라 놀라지 말라 나는 네 하나님이 됨이라 (이사야 41:10)","사람이 마음으로 자기의 길을 계획할지라도 그의 걸음을 인도하시는 이는 여호와시니라 (잠언 16:9)","그런즉 너희는 먼저 그의 나라와 그의 의를 구하라 그리하면 이 모든 것을 너희에게 더하시리라 (마태복음 6:33)","내게 능력 주시는 자 안에서 내가 모든 것을 할 수 있느니라 (빌립보서 4:13)","내가 너희에게 분부한 모든 것을 가르쳐 지키게 하라 볼지어다 내가 세상 끝날까지 너희와 항상 함께 있으리라 (마태복음 28:20)","사랑은 오래 참고 사랑은 온유하며 시기하지 아니하며 (고린도전서 13:4)","하나님이 세상을 이처럼 사랑하사 독생자를 주셨으니 이는 그를 믿는 자마다 멸망하지 않고 영생을 얻게 하려 하심이라 (요한복음 3:16)","그런즉 너희가 먹든지 마시든지 무엇을 하든지 다 하나님의 영광을 위하여 하라 (고린도전서 10:31)" ]; 
+    const verses = [ "자녀들아 주 안에서 너희 부모에게 순종하라 이것이 옳으니라 (에베소서 6:1)","여호와는 나의 목자시니 내게 부족함이 없으리로다 (시편 23:1)","주 너의 하나님을 사랑하고 또한 네 이웃을 네 자신 같이 사랑하라 (마태복음 22:37-39)","항상 기뻐하라 쉬지 말고 기도하라 범사에 감사하라 (데살로니가전서 5:16-18)","수고하고 무거운 짐 진 자들아 다 내게로 오라 내가 너희를 쉬게 하리라 (마태복음 11:28)","두려워하지 말라 내가 너와 함께 함이라 놀라지 말라 나는 네 하나님이 됨이라 (이사야 41:10)","사람이 마음으로 자기의 길을 계획할지라도 그의 걸음을 인도하시는 이는 여호와시니라 (잠언 16:9)","그런즉 너희는 먼저 그의 나라와 그의 의를 구하라 그리하면 이 모든 것을 너희에게 더하시리라 (마태복음 6:33)","내게 능력 주시는 자 안에서 내가 모든 것을 할 수 있느니라 (빌립보서 4:13)","내가 너희에게 분부한 모든 것을 가르쳐 지키게 하라 볼지어다 내가 세상 끝날까지 너희와 항상 함께 있으리라 (마태복음 28:20)","사랑은 오래 참고 사랑은 온유하며 시기하지 아니하며 (고린도전서 13:4)","하나님이 세상을 이처럼 사랑하사 독생자를 주셨으니 이는 그을 믿는 자마다 멸망하지 않고 영생을 얻게 하려 하심이라 (요한복음 3:16)","그런즉 너희가 먹든지 마시든지 무엇을 하든지 다 하나님의 영광을 위하여 하라 (고린도전서 10:31)" ]; 
     document.getElementById('wisdom-verse').textContent = verses[Math.floor(Math.random() * verses.length)]; 
 }
 
@@ -1145,7 +1169,7 @@ function populateUserDropdowns() {
     }); 
 }
 
-// === 향상된 이벤트 리스너 ===
+// === 수정된 이벤트 리스너 설정 (탭 클릭 null 오류 해결) ===
 function setupEventListeners() { 
     document.getElementById('theme-select').addEventListener('change', (e) => { 
         document.body.className = e.target.value; 
@@ -1177,7 +1201,7 @@ function setupEventListeners() {
     document.getElementById('backup-btn').addEventListener('click', handleBackup);
     document.getElementById('cleanup-btn').addEventListener('click', handleCleanup);
     document.getElementById('analyze-btn').addEventListener('click', handleAnalyze);
-    document.getElementById('migrate-dates-btn').addEventListener('click', handleDateMigration);
+    document.getElementById('diagnostic-btn').addEventListener('click', handleDiagnostic);
     
     // ESC 키로 모달 닫기
     document.addEventListener('keydown', (e) => {
@@ -1363,6 +1387,7 @@ function openProgressModal(userId) {
     document.getElementById('progress-modal').classList.remove('hidden'); 
 }
 
+// === 수정된 장 채우기 함수 ===
 function populateChaptersForBook(event) { 
     const detail = event.currentTarget.parentElement; 
     const grid = detail.querySelector('.chapter-grid'); 
@@ -1374,7 +1399,18 @@ function populateChaptersForBook(event) {
     
     const bookName = detail.dataset.bookName; 
     const book = [...BIBLE_BOOKS.old, ...BIBLE_BOOKS.new].find(b => b.name === bookName); 
-    const userRecordsForBook = (db.readRecords[currentProgressUserId]?.[bookName]) || []; 
+    
+    const userRecords = db.readRecords[currentProgressUserId] || {};
+    const bookData = userRecords[bookName];
+    
+    // 새로운 데이터 구조에 맞게 수정
+    let userRecordsForBook = [];
+    if (bookData && bookData.chapters && Array.isArray(bookData.chapters)) {
+        userRecordsForBook = bookData.chapters;
+    } else if (Array.isArray(bookData)) {
+        // 이전 구조 호환성
+        userRecordsForBook = bookData;
+    }
     
     for (let i = 1; i <= book.chapters; i++) { 
         const btn = document.createElement('button'); 
@@ -1388,11 +1424,24 @@ function populateChaptersForBook(event) {
     } 
 }
 
+// === 수정된 진행현황 모달 업데이트 함수 ===
 function updateProgressInModal(detailElement, userId) { 
     const summary = detailElement.querySelector('summary'); 
     const bookName = detailElement.dataset.bookName; 
     const book = [...BIBLE_BOOKS.old, ...BIBLE_BOOKS.new].find(b => b.name === bookName); 
-    const readChapters = (db.readRecords[userId]?.[bookName]) || []; 
+    
+    const userRecords = db.readRecords[userId] || {};
+    const bookData = userRecords[bookName];
+    
+    // 새로운 데이터 구조에 맞게 수정
+    let readChapters = [];
+    if (bookData && bookData.chapters && Array.isArray(bookData.chapters)) {
+        readChapters = bookData.chapters;
+    } else if (Array.isArray(bookData)) {
+        // 이전 구조 호환성
+        readChapters = bookData;
+    }
+    
     const progress = book.chapters > 0 ? (readChapters.length / book.chapters) * 100 : 0; 
     const isReading = readChapters.length > 0; 
     
@@ -1428,11 +1477,10 @@ function switchProgressTab(tab) {
     } 
 }
 
-// === 향상된 장 읽기 토글 (애니메이션 추가) ===
+// === 수정된 장 읽기 토글 함수 ===
 function toggleChapterRead(chapterNumber, buttonElement, context) { 
     const userId = context.userId; 
     const bookName = context.bookName; 
-    const currentDate = new Date().toISOString().split('T')[0]; // ⭐ 이 줄이 새로 추가됨
     
     if (!db.readRecords[userId]) db.readRecords[userId] = {}; 
     if (!db.readRecords[userId][bookName]) {
@@ -1456,15 +1504,7 @@ function toggleChapterRead(chapterNumber, buttonElement, context) {
     
     const readList = bookData.chapters;
     const chapterIndex = readList.indexOf(chapterNumber); 
-    
-    // ⭐ 이 부분이 새로 수정됨: 날짜 정보 포함
-    const params = { 
-        type: 'reading', 
-        userId, 
-        bookName, 
-        chapter: chapterNumber,
-        readDate: currentDate  // 🆕 이 줄이 새로 추가됨
-    }; 
+    const params = { type: 'reading', userId, bookName, chapter: chapterNumber }; 
     
     // 애니메이션 효과 추가
     if (chapterIndex > -1) { 
@@ -1473,7 +1513,7 @@ function toggleChapterRead(chapterNumber, buttonElement, context) {
         buttonElement.className = 'p-2 rounded border transition-colors duration-200 chapter-btn-animate bg-white hover:bg-green-100'; 
     } else { 
         readList.push(chapterNumber); 
-        bookData.readDates[chapterNumber] = currentDate; // 오늘 날짜 추가
+        bookData.readDates[chapterNumber] = new Date().toISOString().split('T')[0]; // 오늘 날짜 추가
         buttonElement.className = 'p-2 rounded border transition-colors duration-200 chapter-btn-animate bg-green-500 text-white border-green-500 checked'; 
         
         // 체크 애니메이션 제거
@@ -1505,11 +1545,22 @@ function openChapterModal(book) {
     document.getElementById('chapter-modal').classList.remove('hidden'); 
 }
 
+// === 수정된 모달 업데이트 함수 ===
 function updateModalForCurrentUser() { 
     const modalChapters = document.getElementById('modal-chapters'); 
     modalChapters.innerHTML = ''; 
     
-    const userRecordsForBook = (db.readRecords[currentUserForModal]?.[currentBook.name]) || []; 
+    const userRecords = db.readRecords[currentUserForModal] || {};
+    const bookData = userRecords[currentBook.name];
+    
+    // 새로운 데이터 구조에 맞게 수정
+    let userRecordsForBook = [];
+    if (bookData && bookData.chapters && Array.isArray(bookData.chapters)) {
+        userRecordsForBook = bookData.chapters;
+    } else if (Array.isArray(bookData)) {
+        // 이전 구조 호환성
+        userRecordsForBook = bookData;
+    }
     
     for (let i = 1; i <= currentBook.chapters; i++) { 
         const btn = document.createElement('button'); 
@@ -1524,9 +1575,14 @@ function closeChapterModal() {
     document.getElementById('chapter-modal').classList.add('hidden'); 
 }
 
-// === 메인 탭 전환 기능 ===
+// === 수정된 메인 탭 전환 기능 (null 오류 해결) ===
 function switchMainTab(tabName) {
-    console.log('탭 전환:', tabName); // 디버깅용
+    console.log('탭 전환:', tabName);
+    
+    if (!tabName) {
+        console.error('탭 이름이 null입니다.');
+        return;
+    }
     
     // 모든 탭 버튼의 활성 상태 제거
     document.querySelectorAll('.main-tab').forEach(tab => {
@@ -1545,37 +1601,13 @@ function switchMainTab(tabName) {
     if (selectedTab && selectedContent) {
         selectedTab.classList.add('tab-active');
         selectedContent.classList.remove('hidden');
-        console.log('탭 전환 완료:', tabName); // 디버깅용
+        console.log('탭 전환 완료:', tabName);
     } else {
-        console.error('탭 요소를 찾을 수 없음:', tabName); // 디버깅용
+        console.error('탭 요소를 찾을 수 없음:', tabName);
     }
     
     // 통계 탭이 선택되었을 때 차트 업데이트
     if (tabName === 'stats' && statisticsManager && statisticsManager.weeklyChart) {
-        setTimeout(() => {
-            statisticsManager.updateCharts();
-        }, 100);
-    }
-}
-
-// === 메인 탭 전환 기능 ===
-function switchMainTab(tabName) {
-    // 모든 탭 버튼의 활성 상태 제거
-    document.querySelectorAll('.main-tab').forEach(tab => {
-        tab.classList.remove('tab-active');
-    });
-    
-    // 모든 탭 콘텐츠 숨기기
-    document.querySelectorAll('.tab-content').forEach(content => {
-        content.classList.add('hidden');
-    });
-    
-    // 선택된 탭 활성화
-    document.getElementById(`tab-${tabName}`).classList.add('tab-active');
-    document.getElementById(`content-${tabName}`).classList.remove('hidden');
-    
-    // 통계 탭이 선택되었을 때 차트 업데이트
-    if (tabName === 'stats' && statisticsManager.progressChart) {
         setTimeout(() => {
             statisticsManager.updateCharts();
         }, 100);
@@ -1600,34 +1632,40 @@ function renderDetailedProgress() {
         let recentBooks = [];
         
         Object.entries(userRecords).forEach(([bookName, bookData]) => {
-            if (bookData && bookData.chapters) {
-                totalRead += bookData.chapters.length;
+            // 새로운 데이터 구조에 맞게 수정
+            let chapters = [];
+            if (bookData && bookData.chapters && Array.isArray(bookData.chapters)) {
+                chapters = bookData.chapters;
+            } else if (Array.isArray(bookData)) {
+                chapters = bookData;
+            }
+            
+            totalRead += chapters.length;
+            
+            // 완독한 책 확인
+            const book = [...BIBLE_BOOKS.old, ...BIBLE_BOOKS.new].find(b => b.name === bookName);
+            if (book && chapters.length === book.chapters) {
+                completedBooks.push({
+                    name: bookName,
+                    endDate: bookData.endDate,
+                    chapters: book.chapters
+                });
+            }
+            
+            // 최근에 읽은 책들 (7일 이내)
+            if (bookData && bookData.readDates) {
+                const recentReads = Object.entries(bookData.readDates).filter(([chapter, date]) => {
+                    const readDate = new Date(date);
+                    const weekAgo = new Date();
+                    weekAgo.setDate(weekAgo.getDate() - 7);
+                    return readDate >= weekAgo;
+                });
                 
-                // 완독한 책 확인
-                const book = [...BIBLE_BOOKS.old, ...BIBLE_BOOKS.new].find(b => b.name === bookName);
-                if (book && bookData.chapters.length === book.chapters) {
-                    completedBooks.push({
+                if (recentReads.length > 0) {
+                    recentBooks.push({
                         name: bookName,
-                        endDate: bookData.endDate,
-                        chapters: book.chapters
+                        recentChapters: recentReads.length
                     });
-                }
-                
-                // 최근에 읽은 책들 (7일 이내)
-                if (bookData.readDates) {
-                    const recentReads = Object.entries(bookData.readDates).filter(([chapter, date]) => {
-                        const readDate = new Date(date);
-                        const weekAgo = new Date();
-                        weekAgo.setDate(weekAgo.getDate() - 7);
-                        return readDate >= weekAgo;
-                    });
-                    
-                    if (recentReads.length > 0) {
-                        recentBooks.push({
-                            name: bookName,
-                            recentChapters: recentReads.length
-                        });
-                    }
                 }
             }
         });
@@ -1720,7 +1758,7 @@ function renderDetailedProgress() {
     });
 }
 
-// === 개인별 최근 7일 읽기 데이터 생성 ===
+// === 수정된 최근 7일 읽기 데이터 생성 함수 ===
 function getWeeklyReadingData(userId) {
     const weeklyData = [];
     const userRecords = db.readRecords[userId] || {};
@@ -1732,6 +1770,7 @@ function getWeeklyReadingData(userId) {
         
         let chaptersReadOnDay = 0;
         Object.values(userRecords).forEach(bookData => {
+            // 새로운 데이터 구조에 맞게 수정
             if (bookData && bookData.readDates) {
                 Object.values(bookData.readDates).forEach(readDate => {
                     if (readDate === dateStr) {
@@ -1860,7 +1899,17 @@ function findCommonReadBooks() {
         let readByAll = true;
         db.family.forEach(member => {
             const userRecords = db.readRecords[member.id] || {};
-            if (!userRecords[bookName] || !userRecords[bookName].chapters || userRecords[bookName].chapters.length === 0) {
+            const bookData = userRecords[bookName];
+            
+            // 새로운 데이터 구조에 맞게 수정
+            let hasChapters = false;
+            if (bookData && bookData.chapters && Array.isArray(bookData.chapters)) {
+                hasChapters = bookData.chapters.length > 0;
+            } else if (Array.isArray(bookData)) {
+                hasChapters = bookData.length > 0;
+            }
+            
+            if (!hasChapters) {
                 readByAll = false;
             }
         });
@@ -2222,61 +2271,6 @@ async function handleDiagnostic() {
     } finally {
         btn.disabled = false;
         btn.textContent = '진단 실행';
-    }
-}
-    // === 날짜 마이그레이션 핸들러 함수 ===
-async function handleDateMigration() {
-    if (!isAdminAuthenticated) {
-        alert('관리자 인증이 필요합니다.');
-        return;
-    }
-    
-    if (!confirm('⏰ 기존 읽기 기록에 날짜를 자동으로 추가합니다.\n\n📋 마이그레이션 방식:\n• 읽은 장 수에 따라 지난 며칠에 걸쳐 분산 배치\n• 예: 30장 읽었다면 → 30일 전부터 오늘까지\n• 하루 최대 2-3장씩 자연스럽게 분배\n• 기존 날짜가 있는 장은 그대로 유지\n\n이 작업은 되돌릴 수 없습니다.\n계속하시겠습니까?')) {
-        return;
-    }
-    
-    const btn = document.getElementById('migrate-dates-btn');
-    const result = document.getElementById('migration-result');
-    
-    btn.disabled = true;
-    btn.textContent = '마이그레이션 중...';
-    result.classList.remove('hidden');
-    result.textContent = '날짜 데이터 마이그레이션 중... 잠시만 기다려주세요.';
-    result.className = 'mt-2 p-2 bg-blue-100 rounded text-sm';
-    
-    try {
-        const response = await gapi.migrateDates(currentAdminPassword);
-        
-        result.innerHTML = `
-            <div class="flex items-center gap-2">
-                <span class="text-green-600">✅</span>
-                <span>${response.message}</span>
-            </div>
-            <div class="text-xs text-gray-600 mt-1">
-                이제 "최근 7일 읽기" 차트에 데이터가 표시됩니다. 페이지를 새로고침하여 확인하세요.
-            </div>
-        `;
-        result.className = 'mt-2 p-2 bg-green-100 rounded text-sm';
-        
-        // 데이터 다시 로드
-        setTimeout(() => {
-            initializeApp();
-        }, 2000);
-        
-    } catch (error) {
-        result.innerHTML = `
-            <div class="flex items-center gap-2">
-                <span class="text-red-600">❌</span>
-                <span>마이그레이션 실패: ${error.message}</span>
-            </div>
-            <div class="text-xs text-gray-600 mt-1">
-                문제가 지속되면 진단 기능을 실행해보세요.
-            </div>
-        `;
-        result.className = 'mt-2 p-2 bg-red-100 rounded text-sm';
-    } finally {
-        btn.disabled = false;
-        btn.textContent = '날짜 마이그레이션 실행';
     }
 }
 </script>
