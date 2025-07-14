@@ -267,58 +267,27 @@
 
             <!-- 세번째 탭: 통계와 현황 -->
             <div id="content-stats" class="tab-content hidden">
-                <!-- 읽기 통계 차트 -->
+                <!-- 최근 7일 읽기 추이 -->
                 <section id="statistics-section" class="mb-8 accent-bg rounded-lg p-4">
-                    <h3 class="text-xl font-bold mb-4 accent-text text-center">📊 읽기 통계</h3>
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                        <div class="chart-container">
-                            <canvas id="progressChart"></canvas>
-                        </div>
-                        <div class="chart-container">
-                            <canvas id="weeklyChart"></canvas>
-                        </div>
+                    <h3 class="text-xl font-bold mb-4 accent-text text-center">📈 최근 7일 읽기 추이</h3>
+                    <div class="chart-container">
+                        <canvas id="weeklyChart"></canvas>
                     </div>
                 </section>
 
                 <!-- 개인별 상세 진행 현황 -->
                 <section class="mb-8">
-                    <h3 class="text-xl font-bold mb-4 accent-text text-center">👥 개인별 진행 현황</h3>
-                    <div id="detailed-progress" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+                    <h3 class="text-xl font-bold mb-4 accent-text text-center">👥 개인별 상세 진행 현황</h3>
+                    <div id="detailed-progress" class="grid grid-cols-1 gap-6"></div>
                 </section>
 
-                <!-- 뱃지 시스템 (향후 기능) -->
-                <section class="mb-8 accent-bg rounded-lg p-4">
-                    <h3 class="text-xl font-bold mb-4 accent-text text-center">🏆 뱃지 및 성취</h3>
-                    <div class="text-center p-8 text-gray-500">
-                        <div class="text-4xl mb-4">🚧</div>
-                        <p class="text-lg">곧 추가될 예정입니다!</p>
-                        <p class="text-sm mt-2">첫 완독, 연속 읽기, 가족 1등 등의 뱃지 시스템이 준비 중입니다.</p>
-                    </div>
-                </section>
-
-                <!-- 읽기 패턴 분석 -->
+                <!-- 가족 대화 주제 (AI 기능) -->
                 <section class="accent-bg rounded-lg p-4">
-                    <h3 class="text-lg font-bold mb-3 accent-text">📈 읽기 패턴 분석</h3>
-                    <div id="reading-patterns" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
-                        <div class="bg-white/50 p-3 rounded text-center">
-                            <div class="text-2xl mb-2">📅</div>
-                            <div class="font-semibold">이번 주</div>
-                            <div id="this-week-count" class="text-lg font-bold accent-text">-</div>
-                        </div>
-                        <div class="bg-white/50 p-3 rounded text-center">
-                            <div class="text-2xl mb-2">🔥</div>
-                            <div class="font-semibold">연속 읽기</div>
-                            <div id="streak-count" class="text-lg font-bold accent-text">-</div>
-                        </div>
-                        <div class="bg-white/50 p-3 rounded text-center">
-                            <div class="text-2xl mb-2">⭐</div>
-                            <div class="font-semibold">즐겨 읽는 책</div>
-                            <div id="favorite-book" class="text-sm font-bold accent-text">-</div>
-                        </div>
-                        <div class="bg-white/50 p-3 rounded text-center">
-                            <div class="text-2xl mb-2">🎯</div>
-                            <div class="font-semibold">완독한 책</div>
-                            <div id="completed-books" class="text-lg font-bold accent-text">-</div>
+                    <h3 class="text-lg font-bold mb-3 accent-text">💬 오늘의 가족 대화 주제</h3>
+                    <div id="family-discussion-topic" class="bg-white/50 p-4 rounded-lg">
+                        <div class="text-center text-gray-500">
+                            <div class="text-4xl mb-2">🤔</div>
+                            <p>공통으로 읽은 말씀을 분석하여 대화 주제를 생성합니다...</p>
                         </div>
                     </div>
                 </section>
@@ -407,7 +376,7 @@
 <script>
 // === 기본 설정 ===
 const API_CONFIG = {
-    scriptUrl: 'https://script.google.com/macros/s/AKfycbxooisK7BCbkhwlCg7O0zpdrFw7-RXSVt0IDnCFNrXaj-QLBi6GkZoC4r073dtqGWJw2g/exec',
+    scriptUrl: 'https://script.google.com/macros/s/AKfycbzvPb4jXaUv01A7RoDggvRoyccLJoFSq-jsKCyQ4tL2bfHAsKqDDR0Jy7gRPNjeMsVjpA/exec',
     apiKey: 'bible_family_default',
     enableSecurity: false // 가족용이므로 보안 기능 비활성화
 };
@@ -685,57 +654,11 @@ class EnhancedGoogleSheetsAPI {
 // === 통계 차트 시스템 ===
 class StatisticsManager {
     constructor() {
-        this.progressChart = null;
         this.weeklyChart = null;
     }
     
     initCharts() {
-        this.createProgressChart();
         this.createWeeklyChart();
-    }
-    
-    createProgressChart() {
-        const ctx = document.getElementById('progressChart').getContext('2d');
-        
-        const data = this.getProgressData();
-        
-        this.progressChart = new Chart(ctx, {
-            type: 'doughnut',
-            data: {
-                labels: data.labels,
-                datasets: [{
-                    data: data.values,
-                    backgroundColor: [
-                        '#8d6e63',
-                        '#1e8449', 
-                        '#a0522d',
-                        '#3f51b5',
-                        '#e91e63',
-                        '#ff9800'
-                    ],
-                    borderWidth: 2,
-                    borderColor: '#fff'
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    title: {
-                        display: true,
-                        text: '가족별 읽기 진도',
-                        font: { size: 16, weight: 'bold' }
-                    },
-                    legend: {
-                        position: 'bottom'
-                    }
-                },
-                animation: {
-                    animateScale: true,
-                    duration: 1000
-                }
-            }
-        });
     }
     
     createWeeklyChart() {
@@ -775,21 +698,6 @@ class StatisticsManager {
         });
     }
     
-    getProgressData() {
-        const labels = [];
-        const values = [];
-        
-        db.family.forEach(member => {
-            const totalRead = Object.values(db.readRecords[member.id] || {})
-                .reduce((sum, chapters) => sum + chapters.length, 0);
-            
-            labels.push(member.name);
-            values.push(totalRead);
-        });
-        
-        return { labels, values };
-    }
-    
     getWeeklyData() {
         const days = [];
         const today = new Date();
@@ -800,7 +708,8 @@ class StatisticsManager {
             date.setDate(date.getDate() - i);
             days.push({
                 date: date,
-                label: date.toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })
+                label: date.toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' }),
+                dateStr: date.toISOString().split('T')[0] // YYYY-MM-DD 형식
             });
         }
         
@@ -808,9 +717,21 @@ class StatisticsManager {
             const colors = ['#8d6e63', '#1e8449', '#a0522d', '#3f51b5', '#e91e63', '#ff9800'];
             
             const data = days.map(day => {
-                // 실제로는 일별 읽기 기록이 필요하지만, 
-                // 현재는 임시로 랜덤 데이터 사용 (실제 구현시 날짜별 읽기 기록 필요)
-                return Math.floor(Math.random() * 5);
+                // 실제 읽기 기록에서 해당 날짜에 읽은 장 수 계산
+                let chaptersReadOnDay = 0;
+                const userRecords = db.readRecords[member.id] || {};
+                
+                Object.values(userRecords).forEach(bookData => {
+                    if (bookData && bookData.readDates) {
+                        Object.values(bookData.readDates).forEach(readDate => {
+                            if (readDate === day.dateStr) {
+                                chaptersReadOnDay++;
+                            }
+                        });
+                    }
+                });
+                
+                return chaptersReadOnDay;
             });
             
             return {
@@ -830,13 +751,6 @@ class StatisticsManager {
     }
     
     updateCharts() {
-        if (this.progressChart) {
-            const data = this.getProgressData();
-            this.progressChart.data.labels = data.labels;
-            this.progressChart.data.datasets[0].data = data.values;
-            this.progressChart.update('active');
-        }
-        
         if (this.weeklyChart) {
             const data = this.getWeeklyData();
             this.weeklyChart.data.datasets = data.datasets;
@@ -850,6 +764,89 @@ const BIBLE_BOOKS = { old: [ { name: '창세기', chapters: 50 }, { name: '출�
 
 const TOTAL_OT_CHAPTERS = BIBLE_BOOKS.old.reduce((s, b) => s + b.chapters, 0);
 const TOTAL_NT_CHAPTERS = BIBLE_BOOKS.new.reduce((s, b) => s + b.chapters, 0);
+
+// === AI 기능을 위한 데이터베이스 ===
+const BIBLE_TOPICS = {
+    "창세기": {
+        themes: ["창조", "믿음", "언약", "시작"],
+        questions: {
+            어린이: "하나님이 만드신 것 중에 가장 좋아하는 것은 무엇인가요?",
+            청소년: "하나님이 나를 특별하게 만드신 이유는 무엇일까요?",
+            성인: "창조 질서를 회복하기 위해 우리 가족이 할 수 있는 일은?"
+        }
+    },
+    "출애굽기": {
+        themes: ["해방", "인도하심", "자유", "순종"],
+        questions: {
+            어린이: "모세처럼 하나님이 나를 도와주신 경험이 있나요?",
+            청소년: "어려운 상황에서 하나님의 도우심을 경험해봤나요?",
+            성인: "우리 가족이 벗어나야 할 '이집트'는 무엇일까요?"
+        }
+    },
+    "시편": {
+        themes: ["찬양", "기도", "위로", "감사"],
+        questions: {
+            어린이: "하나님께 감사한 일을 세 가지 말해보세요",
+            청소년: "힘들 때 하나님께 어떻게 기도하나요?",
+            성인: "가족이 함께 하나님을 찬양할 수 있는 방법은?"
+        }
+    },
+    "마태복음": {
+        themes: ["예수님", "사랑", "섬김", "제자도"],
+        questions: {
+            어린이: "예수님처럼 친구를 도와준 경험이 있나요?",
+            청소년: "예수님의 제자가 된다는 것은 무슨 의미일까요?",
+            성인: "우리 가족이 예수님을 닮아가는 모습은?"
+        }
+    },
+    "사무엘상": {
+        themes: ["용기", "믿음", "승리", "선택"],
+        questions: {
+            어린이: "다윗처럼 용기를 내야 할 때는 언제인가요?",
+            청소년: "나만의 '골리앗'과 어떻게 싸우고 있나요?",
+            성인: "가족이 함께 이겨내야 할 도전은 무엇인가요?"
+        }
+    }
+};
+
+const ENCOURAGEMENT_MESSAGES = {
+    앞서는경우: [
+        "바울처럼 푯대를 향해 달려가고 계시네요! '나는 선한 싸움을 싸우고 달려갈 길을 마치고 믿음을 지켰노라' 🏃‍♂️",
+        "에스라처럼 말씀을 사모하는 마음이 아름다워요! '에스라가 여호와의 율법을 연구하여 준행하며' ✨",
+        "여호수아처럼 담대하게 나아가고 계세요! '강하고 담대하라 두려워하지 말며 놀라지 말라' 💪"
+    ],
+    보통진도: [
+        "아브라함처럼 꾸준히 걸어가고 계시네요! '믿음으로 아브라함은... 갈 바를 알지 못하고 나아갔느니라' 👣",
+        "마리아처럼 말씀을 마음에 새기고 계세요! '마리아는 이 모든 말을 마음에 새기어 생각하니라' 💭",
+        "베뢰아 사람들처럼 간절한 마음으로 성경을 상고하고 계세요! 🔍"
+    ],
+    뒤처지는경우: [
+        "괜찮아요! 베드로도 넘어졌지만 다시 일어났어요. '일곱 번 넘어져도 여덟 번 일어나라' 🌅",
+        "모세도 처음엔 주저했어요. 하나님이 함께 하시니 천천히 시작해봐요! '내가 너와 함께 하리라' 🤝",
+        "다윗도 때로는 낙심했지만 하나님 안에서 힘을 얻었어요. 포기하지 마세요! 💝"
+    ],
+    완독축하: [
+        "와! {bookName}을 완독하셨네요! 🎉 바울처럼 '선한 싸움을 싸우고 달려갈 길을 마쳤습니다!'",
+        "{bookName} 완독을 축하드려요! 🎊 에스라처럼 '말씀을 연구하여 준행하는' 모습이 아름다워요!",
+        "정말 대단해요! {bookName}을 끝까지 읽으셨네요! ✨ 여호수아처럼 '이 율법책을 네 입에서 떠나지 말게 하며'"
+    ]
+};
+
+const FAMILY_DISCUSSION_TEMPLATES = {
+    공통읽기: {
+        창세기: "창조주 하나님의 놀라운 작품들을 보며, 우리 가족만의 특별함은 무엇일까요?",
+        출애굽기: "하나님이 이스라엘을 이집트에서 구원하신 것처럼, 우리 가족이 함께 벗어나고 싶은 것이 있나요?",
+        시편: "다윗처럼 하나님께 찬양하며, 우리 가족만의 감사 제목을 나누어볼까요?",
+        마태복음: "예수님의 사랑을 실천하며, 우리 가족이 이웃에게 베풀 수 있는 일은?",
+        사무엘상: "다윗이 골리앗을 이긴 것처럼, 우리 가족의 '골리앗'은 무엇이고 어떻게 이겨낼까요?"
+    },
+    계절별: {
+        spring: "새 생명이 싹트는 봄처럼, 우리 가족에게도 새롭게 시작하고 싶은 것이 있나요?",
+        summer: "뜨거운 여름 햇살처럼, 하나님의 사랑을 느낄 수 있는 순간은 언제인가요?",
+        autumn: "가을 열매처럼, 올해 우리 가족이 맺은 좋은 열매는 무엇인가요?",
+        winter: "겨울 눈처럼 깨끗하게, 새해에는 어떤 마음으로 하나님을 섬기고 싶나요?"
+    }
+};
 
 // === 전역 변수 ===
 let gapi = new EnhancedGoogleSheetsAPI();
@@ -954,10 +951,10 @@ function renderAll() {
     renderMeditations(); 
     renderPrayers(); 
     renderDetailedProgress();
-    renderReadingPatterns();
+    renderFamilyDiscussionTopic();
     
     // 통계 차트 업데이트
-    if (statisticsManager.progressChart) {
+    if (statisticsManager.weeklyChart) {
         statisticsManager.updateCharts();
     }
 }
@@ -1065,8 +1062,14 @@ function renderFamilyDashboard() {
     
     db.family.forEach(member => { 
         const userRecords = db.readRecords[member.id] || {}; 
-        const otRead = BIBLE_BOOKS.old.reduce((sum, book) => sum + (userRecords[book.name]?.length || 0), 0); 
-        const ntRead = BIBLE_BOOKS.new.reduce((sum, book) => sum + (userRecords[book.name]?.length || 0), 0); 
+        const otRead = BIBLE_BOOKS.old.reduce((sum, book) => {
+            const bookData = userRecords[book.name];
+            return sum + (bookData?.chapters?.length || 0);
+        }, 0); 
+        const ntRead = BIBLE_BOOKS.new.reduce((sum, book) => {
+            const bookData = userRecords[book.name];
+            return sum + (bookData?.chapters?.length || 0);
+        }, 0); 
         const totalRead = otRead + ntRead; 
         const totalChapters = TOTAL_OT_CHAPTERS + TOTAL_NT_CHAPTERS; 
         
@@ -1407,18 +1410,28 @@ function toggleChapterRead(chapterNumber, buttonElement, context) {
     const bookName = context.bookName; 
     
     if (!db.readRecords[userId]) db.readRecords[userId] = {}; 
-    if (!db.readRecords[userId][bookName]) db.readRecords[userId][bookName] = []; 
+    if (!db.readRecords[userId][bookName]) {
+        db.readRecords[userId][bookName] = {
+            chapters: [],
+            readDates: {},
+            startDate: null,
+            endDate: null
+        };
+    }
     
-    const readList = db.readRecords[userId][bookName]; 
+    const bookData = db.readRecords[userId][bookName];
+    const readList = bookData.chapters;
     const chapterIndex = readList.indexOf(chapterNumber); 
     const params = { type: 'reading', userId, bookName, chapter: chapterNumber }; 
     
     // 애니메이션 효과 추가
     if (chapterIndex > -1) { 
         readList.splice(chapterIndex, 1); 
+        delete bookData.readDates[chapterNumber]; // 날짜 정보도 삭제
         buttonElement.className = 'p-2 rounded border transition-colors duration-200 chapter-btn-animate bg-white hover:bg-green-100'; 
     } else { 
         readList.push(chapterNumber); 
+        bookData.readDates[chapterNumber] = new Date().toISOString().split('T')[0]; // 오늘 날짜 추가
         buttonElement.className = 'p-2 rounded border transition-colors duration-200 chapter-btn-animate bg-green-500 text-white border-green-500 checked'; 
         
         // 체크 애니메이션 제거
@@ -1496,7 +1509,7 @@ function switchMainTab(tabName) {
     }
     
     // 통계 탭이 선택되었을 때 차트 업데이트
-    if (tabName === 'stats' && statisticsManager && statisticsManager.progressChart) {
+    if (tabName === 'stats' && statisticsManager && statisticsManager.weeklyChart) {
         setTimeout(() => {
             statisticsManager.updateCharts();
         }, 100);
@@ -1527,7 +1540,7 @@ function switchMainTab(tabName) {
     }
 }
 
-// === 개인별 상세 진행 현황 렌더링 ===
+// === 개인별 상세 진행 현황 렌더링 (대폭 개선) ===
 function renderDetailedProgress() {
     const container = document.getElementById('detailed-progress');
     if (!container) return;
@@ -1538,62 +1551,125 @@ function renderDetailedProgress() {
     
     db.family.forEach(member => {
         const userRecords = db.readRecords[member.id] || {};
-        const otRead = BIBLE_BOOKS.old.reduce((sum, book) => sum + (userRecords[book.name]?.length || 0), 0);
-        const ntRead = BIBLE_BOOKS.new.reduce((sum, book) => sum + (userRecords[book.name]?.length || 0), 0);
-        const totalRead = otRead + ntRead;
-        const totalChapters = TOTAL_OT_CHAPTERS + TOTAL_NT_CHAPTERS;
-        const percentage = totalChapters > 0 ? ((totalRead / totalChapters) * 100).toFixed(1) : 0;
         
-        // 최근 읽은 책 찾기
-        let recentBook = '없음';
-        let maxChapters = 0;
-        Object.entries(userRecords).forEach(([bookName, chapters]) => {
-            if (chapters.length > maxChapters) {
-                maxChapters = chapters.length;
-                recentBook = bookName;
+        // 기본 통계 계산
+        let totalRead = 0;
+        let completedBooks = [];
+        let recentBooks = [];
+        
+        Object.entries(userRecords).forEach(([bookName, bookData]) => {
+            if (bookData && bookData.chapters) {
+                totalRead += bookData.chapters.length;
+                
+                // 완독한 책 확인
+                const book = [...BIBLE_BOOKS.old, ...BIBLE_BOOKS.new].find(b => b.name === bookName);
+                if (book && bookData.chapters.length === book.chapters) {
+                    completedBooks.push({
+                        name: bookName,
+                        endDate: bookData.endDate,
+                        chapters: book.chapters
+                    });
+                }
+                
+                // 최근에 읽은 책들 (7일 이내)
+                if (bookData.readDates) {
+                    const recentReads = Object.entries(bookData.readDates).filter(([chapter, date]) => {
+                        const readDate = new Date(date);
+                        const weekAgo = new Date();
+                        weekAgo.setDate(weekAgo.getDate() - 7);
+                        return readDate >= weekAgo;
+                    });
+                    
+                    if (recentReads.length > 0) {
+                        recentBooks.push({
+                            name: bookName,
+                            recentChapters: recentReads.length
+                        });
+                    }
+                }
             }
         });
         
+        const totalChapters = TOTAL_OT_CHAPTERS + TOTAL_NT_CHAPTERS;
+        const percentage = totalChapters > 0 ? ((totalRead / totalChapters) * 100).toFixed(1) : 0;
+        
+        // 최근 7일 읽기 데이터 생성
+        const weeklyData = getWeeklyReadingData(member.id);
+        
+        // 격려 메시지 생성
+        const encouragement = generateEncouragementMessage(member, percentage, weeklyData, completedBooks);
+        
+        // 읽기 시작일/종료일 계산
+        const readingPeriod = getReadingPeriod(userRecords);
+        
         const memberCard = document.createElement('div');
-        memberCard.className = 'accent-bg rounded-lg p-4 cursor-pointer hover:opacity-80 transition';
+        memberCard.className = 'accent-bg rounded-lg p-4 cursor-pointer hover:opacity-90 transition slide-in';
         memberCard.onclick = () => openProgressModal(member.id);
         
         memberCard.innerHTML = `
             <div class="flex items-center mb-4">
                 <img src="${member.photo || 'https://placehold.co/60x60/cccccc/FFFFFF?text=?'}" 
                      alt="${member.name}" 
-                     class="w-12 h-12 rounded-full mr-3 object-cover border-2 border-white/50" 
+                     class="w-16 h-16 rounded-full mr-4 object-cover border-2 border-white/50" 
                      referrerpolicy="no-referrer">
-                <div>
-                    <h4 class="font-bold text-lg">${member.title} (${member.name})</h4>
+                <div class="flex-grow">
+                    <h4 class="font-bold text-xl">${member.title} (${member.name})</h4>
                     <p class="text-sm text-gray-600">전체 진행률 ${percentage}%</p>
+                    ${readingPeriod.start ? `<p class="text-xs text-gray-500">시작일: ${readingPeriod.start}</p>` : ''}
                 </div>
             </div>
             
-            <div class="space-y-3">
-                <div>
-                    <div class="flex justify-between text-sm mb-1">
-                        <span>전체 진도</span>
-                        <span>${totalRead} / ${totalChapters}장</span>
-                    </div>
-                    <div class="w-full bg-gray-200 rounded-full h-2">
-                        <div class="progress-bar-fill h-2 rounded-full" style="width: ${percentage}%"></div>
+            <!-- 전체 진도 바 -->
+            <div class="mb-4">
+                <div class="flex justify-between text-sm mb-1">
+                    <span>전체 진도</span>
+                    <span>${totalRead} / ${totalChapters}장</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-3">
+                    <div class="progress-bar-fill h-3 rounded-full" style="width: ${percentage}%"></div>
+                </div>
+            </div>
+            
+            <!-- 최근 7일 읽기 차트 -->
+            <div class="mb-4">
+                <h5 class="font-semibold text-sm mb-2">📈 최근 7일 읽기</h5>
+                <div class="flex items-end justify-between h-12 bg-white/50 rounded p-2">
+                    ${weeklyData.map((count, index) => `
+                        <div class="flex flex-col items-center flex-1">
+                            <div class="bg-blue-400 rounded-t" style="height: ${Math.max(count * 8, 2)}px; width: 8px; margin-bottom: 2px;"></div>
+                            <span class="text-xs text-gray-500">${count}</span>
+                        </div>
+                    `).join('')}
+                </div>
+                <div class="flex justify-between text-xs text-gray-500 mt-1">
+                    ${Array.from({length: 7}, (_, i) => {
+                        const date = new Date();
+                        date.setDate(date.getDate() - (6 - i));
+                        return `<span>${date.getDate()}</span>`;
+                    }).join('')}
+                </div>
+            </div>
+            
+            <!-- 완독한 책들 -->
+            ${completedBooks.length > 0 ? `
+                <div class="mb-4">
+                    <h5 class="font-semibold text-sm mb-2">🎉 완독한 책</h5>
+                    <div class="flex flex-wrap gap-1">
+                        ${completedBooks.slice(0, 3).map(book => `
+                            <span class="inline-block bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
+                                ${book.name}
+                            </span>
+                        `).join('')}
+                        ${completedBooks.length > 3 ? `<span class="text-xs text-gray-500">외 ${completedBooks.length - 3}권</span>` : ''}
                     </div>
                 </div>
-                
-                <div class="grid grid-cols-2 gap-2 text-sm">
-                    <div class="bg-white/50 p-2 rounded text-center">
-                        <div class="font-semibold">구약</div>
-                        <div class="accent-text">${otRead}/${TOTAL_OT_CHAPTERS}</div>
-                    </div>
-                    <div class="bg-white/50 p-2 rounded text-center">
-                        <div class="font-semibold">신약</div>
-                        <div class="accent-text">${ntRead}/${TOTAL_NT_CHAPTERS}</div>
-                    </div>
-                </div>
-                
-                <div class="text-xs text-gray-600 text-center">
-                    최근 읽는 책: <span class="font-semibold accent-text">${recentBook}</span>
+            ` : ''}
+            
+            <!-- 격려 메시지 -->
+            <div class="bg-white/70 rounded-lg p-3 text-sm">
+                <div class="flex items-start">
+                    <span class="text-lg mr-2">${encouragement.emoji}</span>
+                    <p class="flex-grow leading-relaxed">${encouragement.message}</p>
                 </div>
             </div>
         `;
@@ -1602,55 +1678,192 @@ function renderDetailedProgress() {
     });
 }
 
-// === 읽기 패턴 분석 렌더링 ===
-function renderReadingPatterns() {
-    if (!db.family || db.family.length === 0) return;
+// === 개인별 최근 7일 읽기 데이터 생성 ===
+function getWeeklyReadingData(userId) {
+    const weeklyData = [];
+    const userRecords = db.readRecords[userId] || {};
     
-    // 이번 주 읽기 수 계산 (임시로 랜덤 값, 실제로는 날짜별 기록 필요)
-    const thisWeekTotal = Math.floor(Math.random() * 50) + 10;
-    document.getElementById('this-week-count').textContent = `${thisWeekTotal}장`;
-    
-    // 연속 읽기 일수 (임시로 랜덤 값)
-    const streakDays = Math.floor(Math.random() * 30) + 1;
-    document.getElementById('streak-count').textContent = `${streakDays}일`;
-    
-    // 즐겨 읽는 책 찾기
-    let favoriteBook = '시편';
-    let maxTotalChapters = 0;
-    
-    // 모든 가족 구성원의 읽기 기록을 합산
-    const bookTotals = {};
-    db.family.forEach(member => {
-        const userRecords = db.readRecords[member.id] || {};
-        Object.entries(userRecords).forEach(([bookName, chapters]) => {
-            if (!bookTotals[bookName]) bookTotals[bookName] = 0;
-            bookTotals[bookName] += chapters.length;
+    for (let i = 6; i >= 0; i--) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        const dateStr = date.toISOString().split('T')[0];
+        
+        let chaptersReadOnDay = 0;
+        Object.values(userRecords).forEach(bookData => {
+            if (bookData && bookData.readDates) {
+                Object.values(bookData.readDates).forEach(readDate => {
+                    if (readDate === dateStr) {
+                        chaptersReadOnDay++;
+                    }
+                });
+            }
         });
-    });
+        
+        weeklyData.push(chaptersReadOnDay);
+    }
     
-    // 가장 많이 읽힌 책 찾기
-    Object.entries(bookTotals).forEach(([bookName, total]) => {
-        if (total > maxTotalChapters) {
-            maxTotalChapters = total;
-            favoriteBook = bookName;
+    return weeklyData;
+}
+
+// === 읽기 기간 계산 ===
+function getReadingPeriod(userRecords) {
+    let startDate = null;
+    let endDate = null;
+    
+    Object.values(userRecords).forEach(bookData => {
+        if (bookData && bookData.startDate) {
+            if (!startDate || bookData.startDate < startDate) {
+                startDate = bookData.startDate;
+            }
+        }
+        if (bookData && bookData.endDate) {
+            if (!endDate || bookData.endDate > endDate) {
+                endDate = bookData.endDate;
+            }
         }
     });
     
-    document.getElementById('favorite-book').textContent = favoriteBook;
-    
-    // 완독한 책 수 계산
-    let completedBooks = 0;
-    [...BIBLE_BOOKS.old, ...BIBLE_BOOKS.new].forEach(book => {
-        db.family.forEach(member => {
-            const userRecords = db.readRecords[member.id] || {};
-            const readChapters = userRecords[book.name] || [];
-            if (readChapters.length === book.chapters) {
-                completedBooks++;
-            }
-        });
+    return {
+        start: startDate ? new Date(startDate).toLocaleDateString('ko-KR') : null,
+        end: endDate ? new Date(endDate).toLocaleDateString('ko-KR') : null
+    };
+}
+
+// === 격려 메시지 생성 (AI 기능) ===
+function generateEncouragementMessage(member, percentage, weeklyData, completedBooks) {
+    // 최근 완독한 책이 있는지 확인
+    const recentCompletion = completedBooks.find(book => {
+        if (!book.endDate) return false;
+        const endDate = new Date(book.endDate);
+        const weekAgo = new Date();
+        weekAgo.setDate(weekAgo.getDate() - 7);
+        return endDate >= weekAgo;
     });
     
-    document.getElementById('completed-books').textContent = `${completedBooks}권`;
+    if (recentCompletion) {
+        const messages = ENCOURAGEMENT_MESSAGES.완독축하;
+        const message = messages[Math.floor(Math.random() * messages.length)]
+            .replace('{bookName}', recentCompletion.name);
+        return { emoji: '🎉', message };
+    }
+    
+    // 최근 7일 읽기 활동 분석
+    const recentTotal = weeklyData.reduce((sum, count) => sum + count, 0);
+    const avgPerDay = recentTotal / 7;
+    
+    let category;
+    if (avgPerDay >= 2) {
+        category = '앞서는경우';
+    } else if (avgPerDay >= 0.5) {
+        category = '보통진도';
+    } else {
+        category = '뒤처지는경우';
+    }
+    
+    const messages = ENCOURAGEMENT_MESSAGES[category];
+    const message = messages[Math.floor(Math.random() * messages.length)];
+    
+    const emoji = category === '앞서는경우' ? '🌟' : 
+                  category === '보통진도' ? '💪' : '🤗';
+    
+    return { emoji, message };
+}
+
+// === 가족 대화 주제 생성 (AI 기능) ===
+function renderFamilyDiscussionTopic() {
+    const container = document.getElementById('family-discussion-topic');
+    if (!container) return;
+    
+    // 가족이 공통으로 읽은 책 찾기
+    const commonBooks = findCommonReadBooks();
+    
+    if (commonBooks.length === 0) {
+        container.innerHTML = `
+            <div class="text-center text-gray-500">
+                <div class="text-4xl mb-2">📚</div>
+                <p>가족이 함께 읽은 성경이 있으면 대화 주제를 제안해드려요!</p>
+                <p class="text-sm mt-2">같은 책을 읽기 시작해보세요.</p>
+            </div>
+        `;
+        return;
+    }
+    
+    // 가장 최근에 함께 읽은 책 선택
+    const latestBook = commonBooks[0];
+    const topic = generateDiscussionTopic(latestBook);
+    
+    container.innerHTML = `
+        <div class="space-y-3">
+            <div class="flex items-center justify-between">
+                <h4 class="font-semibold text-lg">📖 ${latestBook}</h4>
+                <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">AI 추천</span>
+            </div>
+            <p class="text-gray-700 leading-relaxed">${topic}</p>
+            <div class="flex items-center justify-between text-sm">
+                <span class="text-gray-500">💡 가족이 함께 나눠보세요</span>
+                <button onclick="regenerateDiscussionTopic()" class="text-blue-600 hover:underline">다른 주제 보기</button>
+            </div>
+        </div>
+    `;
+}
+
+// === 공통으로 읽은 책 찾기 ===
+function findCommonReadBooks() {
+    if (!db.family || db.family.length < 2) return [];
+    
+    const allBooks = [...BIBLE_BOOKS.old, ...BIBLE_BOOKS.new].map(b => b.name);
+    const commonBooks = [];
+    
+    allBooks.forEach(bookName => {
+        let readByAll = true;
+        db.family.forEach(member => {
+            const userRecords = db.readRecords[member.id] || {};
+            if (!userRecords[bookName] || !userRecords[bookName].chapters || userRecords[bookName].chapters.length === 0) {
+                readByAll = false;
+            }
+        });
+        
+        if (readByAll) {
+            commonBooks.push(bookName);
+        }
+    });
+    
+    return commonBooks;
+}
+
+// === 대화 주제 생성 ===
+function generateDiscussionTopic(bookName) {
+    const topics = BIBLE_TOPICS[bookName];
+    if (topics && topics.questions) {
+        // 가족 구성원 연령대에 따라 적절한 질문 선택
+        const questionTypes = Object.keys(topics.questions);
+        const randomType = questionTypes[Math.floor(Math.random() * questionTypes.length)];
+        return topics.questions[randomType];
+    }
+    
+    // 기본 템플릿 사용
+    const commonTopics = FAMILY_DISCUSSION_TEMPLATES.공통읽기;
+    if (commonTopics[bookName]) {
+        return commonTopics[bookName];
+    }
+    
+    // 계절별 기본 질문
+    const season = getCurrentSeason();
+    return FAMILY_DISCUSSION_TEMPLATES.계절별[season];
+}
+
+// === 현재 계절 반환 ===
+function getCurrentSeason() {
+    const month = new Date().getMonth() + 1;
+    if (month >= 3 && month <= 5) return 'spring';
+    if (month >= 6 && month <= 8) return 'summer';
+    if (month >= 9 && month <= 11) return 'autumn';
+    return 'winter';
+}
+
+// === 대화 주제 재생성 ===
+function regenerateDiscussionTopic() {
+    renderFamilyDiscussionTopic();
 }
 
 // === 관리자 기능들 ===
