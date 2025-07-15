@@ -7,28 +7,146 @@
     <title>Bible Time for Family</title>
     <link rel="icon" type="image/png" href="https://i.imgur.com/SHO8YuH.png">
 
-    <?!= include('Stylesheet'); ?>
-
-    <script src="https://cdn.tailwindcss.com"></script>
-
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Nanum+Myeongjo:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Noto Sans KR', sans-serif; }
+        .font-myeongjo { font-family: 'Nanum Myeongjo', serif; }
+        .custom-scrollbar::-webkit-scrollbar { width: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #c5a992; border-radius: 10px; }
+        
+        /* 탭 네비게이션 스크롤바 숨기기 */
+        .tab-nav::-webkit-scrollbar { display: none; }
+        .tab-nav { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* 테마 정의 */
+        .theme-jerusalem { --bg-main: #fdfaf6; --bg-container: #ffffff; --bg-accent: #f8f1e9; --text-primary: #5a4b42; --text-accent: #8d6e63; --border-color: #d7ccc8; --highlight-bg: #f5e1d3; }
+        .theme-creation { --bg-main: #f0f4f8; --bg-container: #ffffff; --bg-accent: #e6f0e6; --text-primary: #2c3e50; --text-accent: #1e8449; --border-color: #d4e6d4; --highlight-bg: #d4edda; }
+        .theme-exodus { --bg-main: #f4eade; --bg-container: #fff8f0; --bg-accent: #eaddc7; --text-primary: #4a3f35; --text-accent: #a0522d; --border-color: #d1c4b8; --highlight-bg: #e6dace; }
+        .theme-kingdom { --bg-main: #f0f2f5; --bg-container: #ffffff; --bg-accent: #e8eaf6; --text-primary: #37474f; --text-accent: #3f51b5; --border-color: #c5cae9; --highlight-bg: #d9dcf2; }
+        
+        body { background-color: var(--bg-main); color: var(--text-primary); transition: background-color 0.5s, color 0.5s; }
+        .main-container { background-color: var(--bg-container); }
+        .accent-bg { background-color: var(--bg-accent); }
+        .accent-text { color: var(--text-accent); }
+        .highlight-bg { background-color: var(--highlight-bg); }
+        .progress-bar-fill { background-color: var(--text-accent); transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
+        details > summary { list-style: none; }
+        details > summary::-webkit-details-marker { display: none; }
+        .tab-active { border-color: var(--text-accent); color: var(--text-accent); }
+        
+        /* 메인 탭 스타일 */
+        .main-tab {
+            transition: all 0.3s ease;
+        }
+        .main-tab.tab-active {
+            border-color: var(--text-accent);
+            color: var(--text-accent);
+        }
+        .main-tab:not(.tab-active) {
+            border-color: transparent;
+            color: #6b7280;
+        }
+        .main-tab:not(.tab-active):hover {
+            color: #374151;
+            border-color: #d1d5db;
+        }
+        
+        /* 탭 콘텐츠 애니메이션 */
+        .tab-content {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* 새로운 애니메이션 효과 */
+        .chapter-btn-animate { 
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+            transform: scale(1);
+        }
+        .chapter-btn-animate:hover { 
+            transform: scale(1.05); 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .chapter-btn-animate.checked { 
+            animation: checkPulse 0.6s ease-out;
+        }
+        
+        @keyframes checkPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); box-shadow: 0 0 20px rgba(34, 197, 94, 0.6); }
+            100% { transform: scale(1); }
+        }
+        
+        @keyframes slideInUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        .slide-in { animation: slideInUp 0.5s ease-out; }
+        
+        .leaderboard-animate {
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        /* 통계 차트 스타일 */
+        .chart-container {
+            position: relative;
+            height: 300px;
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        /* 로딩 스피너 */
+        .loading-spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid var(--text-accent);
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* 오프라인 인디케이터 */
+        .offline-badge {
+            background: linear-gradient(45deg, #ff6b6b, #ff8e8e);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+    </style>
 </head>
 <body class="theme-jerusalem">
-
-    <div id="loading-overlay" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
-        <div class="bg-white rounded-lg p-6 flex items-center gap-4 shadow-xl">
-            <div class="loading-spinner"></div>
-            <span id="loading-text" class="text-lg font-semibold">처리 중...</span>
-        </div>
-    </div>
 
     <div id="app" class="relative p-2 sm:p-4 md:p-8 max-w-6xl mx-auto">
         <div id="header-top-right" class="absolute top-2 right-2 sm:top-4 sm:right-4 md:top-8 md:right-8 flex flex-col items-end gap-2 z-10">
             <div id="connection-status" class="flex items-center justify-center gap-2">
                 <div id="status-indicator" class="w-3 h-3 rounded-full bg-gray-400"></div>
                 <span id="status-text" class="text-xs sm:text-sm">연결 중...</span>
+                <div id="pending-changes" class="hidden offline-badge">
+                    <span id="pending-count">0</span>개 변경사항
+                </div>
+                <button id="sync-btn" class="ml-1 px-2 py-1 bg-blue-500 text-white rounded text-xs hover:bg-blue-600 hidden" title="동기화">🔄</button>
+                <button id="admin-btn" class="ml-1 px-2 py-1 bg-purple-500 text-white rounded text-xs hover:bg-purple-600 hidden" title="관리">⚙️</button>
             </div>
             <div class="text-xs sm:text-sm">
                 <label for="theme-select" class="mr-2">테마:</label>
@@ -39,7 +157,6 @@
                     <option value="theme-kingdom">왕국</option>
                 </select>
             </div>
-             <button id="admin-btn" class="mt-2 px-3 py-1 bg-purple-500 text-white rounded text-xs hover:bg-purple-600" title="관리"⚙️ 관리</button>
         </div>
 
         <header class="text-center pt-20 md:pt-0 mb-8">
@@ -49,650 +166,2336 @@
 
         <div class="main-container shadow-xl rounded-2xl p-3 sm:p-4 md:p-6">
             <div class="border-b border-gray-200 mb-6">
-                <nav class="-mb-px flex space-x-1 sm:space-x-2 md:space-x-4 overflow-x-auto tab-nav" aria-label="Main Tabs">
-                    <button class="main-tab whitespace-nowrap py-3 px-2 sm:px-3 md:px-4 border-b-2 font-medium text-xs sm:text-sm flex-shrink-0" data-tab="main">
-                        📖 <span class="hidden sm:inline">말씀과 읽기</span>
+                <nav class="-mb-px flex space-x-2 sm:space-x-4 md:space-x-8 overflow-x-auto tab-nav" aria-label="Main Tabs">
+                    <button id="tab-main" class="main-tab whitespace-nowrap py-3 px-2 sm:px-3 md:px-4 border-b-2 font-medium text-xs sm:text-sm tab-active flex-shrink-0" data-tab="main">
+                        📖 <span class="hidden sm:inline">말씀과</span> 읽기
                     </button>
-                    <button class="main-tab whitespace-nowrap py-3 px-2 sm:px-3 md:px-4 border-b-2 font-medium text-xs sm:text-sm flex-shrink-0" data-tab="sharing">
-                        💬 <span class="hidden sm:inline">묵상과 기도</span>
+                    <button id="tab-sharing" class="main-tab whitespace-nowrap py-3 px-2 sm:px-3 md:px-4 border-b-2 font-medium text-xs sm:text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 flex-shrink-0" data-tab="sharing">
+                        💬 <span class="hidden sm:inline">묵상과</span> 기도
                     </button>
-                    <button class="main-tab whitespace-nowrap py-3 px-2 sm:px-3 md:px-4 border-b-2 font-medium text-xs sm:text-sm flex-shrink-0" data-tab="messages">
-                        💌 <span class="hidden sm:inline">메시지 보드</span>
-                    </button>
-                    <button class="main-tab whitespace-nowrap py-3 px-2 sm:px-3 md:px-4 border-b-2 font-medium text-xs sm:text-sm flex-shrink-0" data-tab="allowance">
-                        💰 <span class="hidden sm:inline">비전 통장</span>
-                    </button>
-                    <button class="main-tab whitespace-nowrap py-3 px-2 sm:px-3 md:px-4 border-b-2 font-medium text-xs sm:text-sm flex-shrink-0" data-tab="stats">
-                        📊 <span class="hidden sm:inline">통계와 현황</span>
+                    <button id="tab-stats" class="main-tab whitespace-nowrap py-3 px-2 sm:px-3 md:px-4 border-b-2 font-medium text-xs sm:text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 flex-shrink-0" data-tab="stats">
+                        📊 <span class="hidden sm:inline">통계와</span> 현황
                     </button>
                 </nav>
             </div>
 
-            <div id="content-main" class="tab-content hidden"></div>
-            <div id="content-sharing" class="tab-content hidden"></div>
-            <div id="content-messages" class="tab-content hidden"></div>
-            <div id="content-allowance" class="tab-content hidden"></div>
-            <div id="content-stats" class="tab-content hidden"></div>
+            <div id="content-main" class="tab-content">
+                <section class="mb-8 text-center p-6 border-2 border-dashed slide-in" style="border-color: var(--border-color);">
+                    <h2 class="text-xl font-bold font-myeongjo accent-text mb-2">오늘의 지혜 말씀</h2>
+                    <p id="wisdom-verse" class="text-lg"></p>
+                </section>
+
+                <section id="leaderboard" class="mb-8 leaderboard-animate"></section>
+                
+                <section id="family-dashboard" class="mb-8 accent-bg rounded-lg p-4 grid grid-cols-2 md:grid-cols-4 gap-4 items-center text-center"></section>
+                
+                <section class="mb-8 space-y-4">
+                    <details class="group">
+                        <summary class="text-2xl font-bold text-center cursor-pointer p-2 rounded-lg hover:bg-gray-100 transition">
+                            <span class="group-open:hidden">📖 구약 성경 펼치기 ▼</span>
+                            <span class="hidden group-open:inline">📖 구약 성경 접기 ▲</span>
+                        </summary>
+                        <div class="mt-4">
+                            <h3 class="text-xl font-semibold mb-3 text-center accent-text">구약 (39권)</h3>
+                            <div id="old-testament" class="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2"></div>
+                        </div>
+                    </details>
+                    <details class="group">
+                        <summary class="text-2xl font-bold text-center cursor-pointer p-2 rounded-lg hover:bg-gray-100 transition">
+                            <span class="group-open:hidden">📖 신약 성경 펼치기 ▼</span>
+                            <span class="hidden group-open:inline">📖 신약 성경 접기 ▲</span>
+                        </summary>
+                        <div class="mt-4">
+                            <h3 class="text-xl font-semibold mb-3 text-center accent-text">신약 (27권)</h3>
+                            <div id="new-testament" class="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2"></div>
+                        </div>
+                    </details>
+                </section>
+            </div>
+
+            <div id="content-sharing" class="tab-content hidden">
+                 <section class="mb-6 accent-bg rounded-lg p-4">
+                    <h3 class="text-xl font-bold mb-3">💌 가족 메시지 보드</h3>
+                    <div id="message-board-list" class="h-96 overflow-y-auto custom-scrollbar pr-2 mb-3 bg-white/50 rounded p-2 space-y-4">
+                        </div>
+                    <div class="flex flex-col sm:flex-row gap-2">
+                        <select id="message-user" class="p-2 rounded-md w-full sm:w-auto" style="border-color: var(--border-color);"></select>
+                        <textarea id="message-input" class="flex-grow p-2 rounded-md min-w-0" placeholder="가족에게 남길 메시지를 작성하세요..." rows="1" style="border-color: var(--border-color);"></textarea>
+                        <button id="add-message" class="bg-white/80 hover:bg-white p-2 rounded-md shadow whitespace-nowrap">메시지 남기기</button>
+                    </div>
+                </section>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="accent-bg rounded-lg p-4">
+                        <h3 class="text-xl font-bold mb-3">💬 가족 묵상 나눔</h3>
+                        <div id="meditation-list" class="h-64 overflow-y-auto custom-scrollbar pr-2 mb-3 bg-white/50 rounded p-2"></div>
+                        <div class="flex flex-col sm:flex-row gap-2">
+                            <select id="meditation-user" class="p-2 rounded-md w-full sm:w-auto" style="border-color: var(--border-color);"></select>
+                            <input type="text" id="meditation-input" class="flex-grow p-2 rounded-md min-w-0" placeholder="오늘의 묵상을 나눠보세요..." style="border-color: var(--border-color);">
+                            <button id="add-meditation" class="bg-white/80 hover:bg-white p-2 rounded-md shadow whitespace-nowrap">등록</button>
+                        </div>
+                    </div>
+                    
+                    <div class="accent-bg rounded-lg p-4">
+                        <h3 class="text-xl font-bold mb-3">🙏 가족 기도 노트</h3>
+                        <div id="prayer-list" class="h-64 overflow-y-auto custom-scrollbar pr-2 mb-3 bg-white/50 rounded p-2"></div>
+                        <div class="flex flex-col sm:flex-row gap-2">
+                            <select id="prayer-user" class="p-2 rounded-md w-full sm:w-auto" style="border-color: var(--border-color);"></select>
+                            <input type="text" id="prayer-input" class="flex-grow p-2 rounded-md min-w-0" placeholder="함께 기도할 제목을 나눠요..." style="border-color: var(--border-color);">
+                            <button id="add-prayer" class="bg-white/80 hover:bg-white p-2 rounded-md shadow whitespace-nowrap">등록</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-6 accent-bg rounded-lg p-4">
+                    <h3 class="text-lg font-bold mb-3 accent-text">💡 묵상 도우미</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                        <div class="bg-white/50 p-3 rounded">
+                            <h4 class="font-semibold mb-2">🤔 질문하기</h4>
+                            <p class="text-gray-600">이 말씀이 내 삶에 어떤 의미일까?</p>
+                        </div>
+                        <div class="bg-white/50 p-3 rounded">
+                            <h4 class="font-semibold mb-2">❤️ 감사하기</h4>
+                            <p class="text-gray-600">오늘 하나님께 감사한 일은?</p>
+                        </div>
+                        <div class="bg-white/50 p-3 rounded">
+                            <h4 class="font-semibold mb-2">🎯 적용하기</h4>
+                            <p class="text-gray-600">내일 실천할 수 있는 것은?</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="content-stats" class="tab-content hidden">
+                <section id="statistics-section" class="mb-8 accent-bg rounded-lg p-4">
+                    <h3 class="text-xl font-bold mb-4 accent-text text-center">📈 최근 7일 읽기 추이</h3>
+                    <div class="chart-container">
+                        <canvas id="weeklyChart"></canvas>
+                    </div>
+                </section>
+
+                <section class="mb-8">
+                    <h3 class="text-xl font-bold mb-4 accent-text text-center">👥 개인별 상세 진행 현황</h3>
+                    <div id="detailed-progress" class="grid grid-cols-1 gap-6"></div>
+                </section>
+
+                <section class="accent-bg rounded-lg p-4">
+                    <h3 class="text-lg font-bold mb-3 accent-text">💬 오늘의 가족 대화 주제</h3>
+                    <div id="family-discussion-topic" class="bg-white/50 p-4 rounded-lg">
+                        <div class="text-center text-gray-500">
+                            <div class="text-4xl mb-2">🤔</div>
+                            <p>공통으로 읽은 말씀을 분석하여 대화 주제를 생성합니다...</p>
+                        </div>
+                    </div>
+                </section>
+            </div>
         </div>
     </div>
 
-    <div id="chapter-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-20">
+    <div id="chapter-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-20"><div class="bg-white rounded-lg shadow-2xl p-6 w-full max-w-2xl max-h-[80vh] flex flex-col"><div class="flex justify-between items-center mb-4"><h2 id="modal-title" class="text-2xl font-bold"></h2><button id="close-modal" class="text-3xl">&times;</button></div><div id="modal-user-selector-container" class="flex items-center gap-2 mb-4"><label for="modal-user-selector">체크할 사람:</label><select id="modal-user-selector" class="p-1 border rounded"></select></div><div id="modal-chapters" class="flex-grow overflow-y-auto grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 gap-2 p-2 accent-bg rounded custom-scrollbar"></div></div></div>
+    <div id="progress-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-30"><div class="bg-white rounded-lg shadow-2xl p-6 w-full max-w-lg max-h-[80vh] flex flex-col"><div class="flex items-center mb-4"><img id="progress-modal-photo" class="w-16 h-16 rounded-full mr-4" src="" alt="프로필 사진" referrerpolicy="no-referrer"><div class="flex-grow"><h2 id="progress-modal-title" class="text-2xl font-bold"></h2></div><button id="close-progress-modal" class="text-3xl">&times;</button></div><div class="border-b border-gray-200 mb-4"><nav class="-mb-px flex space-x-8" aria-label="Tabs"><button id="tab-ot" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm tab-active">구약</button><button id="tab-nt" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">신약</button></nav></div><div id="progress-modal-content" class="flex-grow overflow-y-auto custom-scrollbar pr-4"><div id="content-ot"></div><div id="content-nt" class="hidden"></div></div></div></div>
+
+    <div id="admin-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-40">
         <div class="bg-white rounded-lg shadow-2xl p-6 w-full max-w-2xl max-h-[80vh] flex flex-col">
             <div class="flex justify-between items-center mb-4">
-                <h2 id="modal-title" class="text-2xl font-bold"></h2>
-                <button id="close-chapter-modal" class="text-3xl">&times;</button>
+                <h2 class="text-2xl font-bold">🔧 시스템 관리</h2>
+                <button id="close-admin-modal" class="text-3xl">&times;</button>
             </div>
-            <div class="flex items-center gap-2 mb-4">
-                <label for="modal-user-selector">체크할 사람:</label>
-                <select id="modal-user-selector" class="p-1 border rounded"></select>
+            
+            <div id="password-section" class="border border-gray-200 rounded-lg p-4 mb-4">
+                <h3 class="text-lg font-bold mb-2 text-purple-600">🔐 관리자 인증</h3>
+                <div class="flex gap-2 items-center">
+                    <input type="password" id="admin-password" placeholder="관리자 비밀번호 입력" 
+                           class="flex-grow p-2 border rounded-md">
+                    <button id="verify-password-btn" class="px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600">
+                        인증
+                    </button>
+                </div>
+                <div id="auth-status" class="mt-2 text-sm hidden"></div>
             </div>
-            <div id="modal-chapters" class="flex-grow overflow-y-auto grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 gap-2 p-2 accent-bg rounded custom-scrollbar"></div>
+            
+            <div id="admin-functions" class="flex-grow overflow-y-auto space-y-4 hidden">
+                <div class="border border-blue-200 rounded-lg p-4 bg-blue-50">
+                    <h3 class="text-lg font-bold mb-2 text-blue-700">🔒 시스템 정보</h3>
+                    <div class="text-sm space-y-1">
+                        <div>보안 모드: <span id="security-status" class="font-semibold"></span></div>
+                        <div>API 상태: <span id="api-key-status" class="font-mono text-xs"></span></div>
+                        <div class="text-xs text-blue-600 mt-2">
+                            ℹ️ 가족용 대시보드로 간편하게 설정되었습니다.
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="border border-gray-200 rounded-lg p-4">
+                    <h3 class="text-lg font-bold mb-2 text-green-600">💾 데이터 백업</h3>
+                    <p class="text-sm text-gray-600 mb-3">현재 모든 데이터를 새 시트에 백업합니다.</p>
+                    <button id="backup-btn" class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 mr-2">
+                        백업 생성
+                    </button>
+                    <div id="backup-result" class="mt-2 p-2 bg-gray-100 rounded text-sm hidden"></div>
+                </div>
+                
+                <div class="border border-gray-200 rounded-lg p-4">
+                    <h3 class="text-lg font-bold mb-2 text-red-600">⚠️ 데이터 정리</h3>
+                    <p class="text-sm text-gray-600 mb-3">중복된 읽기 기록을 정리합니다. <strong>백업 후 실행하세요!</strong></p>
+                    <div class="flex gap-2">
+                        <button id="cleanup-btn" class="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600">중복 기록 정리</button>
+                        <button id="analyze-btn" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">중복 분석</button>
+                    </div>
+                    <div id="cleanup-result" class="mt-2 p-2 bg-gray-100 rounded text-sm hidden"></div>
+                </div>
+                
+                <div class="border border-gray-200 rounded-lg p-4">
+                    <h3 class="text-lg font-bold mb-2 text-blue-600">🔍 시스템 진단</h3>
+                    <button id="diagnostic-btn" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 mb-3">진단 실행</button>
+                    <div id="diagnostic-result" class="text-sm bg-gray-100 rounded p-2 hidden overflow-auto max-h-40"></div>
+                </div>
+                
+                <div class="border border-gray-200 rounded-lg p-4">
+                    <h3 class="text-lg font-bold mb-2 text-purple-600">📡 연결 상태</h3>
+                    <div id="connection-info" class="text-sm space-y-1">
+                        <div>API 상태: <span id="api-status">확인 중...</span></div>
+                        <div>마지막 동기화: <span id="last-sync">없음</span></div>
+                        <div>보류 중인 변경사항: <span id="pending-info">0개</span></div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
-    
-    <div id="allowance-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-30">
-        <div class="bg-white rounded-lg shadow-2xl p-6 w-full max-w-md max-h-[80vh] flex flex-col">
-            <div class="flex justify-between items-center mb-4">
-                <h2 id="allowance-modal-title" class="text-2xl font-bold">용돈 인출하기</h2>
-                <button id="close-allowance-modal" class="text-3xl">&times;</button>
-            </div>
-            <div id="allowance-modal-content"></div>
-        </div>
-    </div>
-    
-    <div id="admin-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-40">
-        </div>
 
 <script>
-// =================================================================
-// Bible Time for Family - Client-side JavaScript (Complete)
-// =================================================================
-
-// --- 1. 전역 설정 및 변수 ---
-
+// === 기본 설정 ===
 const API_CONFIG = {
-    scriptUrl: 'https://script.google.com/macros/s/AKfycbzJzwZbhJ7Vot1ubzveWIt-7Y-PdR3O0FKYk3FZIRuZKrG--eJ5ANuy00Vwbpiu1Hjvxg/exec',
-    apiKey: 'bible_family_default'
+    scriptUrl: 'https://script.google.com/macros/s/AKfycbyntjuDtRw4MdLb5ySF5mRbX1bbNly66cNpe6S0lZwlNnbK6Nzeqn1JgLgQ_3onDmRRhw/exec',
+    apiKey: 'bible_family_default',
+    enableSecurity: false // 가족용이므로 보안 기능 비활성화
 };
 
-const BIBLE_BOOKS = { 
-  old: [ { name: '창세기', chapters: 50 }, { name: '출애굽기', chapters: 40 }, { name: '레위기', chapters: 27 }, { name: '민수기', chapters: 36 }, { name: '신명기', chapters: 34 }, { name: '여호수아', chapters: 24 }, { name: '사사기', chapters: 21 }, { name: '룻기', chapters: 4 }, { name: '사무엘상', chapters: 31 }, { name: '사무엘하', chapters: 24 }, { name: '열왕기상', chapters: 22 }, { name: '열왕기하', chapters: 25 }, { name: '역대상', chapters: 29 }, { name: '역대하', chapters: 36 }, { name: '에스라', chapters: 10 }, { name: '느헤미야', chapters: 13 }, { name: '에스더', chapters: 10 }, { name: '욥기', chapters: 42 }, { name: '시편', chapters: 150 }, { name: '잠언', chapters: 31 }, { name: '전도서', chapters: 12 }, { name: '아가', chapters: 8 }, { name: '이사야', chapters: 66 }, { name: '예레미야', chapters: 52 }, { name: '예레미야애가', chapters: 5 }, { name: '에스겔', chapters: 48 }, { name: '다니엘', chapters: 12 }, { name: '호세아', chapters: 14 }, { name: '요엘', chapters: 3 }, { name: '아모스', chapters: 9 }, { name: '오바댜', chapters: 1 }, { name: '요나', chapters: 4 }, { name: '미가', chapters: 7 }, { name: '나훔', chapters: 3 }, { name: '하박국', chapters: 3 }, { name: '스바냐', chapters: 3 }, { name: '학개', chapters: 2 }, { name: '스가랴', chapters: 14 }, { name: '말라기', chapters: 4 } ], 
-  new: [ { name: '마태복음', chapters: 28 }, { name: '마가복음', chapters: 16 }, { name: '누가복음', chapters: 24 }, { name: '요한복음', chapters: 21 }, { name: '사도행전', chapters: 28 }, { name: '로마서', chapters: 16 }, { name: '고린도전서', chapters: 16 }, { name: '고린도후서', chapters: 13 }, { name: '갈라디아서', chapters: 6 }, { name: '에베소서', chapters: 6 }, { name: '빌립보서', chapters: 4 }, { name: '골로새서', chapters: 4 }, { name: '데살로니가전서', chapters: 5 }, { name: '데살로니가후서', chapters: 3 }, { name: '디모데전서', chapters: 6 }, { name: '디모데후서', chapters: 4 }, { name: '디도서', chapters: 3 }, { name: '빌레몬서', chapters: 1 }, { name: '히브리서', chapters: 13 }, { name: '야고보서', chapters: 5 }, { name: '베드로전서', chapters: 5 }, { name: '베드로후서', chapters: 3 }, { name: '요한1서', chapters: 5 }, { name: '요한2서', chapters: 1 }, { name: '요한3서', chapters: 1 }, { name: '유다서', chapters: 1 }, { name: '요한계시록', chapters: 22 } ] 
-};
-
-let gapi;
-let db = {
-    family: [],
-    reading_records: {},
-    meditations: [],
-    prayers: [],
-    messages: [],
-    comments: [],
-    allowance_ledger: []
-};
-let currentUserForModal = null;
-let currentBook = null;
-const allowanceTargetIds = ['hayul', 'hajun']; // 용돈 시스템 적용 대상 ID
-
-// --- 2. 애플리케이션 초기화 및 메인 로직 ---
-
-document.addEventListener('DOMContentLoaded', () => {
-    gapi = new EnhancedGoogleSheetsAPI();
-    initializeApp();
-    setupEventListeners();
-});
-
-async function initializeApp() {
-    showLoadingState(true, '데이터 로딩 중...');
-    try {
-        await gapi.loadAllData();
-        if (db.family.length > 0) {
-            currentUserForModal = db.family[0].id;
-        }
-        renderAllTabs();
-        populateUserDropdowns();
-        switchMainTab('main'); // 초기 탭 설정
-        updateConnectionStatus(true);
-    } catch (error) {
-        console.error('초기화 실패:', error);
-        updateConnectionStatus(false);
-        alert('데이터를 불러오는 데 실패했습니다. 오프라인 상태이거나 Apps Script URL을 확인해주세요.');
-    } finally {
-        showLoadingState(false);
-    }
-}
-
-// --- 3. API 통신 클래스 (A-안: 서버 우선 동기화) ---
-
+// === 개선된 API 및 캐싱 시스템 ===
 class EnhancedGoogleSheetsAPI {
     constructor() {
         this.scriptUrl = API_CONFIG.scriptUrl;
         this.apiKey = API_CONFIG.apiKey;
+        this.enableSecurity = API_CONFIG.enableSecurity;
+        this.isConnected = false;
+        this.pendingChanges = [];
+        this.syncInProgress = false;
+        this.lastSyncTime = null;
+        this.autoSyncInterval = null;
+        
+        // 5초마다 자동 동기화 시도
+        this.startAutoSync();
     }
-
+    
+    startAutoSync() {
+        this.autoSyncInterval = setInterval(() => {
+            if (this.pendingChanges.length > 0 && this.isConnected && !this.syncInProgress) {
+                this.processPendingChanges();
+            }
+        }, 5000);
+    }
+    
+    stopAutoSync() {
+        if (this.autoSyncInterval) {
+            clearInterval(this.autoSyncInterval);
+            this.autoSyncInterval = null;
+        }
+    }
+    
     async _request(action, params = {}) {
-        updateConnectionStatus(true, true); // isConnecting = true
         const url = new URL(this.scriptUrl);
         url.searchParams.set('action', action);
-        url.searchParams.set('apiKey', this.apiKey);
-        Object.keys(params).forEach(key => url.searchParams.set(key, params[key]));
-
+        
+        for (const key in params) {
+            url.searchParams.set(key, params[key]);
+        }
+        
         try {
-            const response = await fetch(url);
-            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            const response = await fetch(url.toString());
+            if (!response.ok) throw new Error(`Server Error: ${response.status}`);
             const result = await response.json();
             if (!result.success) throw new Error(result.error || 'API 요청 실패');
-            updateConnectionStatus(true);
-            return result.data;
+            
+            this.isConnected = true;
+            this.lastSyncTime = Date.now();
+            return result;
         } catch (error) {
-            updateConnectionStatus(false);
+            this.isConnected = false;
+            updateConnectionStatus('disconnected');
             console.error(`API Error (${action}):`, error);
             throw error;
         }
     }
-
+    
+    // 변경사항을 큐에 추가하고 로컬에 즉시 저장
+    addPendingChange(changeData) {
+        const changeId = Date.now() + Math.random();
+        const change = {
+            id: changeId,
+            timestamp: Date.now(),
+            ...changeData
+        };
+        
+        this.pendingChanges.push(change);
+        this.savePendingChangesToLocal();
+        this.updatePendingCounter();
+        
+        // 로컬 데이터 즉시 업데이트
+        this.applyChangeLocally(change);
+        
+        return changeId;
+    }
+    
+    // 로컬에 변경사항 즉시 적용
+    applyChangeLocally(change) {
+        const { type, userId, bookName, chapter, content } = change;
+        
+        if (type === 'reading') {
+            if (!db.readRecords[userId]) db.readRecords[userId] = {};
+            if (!db.readRecords[userId][bookName]) {
+                db.readRecords[userId][bookName] = {
+                    chapters: [],
+                    readDates: {},
+                    startDate: null,
+                    endDate: null
+                };
+            }
+            
+            const bookData = db.readRecords[userId][bookName];
+            const readList = bookData.chapters;
+            const chapterIndex = readList.indexOf(chapter);
+            
+            if (change.action === 'delete' && chapterIndex > -1) {
+                readList.splice(chapterIndex, 1);
+                delete bookData.readDates[chapter];
+            } else if (change.action === 'save' && chapterIndex === -1) {
+                readList.push(chapter);
+                bookData.readDates[chapter] = new Date().toISOString().split('T')[0];
+            }
+        }
+        
+        // 로컬 스토리지에 저장
+        this.saveToLocalStorage();
+    }
+    
+    savePendingChangesToLocal() {
+        localStorage.setItem('bible_pending_changes', JSON.stringify(this.pendingChanges));
+    }
+    
+    loadPendingChangesFromLocal() {
+        const stored = localStorage.getItem('bible_pending_changes');
+        if (stored) {
+            this.pendingChanges = JSON.parse(stored);
+            this.updatePendingCounter();
+        }
+    }
+    
+    updatePendingCounter() {
+        const counter = document.getElementById('pending-count');
+        const badge = document.getElementById('pending-changes');
+        
+        if (this.pendingChanges.length > 0) {
+            counter.textContent = this.pendingChanges.length;
+            badge.classList.remove('hidden');
+        } else {
+            badge.classList.add('hidden');
+        }
+    }
+    
+    async processPendingChanges() {
+        if (this.syncInProgress || this.pendingChanges.length === 0) return;
+        
+        this.syncInProgress = true;
+        updateConnectionStatus('syncing');
+        
+        try {
+            // 변경사항들을 그룹화하여 배치 처리
+            const changes = [...this.pendingChanges];
+            
+            for (const change of changes) {
+                try {
+                    if (change.action === 'save') {
+                        await this._request('save', {
+                            type: change.type,
+                            userId: change.userId,
+                            bookName: change.bookName,
+                            chapter: change.chapter,
+                            content: change.content,
+                            messageId: change.messageId, // ⭐ 추가
+                            parentId: change.parentId, // ⭐ 추가
+                        });
+                    } else if (change.action === 'delete') {
+                        await this._request('delete', {
+                            type: change.type,
+                            userId: change.userId,
+                            bookName: change.bookName,
+                            chapter: change.chapter,
+                            id: change.id
+                        });
+                    }
+                    
+                    // 성공한 변경사항 제거
+                    this.pendingChanges = this.pendingChanges.filter(c => c.id !== change.id);
+                } catch (error) {
+                    console.error('개별 변경사항 동기화 실패:', error);
+                    // 실패한 것은 큐에 남겨둠
+                }
+            }
+            
+            this.savePendingChangesToLocal();
+            this.updatePendingCounter();
+            updateConnectionStatus('connected');
+            
+        } catch (error) {
+            console.error('동기화 실패:', error);
+            updateConnectionStatus('disconnected');
+        } finally {
+            this.syncInProgress = false;
+        }
+    }
+    
+    saveToLocalStorage() {
+        const timestamp = Date.now();
+        localStorage.setItem('bible_data_timestamp', timestamp.toString());
+        localStorage.setItem('bible_family', JSON.stringify(db.family));
+        localStorage.setItem('bible_readRecords', JSON.stringify(db.readRecords));
+        localStorage.setItem('bible_badges', JSON.stringify(db.badges));
+        localStorage.setItem('bible_meditations', JSON.stringify(db.meditations));
+        localStorage.setItem('bible_prayers', JSON.stringify(db.prayers));
+        localStorage.setItem('bible_messages', JSON.stringify(db.messages)); // ⭐ 추가
+        localStorage.setItem('bible_comments', JSON.stringify(db.comments)); // ⭐ 추가
+    }
+    
+    loadFromLocalStorage() {
+        try {
+            const timestamp = localStorage.getItem('bible_data_timestamp');
+            const family = JSON.parse(localStorage.getItem('bible_family') || '[]');
+            const readRecords = JSON.parse(localStorage.getItem('bible_readRecords') || '{}');
+            const badges = JSON.parse(localStorage.getItem('bible_badges') || '{}');
+            const meditations = JSON.parse(localStorage.getItem('bible_meditations') || '[]');
+            const prayers = JSON.parse(localStorage.getItem('bible_prayers') || '[]');
+            const messages = JSON.parse(localStorage.getItem('bible_messages') || '[]'); // ⭐ 추가
+            const comments = JSON.parse(localStorage.getItem('bible_comments') || '[]'); // ⭐ 추가
+            
+            return {
+                timestamp: timestamp ? parseInt(timestamp) : null,
+                family, readRecords, badges, meditations, prayers, messages, comments // ⭐ 추가
+            };
+        } catch (error) {
+            console.error('로컬 데이터 로드 실패:', error);
+            return null;
+        }
+    }
+    
+    async testConnection() {
+        await this._request('test');
+        return true;
+    }
+    
     async loadAllData() {
-        const data = await this._request('loadAll');
-        Object.keys(data).forEach(key => {
-            db[key] = data[key] || (key === 'reading_records' ? {} : []);
+        const result = await this._request('loadAll');
+        
+        // 서버 데이터를 로컬에 저장
+        db.family = result.data.family_members || [];
+        db.readRecords = result.data.reading_records || {};
+        db.badges = result.data.badges || {};
+        db.meditations = result.data.meditations || [];
+        db.prayers = result.data.prayers || [];
+        db.messages = result.data.messages || []; // ⭐ 추가
+        db.comments = result.data.comments || []; // ⭐ 추가
+        
+        this.saveToLocalStorage();
+        return result.data;
+    }
+    
+    // 기존 메서드들을 큐 시스템으로 변경
+    async saveData(params) {
+        const changeId = this.addPendingChange({
+            action: 'save',
+            ...params
+        });
+        
+        // 온라인이면 즉시 동기화 시도
+        if (this.isConnected) {
+            setTimeout(() => this.processPendingChanges(), 100);
+        }
+        
+        return { success: true, data: { id: changeId, ...params } };
+    }
+    
+    async deleteData(params) {
+        const changeId = this.addPendingChange({
+            action: 'delete',
+            ...params
+        });
+        
+        // 온라인이면 즉시 동기화 시도
+        if (this.isConnected) {
+            setTimeout(() => this.processPendingChanges(), 100);
+        }
+        
+        return { success: true };
+    }
+    
+    async editData(params) {
+        return this._request('edit', params);
+    }
+    
+    // 새로운 관리자 기능들
+    async cleanupDuplicates(adminPassword) {
+        return this._request('cleanup', { adminPassword });
+    }
+    
+    async verifyAdminPassword(password) {
+        return this._request('verifyAdmin', { password });
+    }
+    
+    async createBackup(adminPassword) {
+        return this._request('backup', { adminPassword });
+    }
+    
+    async runDiagnostics() {
+        return this._request('debug');
+    }
+}
+
+// === 수정된 통계 차트 시스템 (Chart.js 오류 해결) ===
+class StatisticsManager {
+    constructor() {
+        this.weeklyChart = null;
+    }
+    
+    initCharts() {
+        this.createWeeklyChart();
+    }
+    
+    createWeeklyChart() {
+        const ctx = document.getElementById('weeklyChart');
+        if (!ctx) return;
+        
+        // 기존 차트가 있으면 먼저 파괴
+        if (this.weeklyChart) {
+            this.weeklyChart.destroy();
+            this.weeklyChart = null;
+        }
+        
+        const data = this.getWeeklyData();
+        
+        this.weeklyChart = new Chart(ctx.getContext('2d'), {
+            type: 'line',
+            data: {
+                labels: data.labels,
+                datasets: data.datasets
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: false // 개인별 차트에서 제목을 사용하므로 전체 차트에서는 숨김
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1
+                        }
+                    }
+                },
+                animation: {
+                    duration: 1000,
+                    easing: 'easeInOutQuart'
+                }
+            }
         });
     }
-
-    async performAction(action, params) {
-        showLoadingState(true, '서버와 통신 중...');
-        try {
-            await this._request(action, params);
-            await this.loadAllData();
-            renderAllTabs();
-            populateUserDropdowns();
-        } catch (error) {
-            alert(`${action} 작업 실패: ${error.message}`);
-            // 실패 시에도 최신 데이터로 화면을 다시 그려서 동기화 시도
-            await this.loadAllData();
-            renderAllTabs();
-        } finally {
-            showLoadingState(false);
+    
+    getWeeklyData() {
+        const days = [];
+        const today = new Date();
+        
+        // 최근 7일 날짜 생성
+        for (let i = 6; i >= 0; i--) {
+            const date = new Date(today);
+            date.setDate(date.getDate() - i);
+            days.push({
+                date: date,
+                label: date.toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' }),
+                dateStr: date.toISOString().split('T')[0]
+            });
+        }
+        
+        const datasets = db.family.map((member, index) => {
+            const colors = ['#8d6e63', '#1e8449', '#a0522d', '#3f51b5', '#e91e63', '#ff9800'];
+            
+            const data = days.map(day => {
+                let chaptersReadOnDay = 0;
+                const userRecords = db.readRecords[member.id] || {};
+                
+                Object.values(userRecords).forEach(bookData => {
+                    // 새로운 데이터 구조에 맞게 수정
+                    if (bookData && bookData.readDates) {
+                        Object.values(bookData.readDates).forEach(readDate => {
+                            if (readDate === day.dateStr) {
+                                chaptersReadOnDay++;
+                            }
+                        });
+                    }
+                });
+                
+                return chaptersReadOnDay;
+            });
+            
+            return {
+                label: member.name,
+                data: data,
+                borderColor: colors[index % colors.length],
+                backgroundColor: colors[index % colors.length] + '20',
+                tension: 0.4,
+                fill: false
+            };
+        });
+        
+        return {
+            labels: days.map(d => d.label),
+            datasets: datasets
+        };
+    }
+    
+    updateCharts() {
+        if (this.weeklyChart) {
+            const data = this.getWeeklyData();
+            this.weeklyChart.data.datasets = data.datasets;
+            this.weeklyChart.update('active');
         }
     }
 }
 
-// --- 4. 탭별 콘텐츠 렌더링 ---
+// === 기존 코드 (데이터 정의 부분) ===
+const BIBLE_BOOKS = { old: [ { name: '창세기', chapters: 50 }, { name: '출애굽기', chapters: 40 }, { name: '레위기', chapters: 27 }, { name: '민수기', chapters: 36 }, { name: '신명기', chapters: 34 }, { name: '여호수아', chapters: 24 }, { name: '사사기', chapters: 21 }, { name: '룻기', chapters: 4 }, { name: '사무엘상', chapters: 31 }, { name: '사무엘하', chapters: 24 }, { name: '열왕기상', chapters: 22 }, { name: '열왕기하', chapters: 25 }, { name: '역대상', chapters: 29 }, { name: '역대하', chapters: 36 }, { name: '에스라', chapters: 10 }, { name: '느헤미야', chapters: 13 }, { name: '에스더', chapters: 10 }, { name: '욥기', chapters: 42 }, { name: '시편', chapters: 150 }, { name: '잠언', chapters: 31 }, { name: '전도서', chapters: 12 }, { name: '아가', chapters: 8 }, { name: '이사야', chapters: 66 }, { name: '예레미야', chapters: 52 }, { name: '예레미야애가', chapters: 5 }, { name: '에스겔', chapters: 48 }, { name: '다니엘', chapters: 12 }, { name: '호세아', chapters: 14 }, { name: '요엘', chapters: 3 }, { name: '아모스', chapters: 9 }, { name: '오바댜', chapters: 1 }, { name: '요나', chapters: 4 }, { name: '미가', chapters: 7 }, { name: '나훔', chapters: 3 }, { name: '하박국', chapters: 3 }, { name: '스바냐', chapters: 3 }, { name: '학개', chapters: 2 }, { name: '스가랴', chapters: 14 }, { name: '말라기', chapters: 4 } ], new: [ { name: '마태복음', chapters: 28 }, { name: '마가복음', chapters: 16 }, { name: '누가복음', chapters: 24 }, { name: '요한복음', chapters: 21 }, { name: '사도행전', chapters: 28 }, { name: '로마서', chapters: 16 }, { name: '고린도전서', chapters: 16 }, { name: '고린도후서', chapters: 13 }, { name: '갈라디아서', chapters: 6 }, { name: '에베소서', chapters: 6 }, { name: '빌립보서', chapters: 4 }, { name: '골로새서', chapters: 4 }, { name: '데살로니가전서', chapters: 5 }, { name: '데살로니가후서', chapters: 3 }, { name: '디모데전서', chapters: 6 }, { name: '디모데후서', chapters: 4 }, { name: '디도서', chapters: 3 }, { name: '빌레몬서', chapters: 1 }, { name: '히브리서', chapters: 13 }, { name: '야고보서', chapters: 5 }, { name: '베드로전서', chapters: 5 }, { name: '베드로후서', chapters: 3 }, { name: '요한1서', chapters: 5 }, { name: '요한2서', chapters: 1 }, { name: '요한3서', chapters: 1 }, { name: '유다서', chapters: 1 }, { name: '요한계시록', chapters: 22 } ] };
 
-function renderAllTabs() {
-    renderMainTab();
-    renderSharingTab();
-    renderMessagesTab();
-    renderAllowanceTab();
-    renderStatsTab();
+const TOTAL_OT_CHAPTERS = BIBLE_BOOKS.old.reduce((s, b) => s + b.chapters, 0);
+const TOTAL_NT_CHAPTERS = BIBLE_BOOKS.new.reduce((s, b) => s + b.chapters, 0);
+
+// === AI 기능을 위한 데이터베이스 ===
+const BIBLE_TOPICS = {
+    "창세기": {
+        themes: ["창조", "믿음", "언약", "시작"],
+        questions: {
+            어린이: "하나님이 만드신 것 중에 가장 좋아하는 것은 무엇인가요?",
+            청소년: "하나님이 나를 특별하게 만드신 이유는 무엇일까요?",
+            성인: "창조 질서를 회복하기 위해 우리 가족이 할 수 있는 일은?"
+        }
+    },
+    "출애굽기": {
+        themes: ["해방", "인도하심", "자유", "순종"],
+        questions: {
+            어린이: "모세처럼 하나님이 나를 도와주신 경험이 있나요?",
+            청소년: "어려운 상황에서 하나님의 도우심을 경험해봤나요?",
+            성인: "우리 가족이 벗어나야 할 '이집트'는 무엇일까요?"
+        }
+    },
+    "시편": {
+        themes: ["찬양", "기도", "위로", "감사"],
+        questions: {
+            어린이: "하나님께 감사한 일을 세 가지 말해보세요",
+            청소년: "힘들 때 하나님께 어떻게 기도하나요?",
+            성인: "가족이 함께 하나님을 찬양할 수 있는 방법은?"
+        }
+    },
+    "마태복음": {
+        themes: ["예수님", "사랑", "섬김", "제자도"],
+        questions: {
+            어린이: "예수님처럼 친구를 도와준 경험이 있나요?",
+            청소년: "예수님의 제자가 된다는 것은 무슨 의미일까요?",
+            성인: "우리 가족이 예수님을 닮아가는 모습은?"
+        }
+    },
+    "사무엘상": {
+        themes: ["용기", "믿음", "승리", "선택"],
+        questions: {
+            어린이: "다윗처럼 용기를 내야 할 때는 언제인가요?",
+            청소년: "나만의 '골리앗'과 어떻게 싸우고 있나요?",
+            성인: "가족이 함께 이겨내야 할 도전은 무엇인가요?"
+        }
+    }
+};
+
+const ENCOURAGEMENT_MESSAGES = {
+    앞서는경우: [
+        "바울처럼 푯대를 향해 달려가고 계시네요! '나는 선한 싸움을 싸우고 달려갈 길을 마치고 믿음을 지켰노라' 🏃‍♂️",
+        "에스라처럼 말씀을 사모하는 마음이 아름다워요! '에스라가 여호와의 율법을 연구하여 준행하며' ✨",
+        "여호수아처럼 담대하게 나아가고 계세요! '강하고 담대하라 두려워하지 말며 놀라지 말라' 💪"
+    ],
+    보통진도: [
+        "아브라함처럼 꾸준히 걸어가고 계시네요! '믿음으로 아브라함은... 갈 바를 알지 못하고 나아갔느니라' 👣",
+        "마리아처럼 말씀을 마음에 새기고 계세요! '마리아는 이 모든 말을 마음에 새기어 생각하니라' 💭",
+        "베뢰아 사람들처럼 간절한 마음으로 성경을 상고하고 계세요! 🔍"
+    ],
+    뒤처지는경우: [
+        "괜찮아요! 베드로도 넘어졌지만 다시 일어났어요. '일곱 번 넘어져도 여덟 번 일어나라' 🌅",
+        "모세도 처음엔 주저했어요. 하나님이 함께 하시니 천천히 시작해봐요! '내가 너와 함께 하리라' 🤝",
+        "다윗도 때로는 낙심했지만 하나님 안에서 힘을 얻었어요. 포기하지 마세요! 💝"
+    ],
+    완독축하: [
+        "와! {bookName}을 완독하셨네요! 🎉 바울처럼 '선한 싸움을 싸우고 달려갈 길을 마쳤습니다!'",
+        "{bookName} 완독을 축하드려요! 🎊 에스라처럼 '말씀을 연구하여 준행하는' 모습이 아름다워요!",
+        "정말 대단해요! {bookName}을 끝까지 읽으셨네요! ✨ 여호수아처럼 '이 율법책을 네 입에서 떠나지 말게 하며'"
+    ]
+};
+
+const FAMILY_DISCUSSION_TEMPLATES = {
+    공통읽기: {
+        창세기: "창조주 하나님의 놀라운 작품들을 보며, 우리 가족만의 특별함은 무엇일까요?",
+        출애굽기: "하나님이 이스라엘을 이집트에서 구원하신 것처럼, 우리 가족이 함께 벗어나고 싶은 것이 있나요?",
+        시편: "다윗처럼 하나님께 찬양하며, 우리 가족만의 감사 제목을 나누어볼까요?",
+        마태복음: "예수님의 사랑을 실천하며, 우리 가족이 이웃에게 베풀 수 있는 일은?",
+        사무엘상: "다윗이 골리앗을 이긴 것처럼, 우리 가족의 '골리앗'은 무엇이고 어떻게 이겨낼까요?"
+    },
+    계절별: {
+        spring: "새 생명이 싹트는 봄처럼, 우리 가족에게도 새롭게 시작하고 싶은 것이 있나요?",
+        summer: "뜨거운 여름 햇살처럼, 하나님의 사랑을 느낄 수 있는 순간은 언제인가요?",
+        autumn: "가을 열매처럼, 올해 우리 가족이 맺은 좋은 열매는 무엇인가요?",
+        winter: "겨울 눈처럼 깨끗하게, 새해에는 어떤 마음으로 하나님을 섬기고 싶나요?"
+    }
+};
+
+// === 전역 변수 ===
+let gapi = new EnhancedGoogleSheetsAPI();
+let statisticsManager = new StatisticsManager();
+// ⭐ messages, comments 추가
+let db = { family: [], readRecords: {}, badges: {}, meditations: [], prayers: [], messages: [], comments: [] };
+let currentUserForModal = null, currentBook = null, currentProgressUserId = null;
+
+// === 메인 초기화 (수정됨) ===
+document.addEventListener('DOMContentLoaded', async () => { 
+    console.log('DOM 로드 완료');
+    
+    // 1. 기본 설정 먼저
+    renderWisdomVerse(); 
+    renderBibleBooks(); 
+    
+    // 2. 이벤트 리스너 설정
+    setupEventListeners(); 
+    
+    // 3. 메인 탭 리스너 직접 설정 (개선됨)
+    setTimeout(() => {
+        console.log('메인 탭 리스너 설정 중...');
+        
+        // 메인 탭 전환 이벤트 리스너
+        document.querySelectorAll('.main-tab').forEach((tab, index) => {
+            const tabName = tab.getAttribute('data-tab');
+            console.log(`탭 ${index} 설정:`, tabName);
+            
+            tab.addEventListener('click', (e) => {
+                e.preventDefault();
+                const clickedTabName = e.currentTarget.getAttribute('data-tab'); // currentTarget 사용
+                console.log('탭 클릭됨:', clickedTabName);
+                
+                if (clickedTabName) {
+                    switchMainTab(clickedTabName);
+                }
+            });
+        });
+        
+        // 4. 기본 탭을 첫 번째 탭으로 설정
+        switchMainTab('main');
+    }, 100);
+    
+    // 5. 데이터 초기화
+    await initializeApp();
+});
+
+async function initializeApp() { 
+    updateConnectionStatus('loading'); 
+    
+    // 로컬 데이터 먼저 로드
+    const localData = gapi.loadFromLocalStorage();
+    if (localData && localData.family && localData.family.length > 0) {
+        db.family = localData.family;
+        db.readRecords = localData.readRecords;
+        db.badges = localData.badges;
+        db.meditations = localData.meditations;
+        db.prayers = localData.prayers;
+        db.messages = localData.messages; // ⭐ 추가
+        db.comments = localData.comments; // ⭐ 추가
+        
+        currentUserForModal = db.family[0].id;
+        populateUserDropdowns();
+        renderAll();
+        statisticsManager.initCharts();
+    }
+    
+    // 보류 중인 변경사항 로드
+    gapi.loadPendingChangesFromLocal();
+    
+    try { 
+        await gapi.testConnection(); 
+        updateConnectionStatus('connected'); 
+        await loadAllDataAndRender(); 
+    } catch (error) { 
+        updateConnectionStatus('disconnected'); 
+        console.log('오프라인 모드로 시작합니다.');
+    }
 }
 
-function renderMainTab() {
-    const container = document.getElementById('content-main');
-    container.innerHTML = `
-        <section class="mb-8 text-center p-6 border-2 border-dashed" style="border-color: var(--border-color);">
-            <h2 class="text-xl font-bold font-myeongjo accent-text mb-2">오늘의 지혜 말씀</h2>
-            <p id="wisdom-verse" class="text-lg"></p>
-        </section>
-        <section id="leaderboard" class="mb-8"></section>
-        <section id="family-dashboard" class="mb-8 accent-bg rounded-lg p-4 grid grid-cols-2 md:grid-cols-4 gap-4 items-center text-center"></section>
-        <section class="space-y-4">
-            <details class="group">
-                <summary class="text-2xl font-bold text-center cursor-pointer p-2 rounded-lg hover:bg-gray-100 transition">
-                    <span class="group-open:hidden">📖 구약 성경 펼치기 ▼</span><span class="hidden group-open:inline">📖 구약 성경 접기 ▲</span>
-                </summary>
-                <div id="old-testament" class="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2 mt-4 p-2"></div>
-            </details>
-            <details class="group">
-                <summary class="text-2xl font-bold text-center cursor-pointer p-2 rounded-lg hover:bg-gray-100 transition">
-                    <span class="group-open:hidden">📖 신약 성경 펼치기 ▼</span><span class="hidden group-open:inline">📖 신약 성경 접기 ▲</span>
-                </summary>
-                <div id="new-testament" class="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2 mt-4 p-2"></div>
-            </details>
-        </section>
-    `;
-    renderWisdomVerse();
-    renderLeaderboard();
-    renderFamilyDashboard();
-    renderBibleBooks();
+async function loadAllDataAndRender() { 
+    try { 
+        const allData = await gapi.loadAllData(); 
+        db.family = allData.family_members || []; 
+        db.readRecords = allData.reading_records || {}; 
+        db.badges = allData.badges || {}; 
+        db.meditations = allData.meditations || []; 
+        db.prayers = allData.prayers || []; 
+        db.messages = allData.messages || []; // ⭐ 추가
+        db.comments = allData.comments || []; // ⭐ 추가
+        
+        if (db.family?.length > 0) { 
+            currentUserForModal = db.family[0].id; 
+            populateUserDropdowns(); 
+            renderAll(); 
+            statisticsManager.initCharts();
+        } else if (gapi.isConnected) { 
+            alert("가족 정보가 없습니다. 구글 시트의 'family_members' 시트에 데이터를 추가해주세요."); 
+        } 
+    } catch (error) { 
+        console.error('전체 데이터 로드 실패:', error); 
+    } 
 }
 
-function renderSharingTab() {
-    const container = document.getElementById('content-sharing');
-    container.innerHTML = `
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div class="accent-bg rounded-lg p-4">
-                <h3 class="text-xl font-bold mb-3">💬 가족 묵상 나눔</h3>
-                <div id="meditation-list" class="h-64 overflow-y-auto custom-scrollbar pr-2 mb-3 bg-white/50 rounded p-2 space-y-2"></div>
-                <div class="flex flex-col sm:flex-row gap-2">
-                    <select id="meditation-user" class="p-2 rounded-md w-full sm:w-auto"></select>
-                    <input type="text" id="meditation-input" class="flex-grow p-2 rounded-md min-w-0" placeholder="오늘의 묵상을 나눠보세요...">
-                    <button onclick="addGenericItem('meditation')" class="bg-white/80 hover:bg-white p-2 rounded-md shadow whitespace-nowrap">등록</button>
-                </div>
-            </div>
-            <div class="accent-bg rounded-lg p-4">
-                <h3 class="text-xl font-bold mb-3">🙏 가족 기도 노트</h3>
-                <div id="prayer-list" class="h-64 overflow-y-auto custom-scrollbar pr-2 mb-3 bg-white/50 rounded p-2 space-y-2"></div>
-                <div class="flex flex-col sm:flex-row gap-2">
-                    <select id="prayer-user" class="p-2 rounded-md w-full sm:w-auto"></select>
-                    <input type="text" id="prayer-input" class="flex-grow p-2 rounded-md min-w-0" placeholder="함께 기도할 제목을 나눠요...">
-                    <button onclick="addGenericItem('prayer')" class="bg-white/80 hover:bg-white p-2 rounded-md shadow whitespace-nowrap">등록</button>
-                </div>
-            </div>
-        </div>
-    `;
-    renderMeditations();
-    renderPrayers();
+function renderAll() { 
+    renderLeaderboard(); 
+    renderFamilyDashboard(); 
+    renderMeditations(); 
+    renderPrayers(); 
+    renderMessageBoard(); // ⭐ 메시지 보드 렌더링 추가
+    renderDetailedProgress();
+    renderFamilyDiscussionTopic();
+    
+    // 통계 차트 업데이트
+    if (statisticsManager.weeklyChart) {
+        statisticsManager.updateCharts();
+    }
 }
 
-function renderMessagesTab() {
-    const container = document.getElementById('content-messages');
-    container.innerHTML = `
-         <section class="accent-bg rounded-lg p-4">
-            <h3 class="text-xl font-bold mb-3">💌 가족 메시지 보드</h3>
-            <div id="message-board-list" class="h-96 overflow-y-auto custom-scrollbar pr-2 mb-3 bg-white/50 rounded p-2 space-y-4"></div>
-            <div class="flex flex-col sm:flex-row gap-2">
-                <select id="message-user" class="p-2 rounded-md w-full sm:w-auto"></select>
-                <textarea id="message-input" class="flex-grow p-2 rounded-md min-w-0" placeholder="가족에게 남길 메시지를 작성하세요..." rows="1"></textarea>
-                <button onclick="addGenericItem('message')" class="bg-white/80 hover:bg-white p-2 rounded-md shadow whitespace-nowrap">메시지 남기기</button>
-            </div>
-        </section>
-    `;
-    renderMessageBoard();
+// === 향상된 연결 상태 표시 ===
+function updateConnectionStatus(status) { 
+    const indicator = document.getElementById('status-indicator'); 
+    const text = document.getElementById('status-text'); 
+    const syncBtn = document.getElementById('sync-btn'); 
+    const adminBtn = document.getElementById('admin-btn');
+    
+    indicator.classList.remove('loading'); 
+    
+    switch (status) { 
+        case 'connected': 
+            indicator.className = 'w-3 h-3 rounded-full bg-green-500'; 
+            text.textContent = '온라인'; 
+            syncBtn.classList.remove('hidden'); 
+            adminBtn.classList.remove('hidden');
+            break; 
+        case 'disconnected': 
+            indicator.className = 'w-3 h-3 rounded-full bg-red-500'; 
+            text.textContent = '오프라인'; 
+            syncBtn.classList.add('hidden'); 
+            adminBtn.classList.add('hidden');
+            break; 
+        case 'loading': 
+            indicator.className = 'w-3 h-3 rounded-full bg-yellow-500 loading'; 
+            text.textContent = '연결 중...'; 
+            syncBtn.classList.add('hidden'); 
+            adminBtn.classList.add('hidden');
+            break;
+        case 'syncing':
+            indicator.className = 'w-3 h-3 rounded-full bg-blue-500 loading';
+            text.textContent = '동기화 중...';
+            syncBtn.classList.add('hidden');
+            adminBtn.classList.add('hidden');
+            break;
+    } 
 }
 
-function renderAllowanceTab() {
-    const container = document.getElementById('content-allowance');
-    const allowanceUsers = db.family.filter(u => allowanceTargetIds.includes(u.id));
+// === 수정된 리더보드 렌더링 함수 ===
+function renderLeaderboard() {
+    const board = document.getElementById('leaderboard');
+    if (!db.family || db.family.length < 1) { 
+        board.innerHTML = ''; 
+        return; 
+    }
 
-    if (allowanceUsers.length === 0) {
-        container.innerHTML = `<div class="text-center p-8 text-gray-500">용돈 시스템이 설정된 사용자가 없습니다.</div>`;
+    const rankedUsers = db.family.map(member => {
+        const userRecords = db.readRecords[member.id] || {};
+        const chaptersRead = Object.values(userRecords).reduce((sum, bookData) => {
+            // 새로운 데이터 구조에 맞게 수정
+            if (bookData && bookData.chapters && Array.isArray(bookData.chapters)) {
+                return sum + bookData.chapters.length;
+            }
+            // 이전 구조 호환성
+            if (Array.isArray(bookData)) {
+                return sum + bookData.length;
+            }
+            return sum;
+        }, 0);
+        return { ...member, chaptersRead };
+    }).sort((a, b) => b.chaptersRead - a.chaptersRead);
+
+    if (rankedUsers[0].chaptersRead === 0) {
+        board.innerHTML = `<div class="text-center p-4 accent-bg rounded-lg slide-in"><p>아직 성경 읽기 기록이 없습니다. 함께 시작해볼까요?</p></div>`;
         return;
     }
 
-    let cardsHTML = allowanceUsers.map(user => {
-        const userLedger = db.allowance_ledger.filter(item => item.user_id === user.id);
-        const balance = userLedger.reduce((sum, item) => sum + Number(item.amount), 0);
-        const totalEarned = userLedger.filter(item => item.type === '적립').reduce((sum, item) => sum + Number(item.amount), 0);
-        return `
-            <div class="allowance-card rounded-lg p-6 flex flex-col items-center text-center">
-                <img src="${user.photo || 'https://placehold.co/100x100'}" class="w-24 h-24 rounded-full object-cover border-4 border-white shadow-lg" referrerpolicy="no-referrer">
-                <h4 class="text-2xl font-bold mt-4">${user.name}</h4>
-                <div class="mt-4">
-                    <p class="text-sm text-gray-500">현재 잔액</p>
-                    <p class="text-4xl font-bold accent-text">${balance.toLocaleString()}원</p>
+    const topScore = rankedUsers[0].chaptersRead;
+    const winners = rankedUsers.filter(user => user.chaptersRead === topScore);
+    const others = rankedUsers.filter(user => user.chaptersRead < topScore);
+
+    const winnersHTML = `
+        <div class="text-center">
+            <h3 class="text-xl font-bold accent-text mb-2">${winners.length > 1 ? '🏆 공동 1등! 🏆' : '🏆 말씀 읽기 1등! 🏆'}</h3>
+            <div class="flex items-center justify-center gap-4">
+                <div class="flex -space-x-4">
+                    ${winners.map(winner => `<img src="${winner.photo || 'https://placehold.co/80x80/cccccc/FFFFFF?text=?'}" alt="${winner.name}" class="w-16 h-16 rounded-full border-4 border-yellow-400 object-cover" referrerpolicy="no-referrer">`).join('')}
                 </div>
-                <div class="mt-2 text-sm">
-                    <span>총 적립액: ${totalEarned.toLocaleString()}원</span>
+                <div>
+                    <p class="text-xl font-bold">${winners.map(w => w.name).join(', ')}</p>
+                    <p class="text-lg">${topScore}장</p>
                 </div>
-                <button onclick="openWithdrawModal('${user.id}', '${user.name}', ${balance})" class="mt-6 bg-green-500 text-white font-bold py-2 px-6 rounded-full hover:bg-green-600 transition">
-                    인출하기
-                </button>
             </div>
-        `;
-    }).join('');
+        </div>`;
 
-    const recentActivityHTML = `
-        <div class="mt-8">
-            <h4 class="text-xl font-bold mb-3 text-center">최근 활동 내역</h4>
-            <div class="accent-bg rounded-lg p-4 max-h-64 overflow-y-auto custom-scrollbar">
-                <table class="allowance-history-table text-sm">
-                    <thead><tr><th>시간</th><th>이름</th><th>내용</th><th>금액</th></tr></thead>
-                    <tbody>
-                        ${db.allowance_ledger.slice().reverse().slice(0, 10).map(item => `
-                            <tr>
-                                <td class="whitespace-nowrap">${new Date(item.timestamp).toLocaleDateString('ko-KR')}</td>
-                                <td>${item.name}</td>
-                                <td>${item.description}</td>
-                                <td class="${item.type === '적립' ? 'transaction-deposit font-bold' : 'transaction-withdrawal'}">
-                                    ${Number(item.amount).toLocaleString()}
-                                </td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    `;
-
-    container.innerHTML = `
-        <div class="text-center mb-6">
-            <h3 class="text-3xl font-bold font-myeongjo">✨ 비전 통장 ✨</h3>
-            <p class="mt-1 text-gray-600">말씀 읽기로 차곡차곡 쌓이는 우리의 비전!</p>
-        </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-            ${cardsHTML}
-        </div>
-        ${recentActivityHTML}
-    `;
-}
-
-function renderStatsTab() {
-    // 통계 탭 렌더링 로직 (향후 구현)
-    const container = document.getElementById('content-stats');
-    container.innerHTML = `<div class="text-center p-8 text-gray-500">통계 및 현황 페이지는 준비 중입니다.</div>`;
-}
-
-// --- 5. 컴포넌트 렌더링 헬퍼 함수 ---
-
-function renderWisdomVerse() {
-    const verses = [ "자녀들아 주 안에서 너희 부모에게 순종하라 이것이 옳으니라 (에베소서 6:1)","여호와는 나의 목자시니 내게 부족함이 없으리로다 (시편 23:1)","주 너의 하나님을 사랑하고 또한 네 이웃을 네 자신 같이 사랑하라 (마태복음 22:37-39)","항상 기뻐하라 쉬지 말고 기도하라 범사에 감사하라 (데살로니가전서 5:16-18)","수고하고 무거운 짐 진 자들아 다 내게로 오라 내가 너희를 쉬게 하리라 (마태복음 11:28)" ];
-    const verseElement = document.getElementById('wisdom-verse');
-    if (verseElement) {
-        verseElement.textContent = verses[Math.floor(Math.random() * verses.length)];
+    let othersHTML = '<div class="w-full md:w-auto mt-4 md:mt-0">';
+    if (others.length > 0) {
+        let currentRank = winners.length + 1;
+        others.slice(0, 3).forEach(user => {
+            othersHTML += `
+                <div class="flex items-center justify-between text-sm mb-2 slide-in">
+                    <div class="flex items-center">
+                        <span class="font-bold w-8 text-left">${currentRank}.</span>
+                        <img src="${user.photo || 'https://placehold.co/40x40/cccccc/FFFFFF?text=?'}" alt="${user.name}" class="w-8 h-8 rounded-full mr-2 object-cover" referrerpolicy="no-referrer">
+                        <span>${user.name}</span>
+                    </div>
+                    <span class="font-semibold">${user.chaptersRead}장</span>
+                </div>`;
+            currentRank++;
+        });
     }
+    othersHTML += '</div>';
+
+    board.innerHTML = `<div class="p-4 accent-bg rounded-lg flex flex-col md:flex-row items-center justify-center md:gap-8 lg:gap-16 slide-in">${winnersHTML}${othersHTML}</div>`;
 }
 
-function renderLeaderboard() {
-    const container = document.getElementById('leaderboard');
-    if (!container) return;
-    // 리더보드 렌더링 로직
-    container.innerHTML = `<div class="text-center p-4 accent-bg rounded-lg">리더보드 준비 중</div>`;
-}
-
-function renderFamilyDashboard() {
-    const container = document.getElementById('family-dashboard');
-    if (!container || !db.family) return;
-    container.innerHTML = db.family.map(member => {
-        const userRecords = db.reading_records[member.id] || {};
-        const totalRead = Object.values(userRecords).reduce((sum, book) => sum + (book.chapters?.length || 0), 0);
-        return `
-            <div class="flex flex-col items-center cursor-pointer hover:opacity-80 transition" onclick="openProgressModal('${member.id}')">
-                <img src="${member.photo || 'https://placehold.co/80x80'}" alt="${member.name}" class="w-20 h-20 rounded-full border-4 border-white/50 object-cover shadow-md" referrerpolicy="no-referrer">
-                <div class="font-bold mt-2">${member.title} (${member.name})</div>
-                <div class="text-sm mt-1">총 ${totalRead}장 읽음</div>
-            </div>
-        `;
-    }).join('');
-}
-
-function renderBibleBooks() {
-    const oldDiv = document.getElementById('old-testament');
-    const newDiv = document.getElementById('new-testament');
-    if (!oldDiv || !newDiv) return;
-
-    const createEl = (book) => `<button class="p-2 text-sm rounded-md shadow-sm transition-all duration-200 accent-bg hover:shadow-lg hover:-translate-y-1" onclick="openChapterModal('${book.name}')">${book.name}</button>`;
+// === 수정된 가족 대시보드 렌더링 함수 ===
+function renderFamilyDashboard() { 
+    const dashboard = document.getElementById('family-dashboard'); 
+    dashboard.innerHTML = ''; 
     
-    oldDiv.innerHTML = BIBLE_BOOKS.old.map(createEl).join('');
-    newDiv.innerHTML = BIBLE_BOOKS.new.map(createEl).join('');
+    if (!db.family || db.family.length === 0) return; 
+    
+    db.family.forEach(member => { 
+        const userRecords = db.readRecords[member.id] || {}; 
+        
+        const otRead = BIBLE_BOOKS.old.reduce((sum, book) => {
+            const bookData = userRecords[book.name];
+            // 새로운 데이터 구조에 맞게 수정
+            if (bookData && bookData.chapters && Array.isArray(bookData.chapters)) {
+                return sum + bookData.chapters.length;
+            }
+            // 이전 구조 호환성
+            if (Array.isArray(bookData)) {
+                return sum + bookData.length;
+            }
+            return sum;
+        }, 0);
+        
+        const ntRead = BIBLE_BOOKS.new.reduce((sum, book) => {
+            const bookData = userRecords[book.name];
+            // 새로운 데이터 구조에 맞게 수정
+            if (bookData && bookData.chapters && Array.isArray(bookData.chapters)) {
+                return sum + bookData.chapters.length;
+            }
+            // 이전 구조 호환성
+            if (Array.isArray(bookData)) {
+                return sum + bookData.length;
+            }
+            return sum;
+        }, 0);
+        
+        const totalRead = otRead + ntRead; 
+        const totalChapters = TOTAL_OT_CHAPTERS + TOTAL_NT_CHAPTERS; 
+        
+        const memberDiv = document.createElement('div'); 
+        memberDiv.className = 'flex flex-col items-center cursor-pointer hover:opacity-80 transition slide-in'; 
+        memberDiv.onclick = () => openProgressModal(member.id); 
+        memberDiv.innerHTML = `<img src="${member.photo || 'https://placehold.co/80x80/cccccc/FFFFFF?text=?'}" alt="${member.name}" class="w-16 h-16 md:w-20 md:h-20 rounded-full border-4 border-white/50 object-cover shadow-md" referrerpolicy="no-referrer"><div class="font-bold mt-2">${member.title} (${member.name})</div><div class="text-sm mt-2 space-y-1"><div><strong>총:</strong> ${totalRead} / ${totalChapters}</div><div class="text-xs"><strong>구약:</strong> ${otRead}/${TOTAL_OT_CHAPTERS} | <strong>신약:</strong> ${ntRead}/${TOTAL_NT_CHAPTERS}</div></div>`; 
+        dashboard.appendChild(memberDiv); 
+    }); 
 }
 
-function renderMeditations() {
-    const container = document.getElementById('meditation-list');
-    if (!container) return;
-    container.innerHTML = (db.meditations || []).slice().reverse().map(item => `
-        <div class="p-2 mb-2 rounded bg-white/70 text-sm">
-            <div><strong>${item.user_name || item.user_id}:</strong> ${item.content}</div>
-            <div class="text-right text-gray-500 text-xs flex items-center justify-end gap-2 mt-1">
-                <span>${new Date(item.timestamp).toLocaleDateString()}</span>
-                <button class="text-gray-500 hover:text-red-500" onclick="likeItem('meditation', '${item.id}')">👍 ${item.like_count || 0}</button>
-            </div>
-        </div>
-    `).join('');
+function renderWisdomVerse() { 
+    const verses = [ "자녀들아 주 안에서 너희 부모에게 순종하라 이것이 옳으니라 (에베소서 6:1)","여호와는 나의 목자시니 내게 부족함이 없으리로다 (시편 23:1)","주 너의 하나님을 사랑하고 또한 네 이웃을 네 자신 같이 사랑하라 (마태복음 22:37-39)","항상 기뻐하라 쉬지 말고 기도하라 범사에 감사하라 (데살로니가전서 5:16-18)","수고하고 무거운 짐 진 자들아 다 내게로 오라 내가 너희를 쉬게 하리라 (마태복음 11:28)","두려워하지 말라 내가 너와 함께 함이라 놀라지 말라 나는 네 하나님이 됨이라 (이사야 41:10)","사람이 마음으로 자기의 길을 계획할지라도 그의 걸음을 인도하시는 이는 여호와시니라 (잠언 16:9)","그런즉 너희는 먼저 그의 나라와 그의 의를 구하라 그리하면 이 모든 것을 너희에게 더하시리라 (마태복음 6:33)","내게 능력 주시는 자 안에서 내가 모든 것을 할 수 있느니라 (빌립보서 4:13)","내가 너희에게 분부한 모든 것을 가르쳐 지키게 하라 볼지어다 내가 세상 끝날까지 너희와 항상 함께 있으리라 (마태복음 28:20)","사랑은 오래 참고 사랑은 온유하며 시기하지 아니하며 (고린도전서 13:4)","하나님이 세상을 이처럼 사랑하사 독생자를 주셨으니 이는 그을 믿는 자마다 멸망하지 않고 영생을 얻게 하려 하심이라 (요한복음 3:16)","그런즉 너희가 먹든지 마시든지 무엇을 하든지 다 하나님의 영광을 위하여 하라 (고린도전서 10:31)" ]; 
+    document.getElementById('wisdom-verse').textContent = verses[Math.floor(Math.random() * verses.length)]; 
 }
 
-function renderPrayers() {
-    const container = document.getElementById('prayer-list');
-    if (!container) return;
-    container.innerHTML = (db.prayers || []).slice().reverse().map(item => `
-        <div class="p-2 mb-2 rounded bg-white/70 text-sm">
-            <div><strong>${item.user_name || item.user_id}:</strong> ${item.content}</div>
-            <div class="text-right text-gray-500 text-xs flex items-center justify-end gap-2 mt-1">
-                <span>${new Date(item.timestamp).toLocaleDateString()}</span>
-                 <button class="text-gray-500 hover:text-red-500" onclick="likeItem('prayer', '${item.id}')">👍 ${item.like_count || 0}</button>
-            </div>
-        </div>
-    `).join('');
+function renderBibleBooks() { 
+    const oldDiv = document.getElementById('old-testament'); 
+    const newDiv = document.getElementById('new-testament'); 
+    oldDiv.innerHTML = ''; 
+    newDiv.innerHTML = ''; 
+    
+    const createEl = (book) => { 
+        const el = document.createElement('button'); 
+        el.className = 'p-2 text-sm rounded-md shadow-sm transition-all duration-200 accent-bg hover:shadow-lg hover:-translate-y-1'; 
+        el.textContent = book.name; 
+        el.onclick = () => openChapterModal(book); 
+        return el; 
+    }; 
+    
+    BIBLE_BOOKS.old.forEach(book => oldDiv.appendChild(createEl(book))); 
+    BIBLE_BOOKS.new.forEach(book => newDiv.appendChild(createEl(book))); 
 }
+
+function populateUserDropdowns() { 
+    const meditationUser = document.getElementById('meditation-user'); 
+    const prayerUser = document.getElementById('prayer-user'); 
+    const modalUser = document.getElementById('modal-user-selector'); 
+    const messageUser = document.getElementById('message-user'); // ⭐ 추가
+    
+    meditationUser.innerHTML = ''; 
+    prayerUser.innerHTML = ''; 
+    modalUser.innerHTML = ''; 
+    messageUser.innerHTML = ''; // ⭐ 추가
+    
+    db.family.forEach(member => { 
+        const option = `<option value="${member.id}">${member.name}</option>`; 
+        meditationUser.innerHTML += option; 
+        prayerUser.innerHTML += option; 
+        modalUser.innerHTML += option; 
+        messageUser.innerHTML += option; // ⭐ 추가
+    }); 
+}
+
+// === 수정된 이벤트 리스너 설정 (탭 클릭 null 오류 해결) ===
+function setupEventListeners() { 
+    document.getElementById('theme-select').addEventListener('change', (e) => { 
+        document.body.className = e.target.value; 
+    }); 
+    
+    document.getElementById('add-meditation').addEventListener('click', addMeditation); 
+    document.getElementById('meditation-input').addEventListener('keypress', (e) => { 
+        if (e.key === 'Enter') addMeditation(); 
+    }); 
+    document.getElementById('meditation-user').addEventListener('change', renderMeditations); 
+    
+    document.getElementById('add-prayer').addEventListener('click', addPrayer); 
+    document.getElementById('prayer-input').addEventListener('keypress', (e) => { 
+        if (e.key === 'Enter') addPrayer(); 
+    }); 
+    document.getElementById('prayer-user').addEventListener('change', renderPrayers); 
+    
+    // ⭐ 메시지 보드 이벤트 리스너 추가
+    document.getElementById('add-message').addEventListener('click', addMessage);
+    document.getElementById('message-input').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            addMessage();
+        }
+    });
+
+    document.getElementById('sync-btn').addEventListener('click', () => { 
+        initializeApp(); 
+    }); 
+    
+    // 관리자 기능 이벤트 리스너들
+    document.getElementById('admin-btn').addEventListener('click', openAdminModal);
+    document.getElementById('close-admin-modal').addEventListener('click', closeAdminModal);
+    document.getElementById('verify-password-btn').addEventListener('click', handlePasswordVerification);
+    document.getElementById('admin-password').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') handlePasswordVerification();
+    });
+    document.getElementById('backup-btn').addEventListener('click', handleBackup);
+    document.getElementById('cleanup-btn').addEventListener('click', handleCleanup);
+    document.getElementById('analyze-btn').addEventListener('click', handleAnalyze);
+    document.getElementById('diagnostic-btn').addEventListener('click', handleDiagnostic);
+    
+    // ESC 키로 모달 닫기
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            closeChapterModal();
+            closeProgressModal();
+            closeAdminModal();
+        }
+    }); 
+    
+    document.getElementById('close-modal').onclick = closeChapterModal; 
+    document.getElementById('modal-user-selector').addEventListener('change', (e) => { 
+        currentUserForModal = e.target.value; 
+        updateModalForCurrentUser(); 
+    }); 
+    
+    document.getElementById('close-progress-modal').onclick = closeProgressModal; 
+    document.getElementById('tab-ot').onclick = () => switchProgressTab('ot'); 
+    document.getElementById('tab-nt').onclick = () => switchProgressTab('nt'); 
+}
+
+// === 기존 함수들 (수정 없음) ===
+function renderMeditations() { 
+    const list = document.getElementById('meditation-list'); 
+    list.innerHTML = ''; 
+    
+    const currentUserId = document.getElementById('meditation-user').value; 
+    
+    (db.meditations || []).forEach(item => { 
+        const user = db.family.find(u => u.id === item.userId); 
+        const itemEl = document.createElement('div'); 
+        itemEl.className = 'p-2 mb-2 rounded bg-white/70 text-sm slide-in'; 
+        
+        let buttons = (item.userId === currentUserId) ? `<div class="inline-block ml-2"><button onclick="editMeditation('${item.id}')" class="text-xs text-blue-600 hover:underline">수정</button> <button onclick="deleteMeditation('${item.id}')" class="text-xs text-red-600 hover:underline">삭제</button></div>` : ''; 
+        itemEl.innerHTML = `<div><strong class="accent-text">${user ? user.name : '?'}:</strong> ${item.content}</div><div class="text-right text-gray-500 text-xs">${new Date(parseInt(item.id)).toLocaleDateString()} ${buttons}</div>`; 
+        list.appendChild(itemEl); 
+    }); 
+    
+    list.scrollTop = list.scrollHeight; 
+}
+
+function renderPrayers() { 
+    const list = document.getElementById('prayer-list'); 
+    list.innerHTML = ''; 
+    
+    const currentUserId = document.getElementById('prayer-user').value; 
+    
+    (db.prayers || []).forEach(item => { 
+        const user = db.family.find(u => u.id === item.userId); 
+        const itemEl = document.createElement('div'); 
+        itemEl.className = 'p-2 mb-2 rounded bg-white/70 text-sm slide-in'; 
+        
+        let buttons = (item.userId === currentUserId) ? `<div class="inline-block ml-2"><button onclick="editPrayer('${item.id}')" class="text-xs text-blue-600 hover:underline">수정</button> <button onclick="deletePrayer('${item.id}')" class="text-xs text-red-600 hover:underline">삭제</button></div>` : ''; 
+        itemEl.innerHTML = `<div><strong class="accent-text">${user ? user.name : '?'}:</strong> ${item.content}</div><div class="text-right text-gray-500 text-xs">${new Date(parseInt(item.id)).toLocaleDateString()} ${buttons}</div>`; 
+        list.appendChild(itemEl); 
+    }); 
+    
+    list.scrollTop = list.scrollHeight; 
+}
+
+async function addMeditation() { 
+    const userInput = document.getElementById('meditation-user'); 
+    const textInput = document.getElementById('meditation-input'); 
+    
+    if (textInput.value.trim() === '') return; 
+    
+    try { 
+        const result = await gapi.saveData({ 
+            type: 'meditation', 
+            userId: userInput.value, 
+            content: textInput.value.trim() 
+        }); 
+        
+        db.meditations.push(result.data); 
+        textInput.value = ''; 
+        renderMeditations(); 
+    } catch (error) { 
+        alert('묵상 저장 실패: ' + error.message); 
+    } 
+}
+
+async function deleteMeditation(id) { 
+    if (!confirm('정말로 삭제하시겠습니까?')) return; 
+    
+    try { 
+        await gapi.deleteData({ type: 'meditation', id: id }); 
+        db.meditations = db.meditations.filter(item => item.id !== id); 
+        renderMeditations(); 
+    } catch (error) { 
+        alert('묵상 삭제 실패: ' + error.message); 
+    } 
+}
+
+async function editMeditation(id) { 
+    const item = db.meditations.find(item => item.id === id); 
+    const newContent = prompt('묵상 내용 수정:', item.content); 
+    
+    if (newContent === null || newContent.trim() === '' || newContent.trim() === item.content) return; 
+    
+    try { 
+        await gapi.editData({ type: 'meditation', id: id, content: newContent.trim() }); 
+        item.content = newContent.trim(); 
+        renderMeditations(); 
+    } catch (error) { 
+        alert('묵상 수정 실패: ' + error.message); 
+    } 
+}
+
+async function addPrayer() { 
+    const userInput = document.getElementById('prayer-user'); 
+    const textInput = document.getElementById('prayer-input'); 
+    
+    if (textInput.value.trim() === '') return; 
+    
+    try { 
+        const result = await gapi.saveData({ 
+            type: 'prayer', 
+            userId: userInput.value, 
+            content: textInput.value.trim() 
+        }); 
+        
+        db.prayers.push(result.data); 
+        textInput.value = ''; 
+        renderPrayers(); 
+    } catch (error) { 
+        alert('기도제목 저장 실패: ' + error.message); 
+    } 
+}
+
+async function deletePrayer(id) { 
+    if (!confirm('정말로 삭제하시겠습니까?')) return; 
+    
+    try { 
+        await gapi.deleteData({ type: 'prayer', id: id }); 
+        db.prayers = db.prayers.filter(item => item.id !== id); 
+        renderPrayers(); 
+    } catch (error) { 
+        alert('기도제목 삭제 실패: ' + error.message); 
+    } 
+}
+
+async function editPrayer(id) { 
+    const item = db.prayers.find(item => item.id === id); 
+    const newContent = prompt('기도제목 수정:', item.content); 
+    
+    if (newContent === null || newContent.trim() === '' || newContent.trim() === item.content) return; 
+    
+    try { 
+        await gapi.editData({ type: 'prayer', id: id, content: newContent.trim() }); 
+        item.content = newContent.trim(); 
+        renderPrayers(); 
+    } catch (error) { 
+        alert('기도제목 수정 실패: ' + error.message); 
+    } 
+}
+
+// ⭐ === 가족 메시지 보드 기능 ===
 
 function renderMessageBoard() {
-    const container = document.getElementById('message-board-list');
-    if (!container) return;
+    const list = document.getElementById('message-board-list');
+    if (!list) return;
+    list.innerHTML = '';
 
-    const sortedMessages = (db.messages || []).slice().sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    const sortedMessages = (db.messages || []).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
     if (sortedMessages.length === 0) {
-        container.innerHTML = `<div class="text-center text-gray-500 p-8">가족에게 첫 메시지를 남겨보세요! 👋</div>`;
+        list.innerHTML = `<div class="text-center text-gray-500 p-8">가족에게 첫 메시지를 남겨보세요! 👋</div>`;
         return;
     }
 
-    container.innerHTML = sortedMessages.map(message => {
-        const user = db.family.find(u => u.id === message.user_id);
-        return `
-            <div class="p-3 bg-white/80 rounded-lg shadow-sm">
-                <div class="flex items-start gap-3">
-                    <img src="${user?.photo || 'https://placehold.co/40x40'}" class="w-10 h-10 rounded-full object-cover" referrerpolicy="no-referrer">
-                    <div class="flex-grow">
-                        <div class="flex justify-between items-center">
-                            <span class="font-bold">${user?.name || message.user_name}</span>
-                            <span class="text-xs text-gray-500">${new Date(message.timestamp).toLocaleString('ko-KR')}</span>
-                        </div>
-                        <p class="mt-1 text-sm whitespace-pre-wrap">${message.content}</p>
-                        <div class="mt-2 flex items-center gap-4 text-xs">
-                            <button class="text-gray-600 hover:text-red-500" onclick="likeItem('message', '${message.id}')">👍 ${message.like_count || 0}</button>
-                            <button class="text-gray-600 hover:text-blue-500" onclick="toggleCommentForm('comment-form-${message.id}')">💬 댓글 달기</button>
-                        </div>
+    sortedMessages.forEach(message => {
+        const user = db.family.find(u => u.id === message.userId);
+        const currentUserId = document.getElementById('message-user').value;
+
+        const messageEl = document.createElement('div');
+        messageEl.className = 'p-3 bg-white/80 rounded-lg shadow-sm';
+
+        messageEl.innerHTML = `
+            <div class="flex items-start gap-3">
+                <img src="${user ? user.photo : 'https://placehold.co/40x40'}" class="w-10 h-10 rounded-full object-cover" referrerpolicy="no-referrer">
+                <div class="flex-grow">
+                    <div class="flex justify-between items-center">
+                        <span class="font-bold">${user ? user.name : '알 수 없음'}</span>
+                        <span class="text-xs text-gray-500">${new Date(message.timestamp).toLocaleString('ko-KR')}</span>
                     </div>
-                </div>
-                <div id="comments-for-${message.id}" class="ml-12 mt-3 space-y-3">
-                    ${renderComments(message.id, null)}
-                </div>
-                <div id="comment-form-${message.id}" class="ml-12 mt-3 hidden">
-                    <div class="flex gap-2">
-                        <textarea id="comment-input-${message.id}" class="flex-grow p-2 text-sm rounded-md min-w-0" placeholder="댓글을 입력하세요..." rows="1"></textarea>
-                        <button class="bg-white/80 hover:bg-white p-2 rounded-md shadow text-sm" onclick="addComment('${message.id}', null)">등록</button>
+                    <p class="mt-1 text-sm whitespace-pre-wrap">${message.content}</p>
+                    <div class="mt-2 flex items-center gap-4 text-xs">
+                        <button class="text-gray-600 hover:text-red-500">❤️ 좋아요 (${message.likeCount || 0})</button>
+                        <button class="text-gray-600 hover:text-blue-500" onclick="toggleCommentForm('${message.id}')">💬 댓글 달기</button>
+                        ${message.userId === currentUserId ? `
+                            <button class="text-blue-600 hover:underline" onclick="editMessage('${message.id}')">수정</button>
+                            <button class="text-red-600 hover:underline" onclick="deleteMessage('${message.id}')">삭제</button>
+                        ` : ''}
                     </div>
                 </div>
             </div>
+            <div id="comments-for-${message.id}" class="ml-12 mt-3 space-y-3">
+                </div>
+            <div id="comment-form-${message.id}" class="ml-12 mt-3 hidden">
+                <div class="flex gap-2">
+                    <textarea id="comment-input-${message.id}" class="flex-grow p-2 text-sm rounded-md min-w-0" placeholder="댓글을 입력하세요..." rows="1" style="border-color: var(--border-color);"></textarea>
+                    <button class="bg-white/80 hover:bg-white p-2 rounded-md shadow text-sm" onclick="addComment('${message.id}', null)">등록</button>
+                </div>
+            </div>
         `;
-    }).join('');
+        list.appendChild(messageEl);
+        renderComments(message.id, null); // 메시지에 대한 최상위 댓글 렌더링
+    });
 }
 
 function renderComments(messageId, parentId) {
-    return (db.comments || [])
-        .filter(c => c.message_id === messageId && (c.parent_id || null) === parentId)
-        .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
-        .map(comment => {
-            const user = db.family.find(u => u.id === comment.user_id);
-            return `
-                <div class="flex items-start gap-2">
-                    <img src="${user?.photo || 'https://placehold.co/32x32'}" class="w-8 h-8 rounded-full object-cover mt-1" referrerpolicy="no-referrer">
-                    <div class="flex-grow bg-gray-100 p-2 rounded-lg">
-                        <div class="flex justify-between items-center">
-                            <span class="font-semibold text-sm">${user?.name || comment.user_name}</span>
-                        </div>
-                        <p class="mt-1 text-sm whitespace-pre-wrap">${comment.content}</p>
-                        <div class="mt-1 flex items-center gap-3 text-xs">
-                            <button class="text-gray-500 hover:text-red-500" onclick="likeItem('comment', '${comment.id}')">👍 ${comment.like_count || 0}</button>
-                            <button class="text-gray-500 hover:text-blue-500" onclick="toggleCommentForm('comment-form-${comment.id}')">↪️ 답글</button>
-                        </div>
-                        <div id="replies-to-${comment.id}" class="mt-2 space-y-2">
-                             ${renderComments(messageId, comment.id)}
-                        </div>
-                         <div id="comment-form-${comment.id}" class="mt-2 hidden">
-                            <div class="flex gap-2">
-                                <textarea id="comment-input-${comment.id}" class="flex-grow p-2 text-xs rounded-md min-w-0" placeholder="@${user?.name || comment.user_name}에게 답글..." rows="1"></textarea>
-                                <button class="bg-white hover:bg-white/80 p-1 px-2 rounded-md shadow text-xs" onclick="addComment('${messageId}', '${comment.id}')">등록</button>
-                            </div>
-                        </div>
+    const containerId = parentId ? `replies-to-${parentId}` : `comments-for-${messageId}`;
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    container.innerHTML = '';
+    const currentUserId = document.getElementById('message-user').value;
+
+    const comments = (db.comments || [])
+        .filter(c => c.messageId === messageId && c.parentId === parentId)
+        .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+
+    comments.forEach(comment => {
+        const user = db.family.find(u => u.id === comment.userId);
+        const commentEl = document.createElement('div');
+        commentEl.className = 'flex items-start gap-2';
+
+        commentEl.innerHTML = `
+            <img src="${user ? user.photo : 'https://placehold.co/32x32'}" class="w-8 h-8 rounded-full object-cover mt-1" referrerpolicy="no-referrer">
+            <div class="flex-grow bg-gray-100 p-2 rounded-lg">
+                <div class="flex justify-between items-center">
+                    <span class="font-semibold text-sm">${user ? user.name : '알 수 없음'}</span>
+                    <span class="text-xs text-gray-400">${new Date(comment.timestamp).toLocaleString('ko-KR')}</span>
+                </div>
+                <p class="mt-1 text-sm whitespace-pre-wrap">${comment.content}</p>
+                <div class="mt-1 flex items-center gap-3 text-xs">
+                    <button class="text-gray-500 hover:text-red-500">❤️ (${comment.likeCount || 0})</button>
+                    <button class="text-gray-500 hover:text-blue-500" onclick="toggleCommentForm('${messageId}', '${comment.id}')">↪️ 답글</button>
+                    ${comment.userId === currentUserId ? `
+                        <button class="text-blue-500 hover:underline" onclick="editComment('${comment.id}')">수정</button>
+                        <button class="text-red-500 hover:underline" onclick="deleteComment('${comment.id}')">삭제</button>
+                    ` : ''}
+                </div>
+                
+                <div id="replies-to-${comment.id}" class="mt-2 space-y-2">
+                    </div>
+                 <div id="comment-form-${comment.id}" class="mt-2 hidden">
+                    <div class="flex gap-2">
+                        <textarea id="comment-input-${comment.id}" class="flex-grow p-2 text-xs rounded-md min-w-0" placeholder="@${user.name}에게 답글..." rows="1" style="border-color: var(--border-color);"></textarea>
+                        <button class="bg-white hover:bg-white/80 p-1 px-2 rounded-md shadow text-xs" onclick="addComment('${messageId}', '${comment.id}')">등록</button>
                     </div>
                 </div>
-            `;
-        }).join('');
+            </div>
+        `;
+        container.appendChild(commentEl);
+        renderComments(messageId, comment.id); // 재귀 호출로 답글 렌더링
+    });
 }
 
-
-// --- 6. 이벤트 핸들러 및 액션 함수 ---
-
-function setupEventListeners() {
-    document.querySelector('.tab-nav').addEventListener('click', e => {
-        const tabButton = e.target.closest('.main-tab');
-        if (tabButton) switchMainTab(tabButton.dataset.tab);
-    });
-
-    document.getElementById('theme-select').addEventListener('change', e => {
-        document.body.className = e.target.value;
-    });
-
-    document.getElementById('close-chapter-modal').addEventListener('click', closeChapterModal);
-    document.getElementById('close-allowance-modal').addEventListener('click', closeWithdrawModal);
-    
-    // 키보드 ESC로 모달 닫기
-    document.addEventListener('keydown', e => {
-        if (e.key === 'Escape') {
-            closeChapterModal();
-            closeWithdrawModal();
+function toggleCommentForm(messageId, parentId = null) {
+    const formId = parentId ? `comment-form-${parentId}` : `comment-form-${messageId}`;
+    const form = document.getElementById(formId);
+    if (form) {
+        form.classList.toggle('hidden');
+        if (!form.classList.contains('hidden')) {
+            form.querySelector('textarea').focus();
         }
-    });
+    }
 }
 
-function switchMainTab(tabName) {
-    document.querySelectorAll('.main-tab').forEach(tab => {
-        tab.classList.toggle('tab-active', tab.dataset.tab === tabName);
-    });
-    document.querySelectorAll('.tab-content').forEach(content => {
-        content.classList.toggle('hidden', content.id !== `content-${tabName}`);
-    });
-}
 
-async function toggleChapterRead(bookName, chapter, userId) {
-    const userRecords = db.reading_records[userId]?.[bookName]?.chapters || [];
-    const isRead = userRecords.includes(chapter);
-    const action = isRead ? 'delete' : 'save';
-    const userName = db.family.find(u => u.id === userId)?.name || userId;
-    await gapi.performAction(action, { type: 'reading', userId, userName, bookName, chapter });
-}
-
-async function addGenericItem(type) {
-    const userInput = document.getElementById(`${type}-user`);
-    const textInput = document.getElementById(`${type}-input`);
+async function addMessage() {
+    const userInput = document.getElementById('message-user');
+    const textInput = document.getElementById('message-input');
     const content = textInput.value.trim();
     if (!content) return;
 
-    const userId = userInput.value;
-    const userName = db.family.find(u => u.id === userId)?.name || userId;
-    
-    await gapi.performAction('save', { type, userId, userName, content });
-    textInput.value = '';
+    try {
+        const result = await gapi.saveData({
+            type: 'message',
+            userId: userInput.value,
+            content: content
+        });
+        db.messages.push({ ...result.data, id: String(result.data.id), timestamp: new Date().toISOString(), likeCount: 0 }); // 즉시 반영을 위해 로컬에 추가
+        textInput.value = '';
+        renderMessageBoard();
+    } catch (e) {
+        alert('메시지 저장 실패: ' + e.message);
+    }
 }
 
 async function addComment(messageId, parentId) {
     const inputId = parentId ? `comment-input-${parentId}` : `comment-input-${messageId}`;
     const textInput = document.getElementById(inputId);
     const content = textInput.value.trim();
+    const userId = document.getElementById('message-user').value;
     if (!content) return;
 
-    const userId = document.getElementById('message-user').value;
-    const userName = db.family.find(u => u.id === userId)?.name || userId;
-
-    await gapi.performAction('save', { type: 'comment', userId, userName, content, messageId, parentId });
-    textInput.value = '';
+    try {
+        const result = await gapi.saveData({
+            type: 'comment',
+            userId: userId,
+            messageId: messageId,
+            parentId: parentId,
+            content: content
+        });
+        db.comments.push({ ...result.data, id: String(result.data.id), timestamp: new Date().toISOString(), likeCount: 0 });
+        textInput.value = '';
+        renderMessageBoard();
+    } catch (e) {
+        alert('댓글 저장 실패: ' + e.message);
+    }
 }
 
-async function likeItem(type, id) {
-    await gapi.performAction('like', { type, id });
+async function deleteMessage(id) {
+    if (!confirm('메시지를 삭제하면 관련 댓글도 모두 삭제됩니다.\n정말로 삭제하시겠습니까?')) return;
+    try {
+        await gapi.deleteData({ type: 'message', id });
+        db.messages = db.messages.filter(m => m.id !== id);
+        // 관련 댓글도 로컬에서 삭제
+        db.comments = db.comments.filter(c => c.messageId !== id);
+        renderMessageBoard();
+    } catch (e) {
+        alert('메시지 삭제 실패: ' + e.message);
+    }
 }
 
-function openWithdrawModal(userId, userName, balance) {
-    const modal = document.getElementById('allowance-modal');
-    document.getElementById('allowance-modal-title').textContent = `${userName} 용돈 인출하기`;
-    const contentDiv = document.getElementById('allowance-modal-content');
-    contentDiv.innerHTML = `
-        <p class="mb-4">현재 잔액: <strong class="text-xl">${balance.toLocaleString()}원</strong></p>
-        <div class="flex flex-col gap-2">
-            <label for="withdraw-amount" class="font-semibold">인출할 금액</label>
-            <input type="number" id="withdraw-amount" class="p-2 border rounded-md w-full" placeholder="금액을 입력하세요" max="${balance}">
-            <button onclick="handleWithdraw('${userId}', '${userName}')" class="w-full bg-blue-500 text-white font-bold py-2 px-4 rounded hover:bg-blue-600 transition">
-                인출 실행
-            </button>
-        </div>
-    `;
-    modal.classList.remove('hidden');
+async function deleteComment(id) {
+    if (!confirm('정말로 댓글을 삭제하시겠습니까?')) return;
+    try {
+        await gapi.deleteData({ type: 'comment', id });
+        db.comments = db.comments.filter(c => c.id !== id && c.parentId !== id); // 답글도 함께 삭제
+        renderMessageBoard();
+    } catch (e) {
+        alert('댓글 삭제 실패: ' + e.message);
+    }
 }
 
-async function handleWithdraw(userId, userName) {
-    const amountInput = document.getElementById('withdraw-amount');
-    const amount = parseInt(amountInput.value);
-    if (isNaN(amount) || amount <= 0) {
-        alert('올바른 금액을 입력하세요.');
+async function editMessage(id) {
+    const message = db.messages.find(m => m.id === id);
+    const newContent = prompt('메시지 수정:', message.content);
+    if (newContent === null || newContent.trim() === '' || newContent.trim() === message.content) return;
+    
+    try {
+        await gapi.editData({ type: 'message', id, content: newContent.trim() });
+        message.content = newContent.trim();
+        renderMessageBoard();
+    } catch (e) {
+        alert('메시지 수정 실패: ' + e.message);
+    }
+}
+
+async function editComment(id) {
+    const comment = db.comments.find(c => c.id === id);
+    const newContent = prompt('댓글 수정:', comment.content);
+    if (newContent === null || newContent.trim() === '' || newContent.trim() === comment.content) return;
+
+    try {
+        await gapi.editData({ type: 'comment', id, content: newContent.trim() });
+        comment.content = newContent.trim();
+        renderMessageBoard();
+    } catch (e) {
+        alert('댓글 수정 실패: ' + e.message);
+    }
+}
+
+
+// === 이하 기존 함수들 ===
+
+function openProgressModal(userId) { 
+    currentProgressUserId = userId; 
+    const user = db.family.find(u => u.id === userId); 
+    if (!user) return; 
+    
+    document.getElementById('progress-modal-photo').src = user.photo || 'https://placehold.co/80x80/cccccc/FFFFFF?text=?'; 
+    document.getElementById('progress-modal-title').textContent = `${user.name}님의 진행 현황`; 
+    
+    const contentOT = document.getElementById('content-ot'); 
+    const contentNT = document.getElementById('content-nt'); 
+    contentOT.innerHTML = ''; 
+    contentNT.innerHTML = ''; 
+    
+    const createBookHTML = (book) => { 
+        return `<details class="group border-b border-gray-200 rounded-md overflow-hidden mb-1" data-book-name="${book.name}"><summary class="flex justify-between items-center p-2 cursor-pointer hover:bg-gray-50/50"></summary><div class="chapter-grid p-2 grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 gap-2 bg-gray-50 border-t"></div></details>`; 
+    }; 
+    
+    BIBLE_BOOKS.old.forEach(book => contentOT.innerHTML += createBookHTML(book)); 
+    BIBLE_BOOKS.new.forEach(book => contentNT.innerHTML += createBookHTML(book)); 
+    
+    document.querySelectorAll('#progress-modal details').forEach(detail => { 
+        updateProgressInModal(detail, userId); 
+        detail.querySelector('summary').addEventListener('click', populateChaptersForBook); 
+    }); 
+    
+    switchProgressTab('ot'); 
+    document.getElementById('progress-modal').classList.remove('hidden'); 
+}
+
+// === 수정된 장 채우기 함수 ===
+function populateChaptersForBook(event) { 
+    const detail = event.currentTarget.parentElement; 
+    const grid = detail.querySelector('.chapter-grid'); 
+    
+    if (grid.childElementCount > 0) { 
+        grid.innerHTML = ''; 
+        return; 
+    } 
+    
+    const bookName = detail.dataset.bookName; 
+    const book = [...BIBLE_BOOKS.old, ...BIBLE_BOOKS.new].find(b => b.name === bookName); 
+    
+    const userRecords = db.readRecords[currentProgressUserId] || {};
+    const bookData = userRecords[bookName];
+    
+    // 새로운 데이터 구조에 맞게 수정
+    let userRecordsForBook = [];
+    if (bookData && bookData.chapters && Array.isArray(bookData.chapters)) {
+        userRecordsForBook = bookData.chapters;
+    } else if (Array.isArray(bookData)) {
+        // 이전 구조 호환성
+        userRecordsForBook = bookData;
+    }
+    
+    for (let i = 1; i <= book.chapters; i++) { 
+        const btn = document.createElement('button'); 
+        btn.textContent = i; 
+        btn.className = `p-2 rounded border transition-colors duration-200 chapter-btn-animate ${userRecordsForBook.includes(i) ? 'bg-green-500 text-white border-green-500' : 'bg-white hover:bg-green-100'}`; 
+        btn.onclick = (e) => { 
+            e.stopPropagation(); 
+            toggleChapterRead(i, btn, { bookName: book.name, userId: currentProgressUserId }); 
+        }; 
+        grid.appendChild(btn); 
+    } 
+}
+
+// === 수정된 진행현황 모달 업데이트 함수 ===
+function updateProgressInModal(detailElement, userId) { 
+    const summary = detailElement.querySelector('summary'); 
+    const bookName = detailElement.dataset.bookName; 
+    const book = [...BIBLE_BOOKS.old, ...BIBLE_BOOKS.new].find(b => b.name === bookName); 
+    
+    const userRecords = db.readRecords[userId] || {};
+    const bookData = userRecords[bookName];
+    
+    // 새로운 데이터 구조에 맞게 수정
+    let readChapters = [];
+    if (bookData && bookData.chapters && Array.isArray(bookData.chapters)) {
+        readChapters = bookData.chapters;
+    } else if (Array.isArray(bookData)) {
+        // 이전 구조 호환성
+        readChapters = bookData;
+    }
+    
+    const progress = book.chapters > 0 ? (readChapters.length / book.chapters) * 100 : 0; 
+    const isReading = readChapters.length > 0; 
+    
+    detailElement.classList.toggle('highlight-bg', isReading); 
+    
+    summary.innerHTML = `<div class="flex-grow font-bold">${book.name}</div><div class="text-sm text-gray-600 mr-4">${readChapters.length}/${book.chapters} 장</div><div class="w-24 bg-gray-200 rounded-full h-2.5"><div class="progress-bar-fill h-2.5 rounded-full" style="width: ${progress.toFixed(2)}%"></div></div><div class="w-4 ml-2 transform group-open:rotate-180 transition-transform">▼</div>`; 
+}
+
+function closeProgressModal() { 
+    document.getElementById('progress-modal').classList.add('hidden'); 
+}
+
+function switchProgressTab(tab) { 
+    const tabOT = document.getElementById('tab-ot'); 
+    const tabNT = document.getElementById('tab-nt'); 
+    const contentOT = document.getElementById('content-ot'); 
+    const contentNT = document.getElementById('content-nt'); 
+    
+    if (tab === 'ot') { 
+        tabOT.classList.add('tab-active'); 
+        tabOT.classList.remove('border-transparent', 'text-gray-500'); 
+        tabNT.classList.remove('tab-active'); 
+        tabNT.classList.add('border-transparent', 'text-gray-500'); 
+        contentOT.classList.remove('hidden'); 
+        contentNT.classList.add('hidden'); 
+    } else { 
+        tabNT.classList.add('tab-active'); 
+        tabNT.classList.remove('border-transparent', 'text-gray-500'); 
+        tabOT.classList.remove('tab-active'); 
+        tabOT.classList.add('border-transparent', 'text-gray-500'); 
+        contentNT.classList.remove('hidden'); 
+        contentOT.classList.add('hidden'); 
+    } 
+}
+
+// === 수정된 장 읽기 토글 함수 ===
+function toggleChapterRead(chapterNumber, buttonElement, context) { 
+    const userId = context.userId; 
+    const bookName = context.bookName; 
+    
+    if (!db.readRecords[userId]) db.readRecords[userId] = {}; 
+    if (!db.readRecords[userId][bookName]) {
+        db.readRecords[userId][bookName] = {
+            chapters: [],
+            readDates: {},
+            startDate: null,
+            endDate: null
+        };
+    }
+    
+    const bookData = db.readRecords[userId][bookName];
+    
+    // 새로운 구조에서 chapters 배열 확보
+    if (!bookData.chapters) {
+        bookData.chapters = [];
+    }
+    if (!bookData.readDates) {
+        bookData.readDates = {};
+    }
+    
+    const readList = bookData.chapters;
+    const chapterIndex = readList.indexOf(chapterNumber); 
+    const params = { type: 'reading', userId, bookName, chapter: chapterNumber }; 
+    
+    // 애니메이션 효과 추가
+    if (chapterIndex > -1) { 
+        readList.splice(chapterIndex, 1); 
+        delete bookData.readDates[chapterNumber]; // 날짜 정보도 삭제
+        buttonElement.className = 'p-2 rounded border transition-colors duration-200 chapter-btn-animate bg-white hover:bg-green-100'; 
+    } else { 
+        readList.push(chapterNumber); 
+        bookData.readDates[chapterNumber] = new Date().toISOString().split('T')[0]; // 오늘 날짜 추가
+        buttonElement.className = 'p-2 rounded border transition-colors duration-200 chapter-btn-animate bg-green-500 text-white border-green-500 checked'; 
+        
+        // 체크 애니메이션 제거
+        setTimeout(() => {
+            buttonElement.classList.remove('checked');
+        }, 600);
+    } 
+    
+    renderAll(); 
+    
+    const detail = document.querySelector(`#progress-modal details[data-book-name="${bookName}"]`); 
+    if(detail) updateProgressInModal(detail, userId); 
+    
+    // 향상된 API 호출 (큐 시스템 사용)
+    const apiCall = (chapterIndex > -1) ? gapi.deleteData(params) : gapi.saveData(params); 
+    apiCall.catch(error => { 
+        console.error('읽기 상태 저장 실패:', error);
+        // 오류 시 롤백하지 않음 (오프라인에서도 작동하도록)
+    }); 
+}
+
+function openChapterModal(book) { 
+    if (!db.family || db.family.length === 0) return; 
+    
+    currentBook = book; 
+    document.getElementById('modal-title').textContent = book.name; 
+    document.getElementById('modal-user-selector').value = currentUserForModal; 
+    updateModalForCurrentUser(); 
+    document.getElementById('chapter-modal').classList.remove('hidden'); 
+}
+
+// === 수정된 모달 업데이트 함수 ===
+function updateModalForCurrentUser() { 
+    const modalChapters = document.getElementById('modal-chapters'); 
+    modalChapters.innerHTML = ''; 
+    
+    const userRecords = db.readRecords[currentUserForModal] || {};
+    const bookData = userRecords[currentBook.name];
+    
+    // 새로운 데이터 구조에 맞게 수정
+    let userRecordsForBook = [];
+    if (bookData && bookData.chapters && Array.isArray(bookData.chapters)) {
+        userRecordsForBook = bookData.chapters;
+    } else if (Array.isArray(bookData)) {
+        // 이전 구조 호환성
+        userRecordsForBook = bookData;
+    }
+    
+    for (let i = 1; i <= currentBook.chapters; i++) { 
+        const btn = document.createElement('button'); 
+        btn.textContent = i; 
+        btn.className = `p-2 rounded border transition-colors duration-200 chapter-btn-animate ${userRecordsForBook.includes(i) ? 'bg-green-500 text-white border-green-500' : 'bg-white hover:bg-green-100'}`; 
+        btn.onclick = () => toggleChapterRead(i, btn, {bookName: currentBook.name, userId: currentUserForModal}); 
+        modalChapters.appendChild(btn); 
+    } 
+}
+
+function closeChapterModal() { 
+    document.getElementById('chapter-modal').classList.add('hidden'); 
+}
+
+// === 수정된 메인 탭 전환 기능 (null 오류 해결) ===
+function switchMainTab(tabName) {
+    console.log('탭 전환:', tabName);
+    
+    if (!tabName) {
+        console.error('탭 이름이 null입니다.');
         return;
     }
-    await gapi.performAction('withdraw', { userId, userName, amount });
-    closeWithdrawModal();
-}
-
-// --- 7. UI 헬퍼 및 기타 함수 ---
-
-function showLoadingState(isLoading, message = '처리 중...') {
-    const overlay = document.getElementById('loading-overlay');
-    if (isLoading) {
-        document.getElementById('loading-text').textContent = message;
-        overlay.classList.remove('hidden');
-        overlay.classList.add('flex');
+    
+    // 모든 탭 버튼의 활성 상태 제거
+    document.querySelectorAll('.main-tab').forEach(tab => {
+        tab.classList.remove('tab-active');
+    });
+    
+    // 모든 탭 콘텐츠 숨기기
+    document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.add('hidden');
+    });
+    
+    // 선택된 탭 활성화
+    const selectedTab = document.getElementById(`tab-${tabName}`);
+    const selectedContent = document.getElementById(`content-${tabName}`);
+    
+    if (selectedTab && selectedContent) {
+        selectedTab.classList.add('tab-active');
+        selectedContent.classList.remove('hidden');
+        console.log('탭 전환 완료:', tabName);
     } else {
-        overlay.classList.remove('hidden');
-        overlay.classList.remove('flex');
+        console.error('탭 요소를 찾을 수 없음:', tabName);
+    }
+    
+    // 통계 탭이 선택되었을 때 차트 업데이트
+    if (tabName === 'stats' && statisticsManager && statisticsManager.weeklyChart) {
+        setTimeout(() => {
+            statisticsManager.updateCharts();
+        }, 100);
     }
 }
 
-function updateConnectionStatus(isOnline, isConnecting = false) {
-    const indicator = document.getElementById('status-indicator');
-    const text = document.getElementById('status-text');
-    indicator.classList.remove('animate-pulse');
-
-    if (isConnecting) {
-        indicator.className = 'w-3 h-3 rounded-full bg-yellow-500';
-        text.textContent = '연결 중...';
-    } else if (isOnline) {
-        indicator.className = 'w-3 h-3 rounded-full bg-green-500';
-        text.textContent = '온라인';
-    } else {
-        indicator.className = 'w-3 h-3 rounded-full bg-red-500';
-        text.textContent = '오프라인';
-    }
-}
-
-function populateUserDropdowns() {
-    const selectors = ['meditation-user', 'prayer-user', 'message-user', 'modal-user-selector'];
-    selectors.forEach(id => {
-        const select = document.getElementById(id);
-        if (select) {
-            const currentVal = select.value;
-            select.innerHTML = db.family.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
-            if(currentVal) select.value = currentVal;
-        }
+// === 개인별 상세 진행 현황 렌더링 (대폭 개선) ===
+function renderDetailedProgress() {
+    const container = document.getElementById('detailed-progress');
+    if (!container) return;
+    
+    container.innerHTML = '';
+    
+    if (!db.family || db.family.length === 0) return;
+    
+    db.family.forEach(member => {
+        const userRecords = db.readRecords[member.id] || {};
+        
+        // 기본 통계 계산
+        let totalRead = 0;
+        let completedBooks = [];
+        let recentBooks = [];
+        
+        Object.entries(userRecords).forEach(([bookName, bookData]) => {
+            // 새로운 데이터 구조에 맞게 수정
+            let chapters = [];
+            if (bookData && bookData.chapters && Array.isArray(bookData.chapters)) {
+                chapters = bookData.chapters;
+            } else if (Array.isArray(bookData)) {
+                chapters = bookData;
+            }
+            
+            totalRead += chapters.length;
+            
+            // 완독한 책 확인
+            const book = [...BIBLE_BOOKS.old, ...BIBLE_BOOKS.new].find(b => b.name === bookName);
+            if (book && chapters.length === book.chapters) {
+                completedBooks.push({
+                    name: bookName,
+                    endDate: bookData.endDate,
+                    chapters: book.chapters
+                });
+            }
+            
+            // 최근에 읽은 책들 (7일 이내)
+            if (bookData && bookData.readDates) {
+                const recentReads = Object.entries(bookData.readDates).filter(([chapter, date]) => {
+                    const readDate = new Date(date);
+                    const weekAgo = new Date();
+                    weekAgo.setDate(weekAgo.getDate() - 7);
+                    return readDate >= weekAgo;
+                });
+                
+                if (recentReads.length > 0) {
+                    recentBooks.push({
+                        name: bookName,
+                        recentChapters: recentReads.length
+                    });
+                }
+            }
+        });
+        
+        const totalChapters = TOTAL_OT_CHAPTERS + TOTAL_NT_CHAPTERS;
+        const percentage = totalChapters > 0 ? ((totalRead / totalChapters) * 100).toFixed(1) : 0;
+        
+        // 최근 7일 읽기 데이터 생성
+        const weeklyData = getWeeklyReadingData(member.id);
+        
+        // 격려 메시지 생성
+        const encouragement = generateEncouragementMessage(member, percentage, weeklyData, completedBooks);
+        
+        // 읽기 시작일/종료일 계산
+        const readingPeriod = getReadingPeriod(userRecords);
+        
+        const memberCard = document.createElement('div');
+        memberCard.className = 'accent-bg rounded-lg p-4 cursor-pointer hover:opacity-90 transition slide-in';
+        memberCard.onclick = () => openProgressModal(member.id);
+        
+        memberCard.innerHTML = `
+            <div class="flex items-center mb-4">
+                <img src="${member.photo || 'https://placehold.co/60x60/cccccc/FFFFFF?text=?'}" 
+                     alt="${member.name}" 
+                     class="w-16 h-16 rounded-full mr-4 object-cover border-2 border-white/50" 
+                     referrerpolicy="no-referrer">
+                <div class="flex-grow">
+                    <h4 class="font-bold text-xl">${member.title} (${member.name})</h4>
+                    <p class="text-sm text-gray-600">전체 진행률 ${percentage}%</p>
+                    ${readingPeriod.start ? `<p class="text-xs text-gray-500">시작일: ${readingPeriod.start}</p>` : ''}
+                </div>
+            </div>
+            
+            <div class="mb-4">
+                <div class="flex justify-between text-sm mb-1">
+                    <span>전체 진도</span>
+                    <span>${totalRead} / ${totalChapters}장</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-3">
+                    <div class="progress-bar-fill h-3 rounded-full" style="width: ${percentage}%"></div>
+                </div>
+            </div>
+            
+            <div class="mb-4">
+                <h5 class="font-semibold text-sm mb-2">📈 최근 7일 읽기</h5>
+                <div class="flex items-end justify-between h-12 bg-white/50 rounded p-2">
+                    ${weeklyData.map((count, index) => `
+                        <div class="flex flex-col items-center flex-1">
+                            <div class="bg-blue-400 rounded-t" style="height: ${Math.max(count * 8, 2)}px; width: 8px; margin-bottom: 2px;"></div>
+                            <span class="text-xs text-gray-500">${count}</span>
+                        </div>
+                    `).join('')}
+                </div>
+                <div class="flex justify-between text-xs text-gray-500 mt-1">
+                    ${Array.from({length: 7}, (_, i) => {
+                        const date = new Date();
+                        date.setDate(date.getDate() - (6 - i));
+                        return `<span>${date.getDate()}</span>`;
+                    }).join('')}
+                </div>
+            </div>
+            
+            ${completedBooks.length > 0 ? `
+                <div class="mb-4">
+                    <h5 class="font-semibold text-sm mb-2">🎉 완독한 책</h5>
+                    <div class="flex flex-wrap gap-1">
+                        ${completedBooks.slice(0, 3).map(book => `
+                            <span class="inline-block bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
+                                ${book.name}
+                            </span>
+                        `).join('')}
+                        ${completedBooks.length > 3 ? `<span class="text-xs text-gray-500">외 ${completedBooks.length - 3}권</span>` : ''}
+                    </div>
+                </div>
+            ` : ''}
+            
+            <div class="bg-white/70 rounded-lg p-3 text-sm">
+                <div class="flex items-start">
+                    <span class="text-lg mr-2">${encouragement.emoji}</span>
+                    <p class="flex-grow leading-relaxed">${encouragement.message}</p>
+                </div>
+            </div>
+        `;
+        
+        container.appendChild(memberCard);
     });
 }
 
-function openChapterModal(bookName) {
-    currentBook = BIBLE_BOOKS.old.find(b => b.name === bookName) || BIBLE_BOOKS.new.find(b => b.name === bookName);
-    if (!currentBook) return;
-
-    const modal = document.getElementById('chapter-modal');
-    document.getElementById('modal-title').textContent = currentBook.name;
-    document.getElementById('modal-user-selector').value = currentUserForModal;
-    renderModalChapters();
-    modal.classList.remove('hidden');
-}
-
-function renderModalChapters() {
-    const container = document.getElementById('modal-chapters');
-    const selectedUserId = document.getElementById('modal-user-selector').value;
-    const userChapters = db.reading_records[selectedUserId]?.[currentBook.name]?.chapters || [];
+// === 수정된 최근 7일 읽기 데이터 생성 함수 ===
+function getWeeklyReadingData(userId) {
+    const weeklyData = [];
+    const userRecords = db.readRecords[userId] || {};
     
-    container.innerHTML = Array.from({ length: currentBook.chapters }, (_, i) => i + 1).map(chapter => {
-        const isRead = userChapters.includes(chapter);
-        return `<button class="p-2 rounded border transition-colors duration-200 ${isRead ? 'bg-green-500 text-white' : 'bg-white hover:bg-green-100'}" onclick="toggleChapterRead('${currentBook.name}', ${chapter}, '${selectedUserId}')">${chapter}</button>`;
-    }).join('');
+    for (let i = 6; i >= 0; i--) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        const dateStr = date.toISOString().split('T')[0];
+        
+        let chaptersReadOnDay = 0;
+        Object.values(userRecords).forEach(bookData => {
+            // 새로운 데이터 구조에 맞게 수정
+            if (bookData && bookData.readDates) {
+                Object.values(bookData.readDates).forEach(readDate => {
+                    if (readDate === dateStr) {
+                        chaptersReadOnDay++;
+                    }
+                });
+            }
+        });
+        
+        weeklyData.push(chaptersReadOnDay);
+    }
+    
+    return weeklyData;
 }
 
-function toggleCommentForm(formId) {
-    document.getElementById(formId)?.classList.toggle('hidden');
+// === 읽기 기간 계산 ===
+function getReadingPeriod(userRecords) {
+    let startDate = null;
+    let endDate = null;
+    
+    Object.values(userRecords).forEach(bookData => {
+        if (bookData && bookData.startDate) {
+            if (!startDate || bookData.startDate < startDate) {
+                startDate = bookData.startDate;
+            }
+        }
+        if (bookData && bookData.endDate) {
+            if (!endDate || bookData.endDate > endDate) {
+                endDate = bookData.endDate;
+            }
+        }
+    });
+    
+    return {
+        start: startDate ? new Date(startDate).toLocaleDateString('ko-KR') : null,
+        end: endDate ? new Date(endDate).toLocaleDateString('ko-KR') : null
+    };
 }
 
+// === 격려 메시지 생성 (AI 기능) ===
+function generateEncouragementMessage(member, percentage, weeklyData, completedBooks) {
+    // 최근 완독한 책이 있는지 확인
+    const recentCompletion = completedBooks.find(book => {
+        if (!book.endDate) return false;
+        const endDate = new Date(book.endDate);
+        const weekAgo = new Date();
+        weekAgo.setDate(weekAgo.getDate() - 7);
+        return endDate >= weekAgo;
+    });
+    
+    if (recentCompletion) {
+        const messages = ENCOURAGEMENT_MESSAGES.완독축하;
+        const message = messages[Math.floor(Math.random() * messages.length)]
+            .replace('{bookName}', recentCompletion.name);
+        return { emoji: '🎉', message };
+    }
+    
+    // 최근 7일 읽기 활동 분석
+    const recentTotal = weeklyData.reduce((sum, count) => sum + count, 0);
+    const avgPerDay = recentTotal / 7;
+    
+    let category;
+    if (avgPerDay >= 2) {
+        category = '앞서는경우';
+    } else if (avgPerDay >= 0.5) {
+        category = '보통진도';
+    } else {
+        category = '뒤처지는경우';
+    }
+    
+    const messages = ENCOURAGEMENT_MESSAGES[category];
+    const message = messages[Math.floor(Math.random() * messages.length)];
+    
+    const emoji = category === '앞서는경우' ? '🌟' : 
+                  category === '보통진도' ? '💪' : '🤗';
+    
+    return { emoji, message };
+}
 
-function closeChapterModal() { document.getElementById('chapter-modal').classList.add('hidden'); }
-function closeWithdrawModal() { document.getElementById('allowance-modal').classList.add('hidden'); }
+// === 가족 대화 주제 생성 (AI 기능) ===
+function renderFamilyDiscussionTopic() {
+    const container = document.getElementById('family-discussion-topic');
+    if (!container) return;
+    
+    // 가족이 공통으로 읽은 책 찾기
+    const commonBooks = findCommonReadBooks();
+    
+    if (commonBooks.length === 0) {
+        container.innerHTML = `
+            <div class="text-center text-gray-500">
+                <div class="text-4xl mb-2">📚</div>
+                <p>가족이 함께 읽은 성경이 있으면 대화 주제를 제안해드려요!</p>
+                <p class="text-sm mt-2">같은 책을 읽기 시작해보세요.</p>
+            </div>
+        `;
+        return;
+    }
+    
+    // 가장 최근에 함께 읽은 책 선택
+    const latestBook = commonBooks[0];
+    const topic = generateDiscussionTopic(latestBook);
+    
+    container.innerHTML = `
+        <div class="space-y-3">
+            <div class="flex items-center justify-between">
+                <h4 class="font-semibold text-lg">📖 ${latestBook}</h4>
+                <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">AI 추천</span>
+            </div>
+            <p class="text-gray-700 leading-relaxed">${topic}</p>
+            <div class="flex items-center justify-between text-sm">
+                <span class="text-gray-500">💡 가족이 함께 나눠보세요</span>
+                <button onclick="regenerateDiscussionTopic()" class="text-blue-600 hover:underline">다른 주제 보기</button>
+            </div>
+        </div>
+    `;
+}
 
+// === 공통으로 읽은 책 찾기 ===
+function findCommonReadBooks() {
+    if (!db.family || db.family.length < 2) return [];
+    
+    const allBooks = [...BIBLE_BOOKS.old, ...BIBLE_BOOKS.new].map(b => b.name);
+    const commonBooks = [];
+    
+    allBooks.forEach(bookName => {
+        let readByAll = true;
+        db.family.forEach(member => {
+            const userRecords = db.readRecords[member.id] || {};
+            const bookData = userRecords[bookName];
+            
+            // 새로운 데이터 구조에 맞게 수정
+            let hasChapters = false;
+            if (bookData && bookData.chapters && Array.isArray(bookData.chapters)) {
+                hasChapters = bookData.chapters.length > 0;
+            } else if (Array.isArray(bookData)) {
+                hasChapters = bookData.length > 0;
+            }
+            
+            if (!hasChapters) {
+                readByAll = false;
+            }
+        });
+        
+        if (readByAll) {
+            commonBooks.push(bookName);
+        }
+    });
+    
+    return commonBooks;
+}
+
+// === 대화 주제 생성 ===
+function generateDiscussionTopic(bookName) {
+    const topics = BIBLE_TOPICS[bookName];
+    if (topics && topics.questions) {
+        // 가족 구성원 연령대에 따라 적절한 질문 선택
+        const questionTypes = Object.keys(topics.questions);
+        const randomType = questionTypes[Math.floor(Math.random() * questionTypes.length)];
+        return topics.questions[randomType];
+    }
+    
+    // 기본 템플릿 사용
+    const commonTopics = FAMILY_DISCUSSION_TEMPLATES.공통읽기;
+    if (commonTopics[bookName]) {
+        return commonTopics[bookName];
+    }
+    
+    // 계절별 기본 질문
+    const season = getCurrentSeason();
+    return FAMILY_DISCUSSION_TEMPLATES.계절별[season];
+}
+
+// === 현재 계절 반환 ===
+function getCurrentSeason() {
+    const month = new Date().getMonth() + 1;
+    if (month >= 3 && month <= 5) return 'spring';
+    if (month >= 6 && month <= 8) return 'summer';
+    if (month >= 9 && month <= 11) return 'autumn';
+    return 'winter';
+}
+
+// === 대화 주제 재생성 ===
+function regenerateDiscussionTopic() {
+    renderFamilyDiscussionTopic();
+}
+
+// === 관리자 기능들 ===
+let isAdminAuthenticated = false;
+let currentAdminPassword = '';
+
+function openAdminModal() {
+    document.getElementById('admin-modal').classList.remove('hidden');
+    
+    // 초기 상태로 리셋
+    isAdminAuthenticated = false;
+    currentAdminPassword = '';
+    document.getElementById('admin-password').value = '';
+    document.getElementById('password-section').style.display = 'block';
+    document.getElementById('admin-functions').classList.add('hidden');
+    document.getElementById('auth-status').classList.add('hidden');
+    
+    updateConnectionInfo();
+}
+
+function closeAdminModal() {
+    document.getElementById('admin-modal').classList.add('hidden');
+    isAdminAuthenticated = false;
+    currentAdminPassword = '';
+}
+
+function updateConnectionInfo() {
+    document.getElementById('api-status').textContent = gapi.isConnected ? '온라인' : '오프라인';
+    document.getElementById('last-sync').textContent = gapi.lastSyncTime ? 
+        new Date(gapi.lastSyncTime).toLocaleString('ko-KR') : '없음';
+    document.getElementById('pending-info').textContent = `${gapi.pendingChanges.length}개`;
+    
+    // 보안 상태 업데이트 (간소화)
+    const securityStatus = document.getElementById('security-status');
+    const apiKeyStatus = document.getElementById('api-key-status');
+    
+    if (securityStatus) {
+        if (gapi.enableSecurity) {
+            securityStatus.textContent = '활성화됨';
+            securityStatus.className = 'font-semibold text-green-600';
+            apiKeyStatus.textContent = gapi.apiKey.substring(0, 16) + '...';
+            apiKeyStatus.className = 'font-mono text-xs text-green-600';
+        } else {
+            securityStatus.textContent = '비활성화됨 (가족용)';
+            securityStatus.className = 'font-semibold text-blue-600';
+            apiKeyStatus.textContent = '사용 안함';
+            apiKeyStatus.className = 'font-mono text-xs text-gray-500';
+        }
+    }
+}
+
+async function handlePasswordVerification() {
+    const passwordInput = document.getElementById('admin-password');
+    const verifyBtn = document.getElementById('verify-password-btn');
+    const authStatus = document.getElementById('auth-status');
+    
+    const password = passwordInput.value.trim();
+    if (!password) {
+        showAuthStatus('비밀번호를 입력하세요.', 'error');
+        return;
+    }
+    
+    verifyBtn.disabled = true;
+    verifyBtn.textContent = '인증 중...';
+    authStatus.classList.remove('hidden');
+    authStatus.textContent = '인증 중...';
+    authStatus.className = 'mt-2 text-sm text-blue-600';
+    
+    try {
+        const response = await gapi.verifyAdminPassword(password);
+        
+        if (response.isValid) {
+            isAdminAuthenticated = true;
+            currentAdminPassword = password;
+            
+            showAuthStatus('✅ 인증 성공! 관리자 권한이 활성화되었습니다.', 'success');
+            
+            // 비밀번호 섹션 숨기고 관리 기능 표시
+            setTimeout(() => {
+                document.getElementById('password-section').style.display = 'none';
+                document.getElementById('admin-functions').classList.remove('hidden');
+            }, 1000);
+            
+        } else {
+            showAuthStatus('❌ 잘못된 비밀번호입니다.', 'error');
+            passwordInput.value = '';
+            passwordInput.focus();
+        }
+        
+    } catch (error) {
+        showAuthStatus(`❌ 인증 오류: ${error.message}`, 'error');
+    } finally {
+        verifyBtn.disabled = false;
+        verifyBtn.textContent = '인증';
+    }
+}
+
+function showAuthStatus(message, type) {
+    const authStatus = document.getElementById('auth-status');
+    authStatus.classList.remove('hidden');
+    authStatus.textContent = message;
+    
+    switch (type) {
+        case 'success':
+            authStatus.className = 'mt-2 text-sm text-green-600 bg-green-50 p-2 rounded';
+            break;
+        case 'error':
+            authStatus.className = 'mt-2 text-sm text-red-600 bg-red-50 p-2 rounded';
+            break;
+        default:
+            authStatus.className = 'mt-2 text-sm text-blue-600';
+    }
+}
+
+async function handleBackup() {
+    if (!isAdminAuthenticated) {
+        alert('관리자 인증이 필요합니다.');
+        return;
+    }
+    
+    if (!confirm('현재 모든 데이터를 백업하시겠습니까?\n\n새로운 백업 시트가 생성됩니다.')) {
+        return;
+    }
+    
+    const btn = document.getElementById('backup-btn');
+    const result = document.getElementById('backup-result');
+    
+    btn.disabled = true;
+    btn.textContent = '백업 중...';
+    result.classList.remove('hidden');
+    result.textContent = '백업 생성 중...';
+    result.className = 'mt-2 p-2 bg-blue-100 rounded text-sm';
+    
+    try {
+        const response = await gapi.createBackup(currentAdminPassword);
+        
+        result.innerHTML = `
+            <div class="flex items-center gap-2">
+                <span class="text-green-600">✅</span>
+                <span>${response.message}</span>
+            </div>
+            <div class="text-xs text-gray-600 mt-1">
+                구글 시트에서 새로 생성된 백업 시트를 확인하세요.
+            </div>
+        `;
+        result.className = 'mt-2 p-2 bg-green-100 rounded text-sm';
+        
+    } catch (error) {
+        result.innerHTML = `
+            <div class="flex items-center gap-2">
+                <span class="text-red-600">❌</span>
+                <span>백업 실패: ${error.message}</span>
+            </div>
+        `;
+        result.className = 'mt-2 p-2 bg-red-100 rounded text-sm';
+    } finally {
+        btn.disabled = false;
+        btn.textContent = '백업 생성';
+    }
+}
+
+async function handleCleanup() {
+    if (!isAdminAuthenticated) {
+        alert('관리자 인증이 필요합니다.');
+        return;
+    }
+    
+    if (!confirm('⚠️ 중복된 읽기 기록을 정리합니다.\n\n이 작업은 되돌릴 수 없습니다.\n백업을 먼저 생성하셨나요?\n\n계속하시겠습니까?')) {
+        return;
+    }
+    
+    const btn = document.getElementById('cleanup-btn');
+    const result = document.getElementById('cleanup-result');
+    
+    btn.disabled = true;
+    btn.textContent = '정리 중...';
+    result.classList.remove('hidden');
+    result.textContent = '중복 기록 정리 중...';
+    result.className = 'mt-2 p-2 bg-yellow-100 rounded text-sm';
+    
+    try {
+        const response = await gapi.cleanupDuplicates(currentAdminPassword);
+        
+        result.innerHTML = `
+            <div class="flex items-center gap-2">
+                <span class="text-green-600">✅</span>
+                <span>${response.message}</span>
+            </div>
+            <div class="text-xs text-gray-600 mt-1">
+                페이지를 새로고침하여 변경사항을 확인하세요.
+            </div>
+        `;
+        result.className = 'mt-2 p-2 bg-green-100 rounded text-sm';
+        
+        // 데이터 다시 로드
+        setTimeout(() => {
+            initializeApp();
+        }, 2000);
+        
+    } catch (error) {
+        result.innerHTML = `
+            <div class="flex items-center gap-2">
+                <span class="text-red-600">❌</span>
+                <span>정리 실패: ${error.message}</span>
+            </div>
+        `;
+        result.className = 'mt-2 p-2 bg-red-100 rounded text-sm';
+    } finally {
+        btn.disabled = false;
+        btn.textContent = '중복 기록 정리';
+    }
+}
+
+async function handleAnalyze() {
+    const btn = document.getElementById('analyze-btn');
+    const result = document.getElementById('cleanup-result');
+    
+    btn.disabled = true;
+    btn.textContent = '분석 중...';
+    result.classList.remove('hidden');
+    result.textContent = '중복 데이터 분석 중...';
+    result.className = 'mt-2 p-2 bg-blue-100 rounded text-sm';
+    
+    try {
+        const response = await gapi.runDiagnostics();
+        const analysis = response.debugInfo.duplicateAnalysis;
+        
+        if (typeof analysis === 'string') {
+            result.innerHTML = `
+                <div class="flex items-center gap-2">
+                    <span class="text-blue-600">📊</span>
+                    <span>${analysis}</span>
+                </div>
+            `;
+        } else {
+            const duplicates = analysis.duplicates || [];
+            result.innerHTML = `
+                <div><strong>📊 중복 분석 결과:</strong></div>
+                <div class="mt-1 space-y-1">
+                    <div>• 전체 행: ${analysis.totalRows}개</div>
+                    <div>• 중복 행: <span class="font-bold ${analysis.duplicateCount > 0 ? 'text-red-600' : 'text-green-600'}">${analysis.duplicateCount}개</span></div>
+                </div>
+                ${duplicates.length > 0 ? `
+                    <div class="mt-2 border-t pt-2">
+                        <div class="font-semibold text-red-600">중복 항목들:</div>
+                        <div class="mt-1 space-y-1 max-h-20 overflow-y-auto">
+                            ${duplicates.map(dup => `
+                                <div class="text-xs bg-red-50 p-1 rounded">
+                                    ${dup.userId} - ${dup.bookName} (행 ${dup.rowNumber})
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+            `;
+        }
+        result.className = 'mt-2 p-2 bg-blue-100 rounded text-sm';
+        
+    } catch (error) {
+        result.innerHTML = `
+            <div class="flex items-center gap-2">
+                <span class="text-red-600">❌</span>
+                <span>분석 오류: ${error.message}</span>
+            </div>
+        `;
+        result.className = 'mt-2 p-2 bg-red-100 rounded text-sm';
+    } finally {
+        btn.disabled = false;
+        btn.textContent = '중복 분석';
+    }
+}
+
+async function handleDiagnostic() {
+    const btn = document.getElementById('diagnostic-btn');
+    const result = document.getElementById('diagnostic-result');
+    
+    btn.disabled = true;
+    btn.textContent = '진단 중...';
+    result.classList.remove('hidden');
+    result.textContent = '시스템 진단 중...';
+    result.className = 'text-sm bg-blue-100 rounded p-2';
+    
+    try {
+        const response = await gapi.runDiagnostics();
+        const info = response.debugInfo;
+        
+        result.innerHTML = `
+            <div><strong>📋 시스템 진단 결과:</strong></div>
+            <div class="mt-2 space-y-2 text-xs">
+                <div class="bg-white p-2 rounded">
+                    <div><strong>스프레드시트:</strong> ${info.spreadsheetName}</div>
+                    <div><strong>시트 탭들:</strong> ${info.foundSheetTabs.join(', ')}</div>
+                </div>
+                <div class="bg-white p-2 rounded">
+                    <div><strong>가족 시트 샘플:</strong></div>
+                    <pre class="text-xs bg-gray-50 p-1 rounded mt-1 overflow-auto max-h-16">${JSON.stringify(info.familySheetFirst5Rows, null, 2)}</pre>
+                </div>
+                <div class="bg-white p-2 rounded">
+                    <div><strong>중복 분석:</strong></div>
+                    <pre class="text-xs bg-gray-50 p-1 rounded mt-1 overflow-auto max-h-16">${JSON.stringify(info.duplicateAnalysis, null, 2)}</pre>
+                </div>
+            </div>
+        `;
+        result.className = 'text-sm bg-gray-100 rounded p-2 overflow-auto max-h-40';
+        
+    } catch (error) {
+        result.innerHTML = `
+            <div class="flex items-center gap-2">
+                <span class="text-red-600">❌</span>
+                <span>진단 오류: ${error.message}</span>
+            </div>
+        `;
+        result.className = 'text-sm bg-red-100 rounded p-2';
+    } finally {
+        btn.disabled = false;
+        btn.textContent = '진단 실행';
+    }
+}
 </script>
 </body>
 </html>
