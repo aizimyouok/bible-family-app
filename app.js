@@ -42,6 +42,8 @@ function setupGlobalEventListeners() {
     const syncBtn = document.getElementById('sync-btn');
     if (syncBtn) {
         syncBtn.addEventListener('click', () => {
+            // ⭐ 보류 중인 변경사항 정리 후 데이터 새로고침
+            window.gapi.clearPendingChanges();
             initializeData();
         });
     }
@@ -50,6 +52,9 @@ function setupGlobalEventListeners() {
  * 컴포넌트 초기화
  */
 function initializeComponents() {
+    // 전역 컴포넌트 객체 초기화
+    window.components = {};
+    
     // 각 탭별 컴포넌트 인스턴스 생성
     window.components.reading = new ReadingComponent();
     window.components.meditation = new MeditationComponent();
@@ -331,42 +336,24 @@ window.toggleChapterRead = async function(chapterNumber, buttonElement, context)
             // --- 삭제 로직 ---
             buttonElement.className = 'p-2 rounded border transition-colors duration-200 chapter-btn-animate bg-white hover:bg-green-100';
             
-            const result = await window.gapi.deleteData({
+            await window.gapi.deleteData({
                 type: 'reading',
                 userId,
                 bookName,
                 chapter: chapterNumber
             });
-
-            // 서버 결과에 따라 비전통장 로컬 데이터 업데이트
-            if (result.data.deletedTransactionInfo) {
-                const allowance = window.stateManager.getState('allowance');
-                const info = result.data.deletedTransactionInfo;
-                const filteredAllowance = allowance.filter(t => 
-                    !(t.user_id == info.userId && t.description === info.description && t.amount > 0)
-                );
-                window.stateManager.updateState('allowance', filteredAllowance);
-            }
-
         } else {
             // --- 추가 로직 ---
             buttonElement.className = 'p-2 rounded border transition-colors duration-200 chapter-btn-animate bg-green-500 text-white border-green-500 checked';
             setTimeout(() => buttonElement.classList.remove('checked'), 600);
             
-            const result = await window.gapi.saveData({
+            await window.gapi.saveData({
                 type: 'reading',
                 userId,
                 userName: getUserName(userId),
                 bookName,
                 chapter: chapterNumber
             });
-
-            // 서버 결과에 따라 비전통장 로컬 데이터 업데이트
-            if (result.data.newAllowance) {
-                const allowance = window.stateManager.getState('allowance');
-                allowance.push(result.data.newAllowance);
-                window.stateManager.updateState('allowance', allowance);
-            }
         }
     } catch (error) {
         console.error('읽기 상태 변경 실패:', error);
@@ -627,6 +614,66 @@ window.reopenProgressModal = function() {
     if (currentProgressUserId) {
         window.openProgressModal(currentProgressUserId);
     }
+};
+
+/**
+ * ⭐ 개발자 도구용 - 보류 중인 변경사항 정리
+ */
+window.clearPendingChanges = function() {
+    if (window.gapi) {
+        window.gapi.clearPendingChanges();
+        console.log('보류 중인 변경사항이 정리되었습니다.');
+    }
+};
+
+/**
+ * ⭐ 개발자 도구용 - 비전통장 업데이트 테스트
+ */
+window.testAllowanceUpdate = async function() {
+    console.log('=== 비전통장 업데이트 테스트 시작 ===');
+    
+    const family = window.stateManager.getState('family');
+    const allowanceTargets = family.filter(member => member.is_allowance_target === true);
+    
+    console.log('1. 적립 대상자:', allowanceTargets.map(m => m.name));
+    
+    if (allowanceTargets.length > 0) {
+        const testUser = allowanceTargets[0];
+        console.log('2. 테스트 대상:', testUser.name, testUser.id);
+        
+        try {
+            const result = await window.gapi.saveData({
+                type: 'reading',
+                userId: testUser.id,
+                userName: testUser.name,
+                bookName: '창세기',
+                chapter: 999  // 테스트용 장 번호
+            });
+            
+            console.log('3. 서버 응답:', result);
+            
+            const allowanceData = window.stateManager.getState('allowance');
+            console.log('4. 현재 비전통장 데이터:', allowanceData.length, '개');
+            console.log('5. 최근 3개 항목:', allowanceData.slice(-3));
+            
+        } catch (error) {
+            console.error('테스트 실패:', error);
+        }
+    } else {
+        console.log('적립 대상자가 없습니다.');
+    }
+};
+
+/**
+ * ⭐ 개발자 도구용 - 가족 정보 확인
+ */
+window.checkFamilyInfo = function() {
+    const family = window.stateManager.getState('family');
+    console.log('=== 가족 정보 ===');
+    family.forEach(member => {
+        console.log(`${member.name} (${member.id}): 적립대상=${member.is_allowance_target}`);
+    });
+    return family;
 };
 
 console.log('앱 모듈이 로드되었습니다.');
