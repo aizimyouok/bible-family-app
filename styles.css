@@ -144,9 +144,20 @@ details > summary::-webkit-details-marker {
     border-color: #d1d5db;
 }
 
-/* === 탭 콘텐츠 애니메이션 === */
+/* === 탭 콘텐츠 애니메이션 (⭐ 조건부 제어) === */
 .tab-content {
     animation: fadeIn 0.5s ease-in-out;
+}
+
+/* ⭐ 백그라운드 업데이트 시에는 애니메이션 비활성화 */
+.tab-content.no-animation {
+    animation: none !important;
+}
+
+/* ⭐ 부드러운 백그라운드 업데이트용 클래스 */
+.tab-content.background-update {
+    animation: none;
+    transition: none;
 }
 
 @keyframes fadeIn {

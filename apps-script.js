@@ -76,6 +76,13 @@ function doGet(e) {
       case 'withdraw':
         responseData = withdrawAllowance(params);
         break;
+      // ⭐ 실시간 동기화를 위한 새로운 API들
+      case 'checkUpdates':
+        responseData = checkForUpdates(params.lastSync);
+        break;
+      case 'getLastModified':
+        responseData = getLastModifiedTimestamp();
+        break;
 
       // --- 관리자 기능 ---
       case 'debug':
@@ -156,6 +163,9 @@ function saveData(params) {
                 
                 Logger.log(`비전통장 적립 완료: ${JSON.stringify(newTransaction)}`);
                 
+                // ⭐ 실시간 동기화를 위한 타임스탬프 업데이트
+                notifyDataChanged('reading_with_allowance', { userId, bookName, chapter, transaction: newTransaction });
+                
                 // ⭐ 클라이언트에 새로 추가된 용돈 내역(newAllowance)을 함께 보내줌
                 return { 
                     message: '읽기 기록 저장 완료',
@@ -166,11 +176,20 @@ function saveData(params) {
     }
     
     Logger.log('적립 대상이 아니거나 is_allowance_target 컬럼이 없음');
+    
+    // ⭐ 적립 대상이 아닐 경우에도 타임스탬프 업데이트
+    notifyDataChanged('reading', { userId, bookName, chapter });
+    
     // 적립 대상이 아닐 경우, 기존처럼 메시지만 반환
     return { message: '읽기 기록 저장 완료' };
   } else {
     // 읽기 기록이 아닌 다른 타입(묵상, 기도 등) 저장
-    return saveGenericItem(params);
+    const result = saveGenericItem(params);
+    
+    // ⭐ 실시간 동기화를 위한 타임스탬프 업데이트
+    notifyDataChanged(type, { userId: params.userId, content: params.content });
+    
+    return result;
   }
 }
 
@@ -787,4 +806,86 @@ function migrateDatesForAllUsers() {
 // 1. 비전통장 실시간 업데이트를 위한 deleteReading 함수 개선
 // 2. 삭제된 거래내역 정보 반환 기능 추가
 // 3. 클라이언트 측 즉시 업데이트 지원
+// =================================================================
+// ⭐ === 실시간 동기화를 위한 새로운 함수들 ===
+
+/**
+ * 마지막 수정 타임스탬프 업데이트
+ */
+function updateLastModifiedTimestamp() {
+  const timestamp = new Date().toISOString();
+  PropertiesService.getScriptProperties().setProperty('LAST_MODIFIED', timestamp);
+  Logger.log(`마지막 수정 시간 업데이트: ${timestamp}`);
+  return timestamp;
+}
+
+/**
+ * 마지막 수정 타임스탬프 조회
+ */
+function getLastModifiedTimestamp() {
+  const timestamp = PropertiesService.getScriptProperties().getProperty('LAST_MODIFIED');
+  return {
+    lastModified: timestamp || new Date().toISOString(),
+    serverTime: new Date().toISOString()
+  };
+}
+
+/**
+ * 특정 시간 이후 변경사항 확인
+ */
+function checkForUpdates(clientLastSync) {
+  try {
+    const serverLastModified = PropertiesService.getScriptProperties().getProperty('LAST_MODIFIED');
+    
+    if (!serverLastModified || !clientLastSync) {
+      // 타임스탬프가 없으면 전체 데이터 업데이트 필요
+      return {
+        hasUpdates: true,
+        lastModified: serverLastModified || new Date().toISOString(),
+        updateType: 'full',
+        data: loadAllData()
+      };
+    }
+    
+    const serverTime = new Date(serverLastModified).getTime();
+    const clientTime = new Date(clientLastSync).getTime();
+    
+    Logger.log(`업데이트 확인: 서버=${serverLastModified}, 클라이언트=${clientLastSync}`);
+    
+    if (serverTime > clientTime) {
+      // 서버에 새로운 변경사항이 있음
+      return {
+        hasUpdates: true,
+        lastModified: serverLastModified,
+        updateType: 'full', // 간단한 구현을 위해 전체 업데이트
+        data: loadAllData()
+      };
+    } else {
+      // 변경사항 없음
+      return {
+        hasUpdates: false,
+        lastModified: serverLastModified
+      };
+    }
+    
+  } catch (error) {
+    Logger.log(`checkForUpdates 오류: ${error.toString()}`);
+    return {
+      hasUpdates: false,
+      error: error.toString()
+    };
+  }
+}
+
+/**
+ * ⭐ 모든 데이터 변경 시 호출되는 공통 함수
+ */
+function notifyDataChanged(changeType, details) {
+  const timestamp = updateLastModifiedTimestamp();
+  Logger.log(`데이터 변경 알림: ${changeType}, 시간: ${timestamp}, 상세: ${JSON.stringify(details)}`);
+  return timestamp;
+}
+
+// =================================================================
+// ⭐ 기존 함수들을 실시간 동기화용으로 수정
 // =================================================================

@@ -76,6 +76,17 @@ class BaseComponent {
     _doRender() {
         throw new Error('render() method must be implemented by subclass');
     }
+    
+    /**
+     * ⭐ 데이터만 업데이트 (백그라운드 업데이트용 - 애니메이션 없이)
+     */
+    updateDataOnly() {
+        // 기본적으로는 render()와 동일하지만, 하위 클래스에서 더 세밀하게 구현 가능
+        if (this.container && !this.container.classList.contains('hidden')) {
+            console.log(`${this.constructor.name}: 데이터 전용 업데이트`);
+            this._doRender();
+        }
+    }
 }
 /**
  * 말씀읽기 탭 컴포넌트
@@ -578,6 +589,19 @@ class MeditationComponent extends BaseComponent {
             textInput.disabled = false;
         }
     }
+    
+    /**
+     * ⭐ 데이터만 업데이트 (묵상 기도 - 애니메이션 없이 부분 업데이트)
+     */
+    updateDataOnly() {
+        if (this.container && !this.container.classList.contains('hidden')) {
+            console.log('MeditationComponent: 데이터 전용 업데이트 (깜빡거림 방지)');
+            
+            // ⭐ 묵상 목록과 기도 목록만 업데이트
+            this.renderMeditations();
+            this.renderPrayers();
+        }
+    }
 }
 /**
  * 메시지보드 탭 컴포넌트
@@ -735,6 +759,18 @@ class MessageBoardComponent extends BaseComponent {
             textInput.disabled = false;
         }
     }
+    
+    /**
+     * ⭐ 데이터만 업데이트 (메시지 보드 - 애니메이션 없이 부분 업데이트)
+     */
+    updateDataOnly() {
+        if (this.container && !this.container.classList.contains('hidden')) {
+            console.log('MessageBoardComponent: 데이터 전용 업데이트 (깜빡거림 방지)');
+            
+            // ⭐ 메시지 목록만 업데이트
+            this.renderMessages();
+        }
+    }
 }
 
 /**
@@ -834,36 +870,36 @@ class AllowanceComponent extends BaseComponent {
         const goalAmount = member.goal_amount || 118900; // 목표 금액 (없으면 118,900원)
         
         return `
-            <div class="bg-white rounded-lg p-4 shadow-md">
+            <div class="bg-white rounded-lg p-4 shadow-md balance-card">
                 <div class="flex items-center mb-3">
                     <img src="${member.photo || 'https://placehold.co/50x50'}" class="w-12 h-12 rounded-full mr-3 object-cover" referrerpolicy="no-referrer">
                     <div>
-                        <h5 class="font-bold">${member.name}</h5>
+                        <h5 class="font-bold member-name">${member.name}</h5>
                         <p class="text-sm text-gray-600">${member.title}</p>
                     </div>
                 </div>
                 <div class="space-y-2">
                     <div class="flex justify-between">
                         <span class="text-sm">현재 잔액:</span>
-                        <span class="font-bold text-lg text-green-600">${balance.toLocaleString()}원</span>
+                        <span class="font-bold text-lg text-green-600 current-balance">${balance.toLocaleString()}원</span>
                     </div>
                     <div class="flex justify-between text-sm text-gray-600">
                         <span>총 적립:</span>
-                        <span>+${totalEarned.toLocaleString()}원</span>
+                        <span class="total-earned">+${totalEarned.toLocaleString()}원</span>
                     </div>
                     <div class="flex justify-between text-sm text-gray-600">
                         <span>총 인출:</span>
-                        <span>-${totalWithdrawn.toLocaleString()}원</span>
+                        <span class="total-withdrawn">-${totalWithdrawn.toLocaleString()}원</span>
                     </div>
                 </div>
                 <div class="mt-3 bg-gray-100 rounded p-2">
                     <div class="text-xs text-gray-600 mb-1">목표까지</div>
                     <div class="flex justify-between items-center">
-                        <span class="text-sm font-medium">${Math.max(0, goalAmount - balance).toLocaleString()}원</span>
+                        <span class="text-sm font-medium remaining-amount">${Math.max(0, goalAmount - balance).toLocaleString()}원</span>
                         <span class="text-xs text-gray-500">/${goalAmount.toLocaleString()}원</span>
                     </div>
                     <div class="w-full bg-gray-200 rounded-full h-2 mt-1">
-                        <div class="bg-green-500 h-2 rounded-full transition-all" style="width: ${Math.min(100, (balance / goalAmount) * 100)}%"></div>
+                        <div class="bg-green-500 h-2 rounded-full transition-all progress-bar" style="width: ${Math.min(100, (balance / goalAmount) * 100)}%"></div>
                     </div>
                 </div>
             </div>
@@ -936,6 +972,70 @@ class AllowanceComponent extends BaseComponent {
             withdrawAmount.addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') this.handleWithdraw();
             });
+        }
+    }
+    
+    /**
+     * ⭐ 데이터만 업데이트 (비전통장 - 애니메이션 없이 부분 업데이트)
+     */
+    updateDataOnly() {
+        if (this.container && !this.container.classList.contains('hidden')) {
+            console.log('AllowanceComponent: 데이터 전용 업데이트 (깜빡거림 방지)');
+            
+            const family = window.stateManager.getState('family');
+            if (!family || family.length === 0) return;
+            
+            const allowanceTargets = family.filter(member => member.is_allowance_target === true);
+            if (allowanceTargets.length === 0) return;
+            
+            // ⭐ 잔액 카드들만 업데이트 (전체 DOM 재생성 대신)
+            allowanceTargets.forEach(member => {
+                this.updateBalanceCardData(member);
+            });
+            
+            // ⭐ 거래 내역만 업데이트
+            this.updateTransactionListData();
+        }
+    }
+    
+    /**
+     * ⭐ 개별 잔액 카드 데이터 업데이트
+     */
+    updateBalanceCardData(member) {
+        const allowanceData = window.stateManager.getState('allowance') || [];
+        const balance = this.calculateBalance(member.id, allowanceData);
+        const totalEarned = this.calculateTotalEarned(member.id, allowanceData);
+        const totalWithdrawn = this.calculateTotalWithdrawn(member.id, allowanceData);
+        const goalAmount = member.goal_amount || 118900;
+        
+        // DOM 요소를 찾아서 텍스트만 업데이트 (애니메이션 방지)
+        const balanceElements = this.container.querySelectorAll('.balance-card');
+        balanceElements.forEach(card => {
+            const nameElement = card.querySelector('.member-name');
+            if (nameElement && nameElement.textContent.includes(member.name)) {
+                const balanceElement = card.querySelector('.current-balance');
+                const earnedElement = card.querySelector('.total-earned');
+                const withdrawnElement = card.querySelector('.total-withdrawn');
+                const progressBar = card.querySelector('.progress-bar');
+                const remainingElement = card.querySelector('.remaining-amount');
+                
+                if (balanceElement) balanceElement.textContent = `${balance.toLocaleString()}원`;
+                if (earnedElement) earnedElement.textContent = `+${totalEarned.toLocaleString()}원`;
+                if (withdrawnElement) withdrawnElement.textContent = `-${totalWithdrawn.toLocaleString()}원`;
+                if (remainingElement) remainingElement.textContent = `${Math.max(0, goalAmount - balance).toLocaleString()}원`;
+                if (progressBar) progressBar.style.width = `${Math.min(100, (balance / goalAmount) * 100)}%`;
+            }
+        });
+    }
+    
+    /**
+     * ⭐ 거래 내역 리스트 데이터 업데이트
+     */
+    updateTransactionListData() {
+        const transactionList = document.getElementById('transaction-list');
+        if (transactionList) {
+            // 거래 내역은 전체 업데이트가 필요하므로 HTML 재생성
+            transactionList.innerHTML = this.renderTransactions();
         }
     }
     

@@ -13,6 +13,9 @@ let currentProgressUserId = null;
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('Bible Time for Family - 애플리케이션 시작');
     
+    // ⭐ 전역 탭 상태 초기화
+    window.currentTab = 'reading';
+    
     // 1. 기본 이벤트 리스너 설정
     setupGlobalEventListeners();
     
@@ -38,13 +41,11 @@ function setupGlobalEventListeners() {
         });
     }
     
-    // 동기화 버튼
-    const syncBtn = document.getElementById('sync-btn');
-    if (syncBtn) {
-        syncBtn.addEventListener('click', () => {
-            // ⭐ 보류 중인 변경사항 정리 후 데이터 새로고침
-            window.gapi.clearPendingChanges();
-            initializeData();
+    // ⭐ 관리자 버튼
+    const adminBtn = document.getElementById('admin-btn');
+    if (adminBtn) {
+        adminBtn.addEventListener('click', () => {
+            window.openAdminModal();
         });
     }
 }
@@ -76,7 +77,7 @@ function initializeComponents() {
 }
 
 /**
- * 탭 전환 함수
+ * 탭 전환 함수 (⭐ 백그라운드 업데이트를 위한 탭 상태 저장 + 애니메이션 제어)
  */
 function switchTab(tabName) {
     console.log('탭 전환:', tabName);
@@ -86,7 +87,12 @@ function switchTab(tabName) {
         return;
     }
     
+    // ⭐ 현재 탭을 전역 변수에 저장 (백그라운드 업데이트용)
+    window.currentTab = tabName;
     currentTab = tabName;
+    
+    // ⭐ 사용자가 직접 탭을 전환하는 것임을 표시 (애니메이션 활성화)
+    window.isUserTabSwitch = true;
     
     // 모든 탭 버튼의 활성 상태 제거
     document.querySelectorAll('.main-tab').forEach(tab => {
@@ -96,6 +102,8 @@ function switchTab(tabName) {
     // 모든 탭 콘텐츠 숨기기
     document.querySelectorAll('.tab-content').forEach(content => {
         content.classList.add('hidden');
+        // ⭐ 백그라운드 업데이트 클래스 제거 (애니메이션 활성화를 위해)
+        content.classList.remove('background-update', 'no-animation');
     });
     
     // 선택된 탭 활성화
@@ -106,14 +114,19 @@ function switchTab(tabName) {
         selectedTab.classList.add('tab-active');
         selectedContent.classList.remove('hidden');
         
-        // 해당 컴포넌트 렌더링
-        if (window.components[tabName]) {
-            window.components[tabName].render();
-        }
+        // ⭐ 애니메이션이 완전히 실행되도록 약간의 지연 후 컴포넌트 렌더링
+        setTimeout(() => {
+            if (window.components[tabName]) {
+                window.components[tabName].render();
+            }
+            // ⭐ 사용자 탭 전환 플래그 해제
+            window.isUserTabSwitch = false;
+        }, 50);
         
         console.log('탭 전환 완료:', tabName);
     } else {
         console.error('탭 요소를 찾을 수 없음:', tabName);
+        window.isUserTabSwitch = false;
     }
 }
 /**
@@ -183,12 +196,11 @@ async function loadAllDataAndRender() {
     }
 }
 /**
- * 연결 상태 표시 업데이트
+ * 연결 상태 표시 업데이트 (⭐ 자동 동기화 UI 제거, 관리자 버튼만 유지)
  */
 function updateConnectionStatus(status) {
     const indicator = document.getElementById('status-indicator');
     const text = document.getElementById('status-text');
-    const syncBtn = document.getElementById('sync-btn');
     const adminBtn = document.getElementById('admin-btn');
     
     if (indicator) indicator.classList.remove('loading');
@@ -197,25 +209,21 @@ function updateConnectionStatus(status) {
         case 'connected':
             if (indicator) indicator.className = 'w-3 h-3 rounded-full bg-green-500';
             if (text) text.textContent = '온라인';
-            if (syncBtn) syncBtn.classList.remove('hidden');
             if (adminBtn) adminBtn.classList.remove('hidden');
             break;
         case 'disconnected':
             if (indicator) indicator.className = 'w-3 h-3 rounded-full bg-red-500';
             if (text) text.textContent = '오프라인';
-            if (syncBtn) syncBtn.classList.add('hidden');
             if (adminBtn) adminBtn.classList.add('hidden');
             break;
         case 'loading':
             if (indicator) indicator.className = 'w-3 h-3 rounded-full bg-yellow-500 loading';
             if (text) text.textContent = '연결 중...';
-            if (syncBtn) syncBtn.classList.add('hidden');
             if (adminBtn) adminBtn.classList.add('hidden');
             break;
         case 'syncing':
             if (indicator) indicator.className = 'w-3 h-3 rounded-full bg-blue-500 loading';
             if (text) text.textContent = '동기화 중...';
-            if (syncBtn) syncBtn.classList.add('hidden');
             if (adminBtn) adminBtn.classList.add('hidden');
             break;
     }
@@ -607,12 +615,116 @@ window.closeProgressModal = function() {
 };
 
 /**
- * 진행 현황 모달로 돌아가기
+ * ⭐ 관리자 모달 열기 (전역 함수로 노출)
  */
-window.reopenProgressModal = function() {
-    window.closeChapterModal();
-    if (currentProgressUserId) {
-        window.openProgressModal(currentProgressUserId);
+window.openAdminModal = function() {
+    const modal = document.getElementById('admin-modal');
+    if (modal) {
+        modal.innerHTML = createAdminModalHTML();
+        modal.classList.remove('hidden');
+        modal.style.display = 'flex';
+    }
+}
+
+/**
+ * ⭐ 관리자 모달 닫기 (전역 함수로 노출)
+ */
+window.closeAdminModal = function() {
+    const modal = document.getElementById('admin-modal');
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.style.display = 'none';
+    }
+}
+
+/**
+ * ⭐ 관리자 모달 HTML 생성
+ */
+function createAdminModalHTML() {
+    return `
+        <div class="bg-white rounded-lg shadow-2xl p-6 w-full max-w-md">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold text-purple-600">⚙️ 관리자 기능</h2>
+                <button onclick="window.closeAdminModal()" class="text-3xl hover:text-gray-600">&times;</button>
+            </div>
+            
+            <div class="space-y-4">
+                <!-- 실시간 동기화 제어 -->
+                <div class="p-4 border rounded-lg">
+                    <h3 class="font-bold mb-2">📡 실시간 동기화</h3>
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm">다중 기기 실시간 동기화 (2초 간격)</span>
+                        <button id="admin-realtime-toggle" class="px-3 py-1 bg-purple-500 text-white rounded text-sm hover:bg-purple-600" onclick="window.toggleRealtimeSync()">
+                            ${window.gapi?.realtimeSyncEnabled ? '비활성화' : '활성화'}
+                        </button>>
+                            ${window.gapi?.realtimeSyncEnabled ? '비활성화' : '활성화'}
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- 데이터 관리 -->
+                <div class="p-4 border rounded-lg">
+                    <h3 class="font-bold mb-2">💾 데이터 관리</h3>
+                    <div class="space-y-2">
+                        <button onclick="window.manualDataRefresh()" class="w-full px-3 py-2 bg-blue-500 text-white rounded text-sm hover:bg-blue-600">
+                            🔄 데이터 새로고침
+                        </button>
+                        <button onclick="window.testRealtimeSync()" class="w-full px-3 py-2 bg-green-500 text-white rounded text-sm hover:bg-green-600">
+                            🧪 실시간 동기화 테스트
+                        </button>
+                        <button onclick="window.clearLocalData()" class="w-full px-3 py-2 bg-orange-500 text-white rounded text-sm hover:bg-orange-600">
+                            🗑️ 로컬 데이터 초기화
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- 시스템 정보 -->
+                <div class="p-4 border rounded-lg">
+                    <h3 class="font-bold mb-2">📊 시스템 상태</h3>
+                    <div class="text-sm space-y-1">
+                        <div>연결 상태: <span class="font-semibold">${window.gapi?.isConnected ? '🟢 온라인' : '🔴 오프라인'}</span></div>
+                        <div>실시간 동기화: <span class="font-semibold">${window.gapi?.realtimeSyncEnabled ? '🟢 활성화 (2초)' : '🔴 비활성화'}</span></div>
+                        <div>현재 탭: <span class="font-semibold">${window.currentTab || 'unknown'}</span></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-6 text-center">
+                <button onclick="window.closeAdminModal()" class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">
+                    닫기
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+/**
+ * ⭐ 관리자 기능들
+ */
+window.toggleRealtimeSync = function() {
+    if (window.gapi) {
+        if (window.gapi.realtimeSyncEnabled) {
+            window.gapi.disableRealtimeSync();
+        } else {
+            window.gapi.enableRealtimeSync();
+        }
+        // 모달 새로고침
+        openAdminModal();
+    }
+};
+
+window.manualDataRefresh = function() {
+    closeAdminModal();
+    initializeData();
+    alert('데이터 새로고침이 완료되었습니다.');
+};
+
+window.clearLocalData = function() {
+    if (confirm('로컬 데이터를 초기화하시겠습니까? 저장되지 않은 변경사항이 손실될 수 있습니다.')) {
+        localStorage.clear();
+        closeAdminModal();
+        alert('로컬 데이터가 초기화되었습니다. 페이지를 새로고침합니다.');
+        location.reload();
     }
 };
 
@@ -665,15 +777,116 @@ window.testAllowanceUpdate = async function() {
 };
 
 /**
- * ⭐ 개발자 도구용 - 가족 정보 확인
+ * ⭐ 개발자 도구용 - 실시간 동기화 제어
  */
-window.checkFamilyInfo = function() {
-    const family = window.stateManager.getState('family');
-    console.log('=== 가족 정보 ===');
-    family.forEach(member => {
-        console.log(`${member.name} (${member.id}): 적립대상=${member.is_allowance_target}`);
-    });
-    return family;
+window.disableRealtimeSync = function() {
+    if (window.gapi) {
+        window.gapi.disableRealtimeSync();
+        console.log('📡 실시간 동기화가 비활성화되었습니다.');
+    }
+};
+
+window.enableRealtimeSync = function() {
+    if (window.gapi) {
+        window.gapi.enableRealtimeSync();
+        console.log('📡 실시간 동기화가 활성화되었습니다.');
+    }
+};
+
+/**
+ * ⭐ 개발자 도구용 - 실시간 동기화 즉시 테스트
+ */
+window.testRealtimeSync = function() {
+    if (window.gapi) {
+        console.log('🔍 실시간 동기화 강제 테스트 중...');
+        console.log('연결 상태:', window.gapi.isConnected);
+        console.log('실시간 동기화 활성화:', window.gapi.realtimeSyncEnabled);
+        console.log('동기화 진행 중:', window.gapi.syncInProgress);
+        
+        if (window.gapi.isConnected) {
+            window.gapi.checkForServerUpdates();
+            console.log('✅ 실시간 동기화 테스트 실행됨');
+        } else {
+            console.log('❌ 서버에 연결되지 않음');
+        }
+    } else {
+        console.log('❌ API 객체를 찾을 수 없음');
+    }
+};
+
+/**
+ * ⭐ 개발자 도구용 - 실시간 동기화 재시작
+ */
+window.restartRealtimeSync = function() {
+    if (window.gapi) {
+        console.log('🔄 실시간 동기화 재시작 중...');
+        window.gapi.stopRealtimeSync();
+        setTimeout(() => {
+            window.gapi.startRealtimeSync();
+            console.log('✅ 실시간 동기화 재시작 완료');
+        }, 1000);
+    }
+};
+
+/**
+ * ⭐ 개발자 도구용 - 현재 동기화 상태 확인
+ */
+window.checkSyncStatus = function() {
+    if (window.gapi) {
+        console.log('=== 동기화 상태 ===');
+        console.log('연결 상태:', window.gapi.isConnected);
+        console.log('실시간 동기화:', window.gapi.realtimeSyncEnabled);
+        console.log('실시간 동기화 간격:', window.gapi.realtimeSyncInterval ? '2초' : '비활성화');
+        console.log('현재 탭:', window.currentTab);
+        console.log('마지막 서버 수정:', window.gapi.lastServerModified);
+        console.log('클라이언트 마지막 동기화:', localStorage.getItem('bible_data_timestamp'));
+        
+        return {
+            connected: window.gapi.isConnected,
+            realtimeSync: window.gapi.realtimeSyncEnabled,
+            currentTab: window.currentTab,
+            lastServerModified: window.gapi.lastServerModified,
+            lastClientSync: localStorage.getItem('bible_data_timestamp')
+        };
+    }
+};
+
+/**
+ * ⭐ 개발자 도구용 - 애니메이션 및 백그라운드 업데이트 상태 확인
+ */
+window.checkAnimationStatus = function() {
+    console.log('=== 애니메이션 상태 ===');
+    console.log('백그라운드 업데이트 중:', window.isBackgroundUpdate || false);
+    console.log('사용자 탭 전환 중:', window.isUserTabSwitch || false);
+    console.log('조용한 업데이트 모드:', window.stateManager?.silentUpdate || false);
+    console.log('현재 탭:', window.currentTab);
+    
+    // 현재 탭의 애니메이션 상태 확인
+    const currentTabContent = document.getElementById(`content-${window.currentTab}`);
+    if (currentTabContent) {
+        console.log('현재 탭 CSS 클래스:', currentTabContent.className);
+        console.log('백그라운드 업데이트 클래스 존재:', currentTabContent.classList.contains('background-update'));
+        console.log('애니메이션 비활성화 클래스 존재:', currentTabContent.classList.contains('no-animation'));
+    }
+    
+    return {
+        isBackgroundUpdate: window.isBackgroundUpdate || false,
+        isUserTabSwitch: window.isUserTabSwitch || false,
+        silentUpdate: window.stateManager?.silentUpdate || false,
+        currentTab: window.currentTab,
+        currentTabClasses: currentTabContent?.className || 'none'
+    };
+};
+
+/**
+ * ⭐ 개발자 도구용 - 강제로 백그라운드 업데이트 테스트
+ */
+window.testBackgroundUpdate = function() {
+    console.log('🧪 백그라운드 업데이트 테스트 실행...');
+    if (window.gapi) {
+        // 강제로 서버 업데이트 확인
+        window.gapi.checkForServerUpdates();
+    }
 };
 
 console.log('앱 모듈이 로드되었습니다.');
