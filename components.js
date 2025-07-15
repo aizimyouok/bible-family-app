@@ -304,34 +304,30 @@ class MeditationComponent extends BaseComponent {
         }
         
         this.container.innerHTML = `
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <!-- 가족 묵상 나눔 -->
-                <div class="accent-bg rounded-lg p-4">
-                    <h3 class="text-xl font-bold mb-3">💬 가족 묵상 나눔</h3>
-                    <div id="meditation-list" class="h-64 overflow-y-auto custom-scrollbar pr-2 mb-3 bg-white/50 rounded p-2">
-                        <!-- 묵상 목록이 여기에 렌더링됩니다 -->
-                    </div>
-                    <div class="flex flex-col sm:flex-row gap-2">
-                        <select id="meditation-user" class="p-2 rounded-md w-full sm:w-auto" style="border-color: var(--border-color);">
-                            ${this.renderUserOptions()}
-                        </select>
-                        <input type="text" id="meditation-input" class="flex-grow p-2 rounded-md min-w-0" placeholder="오늘의 묵상을 나눠보세요..." style="border-color: var(--border-color);">
-                        <button id="add-meditation" class="bg-white/80 hover:bg-white p-2 rounded-md shadow whitespace-nowrap">등록</button>
-                    </div>
-                </div>
-                
-                <!-- 가족 기도 노트 -->
+            <div class="grid grid-cols-1 gap-6">
                 <div class="accent-bg rounded-lg p-4">
                     <h3 class="text-xl font-bold mb-3">🙏 가족 기도 노트</h3>
                     <div id="prayer-list" class="h-64 overflow-y-auto custom-scrollbar pr-2 mb-3 bg-white/50 rounded p-2">
-                        <!-- 기도 목록이 여기에 렌더링됩니다 -->
-                    </div>
+                        </div>
                     <div class="flex flex-col sm:flex-row gap-2">
                         <select id="prayer-user" class="p-2 rounded-md w-full sm:w-auto" style="border-color: var(--border-color);">
                             ${this.renderUserOptions()}
                         </select>
                         <input type="text" id="prayer-input" class="flex-grow p-2 rounded-md min-w-0" placeholder="함께 기도할 제목을 나눠요..." style="border-color: var(--border-color);">
                         <button id="add-prayer" class="bg-white/80 hover:bg-white p-2 rounded-md shadow whitespace-nowrap">등록</button>
+                    </div>
+                </div>
+
+                <div class="accent-bg rounded-lg p-4">
+                    <h3 class="text-xl font-bold mb-3">💬 가족 묵상 나눔</h3>
+                    <div id="meditation-list" class="h-64 overflow-y-auto custom-scrollbar pr-2 mb-3 bg-white/50 rounded p-2">
+                        </div>
+                    <div class="flex flex-col sm:flex-row gap-2">
+                        <select id="meditation-user" class="p-2 rounded-md w-full sm:w-auto" style="border-color: var(--border-color);">
+                            ${this.renderUserOptions()}
+                        </select>
+                        <input type="text" id="meditation-input" class="flex-grow p-2 rounded-md min-w-0" placeholder="오늘의 묵상을 나눠보세요..." style="border-color: var(--border-color);">
+                        <button id="add-meditation" class="bg-white/80 hover:bg-white p-2 rounded-md shadow whitespace-nowrap">등록</button>
                     </div>
                 </div>
             </div>
@@ -883,11 +879,11 @@ class AllowanceComponent extends BaseComponent {
                 <div class="mt-3 bg-gray-100 rounded p-2">
                     <div class="text-xs text-gray-600 mb-1">목표까지</div>
                     <div class="flex justify-between items-center">
-                        <span class="text-sm font-medium">${Math.max(0, 1000 - balance).toLocaleString()}원</span>
-                        <span class="text-xs text-gray-500">/1,000원</span>
+                        <span class="text-sm font-medium">${Math.max(0, 118900 - balance).toLocaleString()}원</span>
+                        <span class="text-xs text-gray-500">/118,900원</span>
                     </div>
                     <div class="w-full bg-gray-200 rounded-full h-2 mt-1">
-                        <div class="bg-green-500 h-2 rounded-full transition-all" style="width: ${Math.min(100, (balance / 1000) * 100)}%"></div>
+                        <div class="bg-green-500 h-2 rounded-full transition-all" style="width: ${Math.min(100, (balance / 118900) * 100)}%"></div>
                     </div>
                 </div>
             </div>
