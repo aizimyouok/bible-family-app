@@ -315,69 +315,87 @@ function getUserName(userId) {
 }
 
 /**
- * 장 읽기 토글
+ * 장 읽기 토글 (서버 응답 처리 방식으로 수정됨)
  */
 window.toggleChapterRead = async function(chapterNumber, buttonElement, context) {
-    // ⭐ 동적으로 현재 선택된 사용자 ID 가져오기
     const userSelector = document.getElementById('modal-user-selector');
     const userId = userSelector ? userSelector.value : context.userId;
     const { bookName } = context;
-    
-    // 로컬 상태 업데이트
-    const readRecords = window.stateManager.getState('readRecords');
-    if (!readRecords[userId]) readRecords[userId] = {};
-    if (!readRecords[userId][bookName]) {
-        readRecords[userId][bookName] = {
-            chapters: [],
-            readDates: {},
-            startDate: null,
-            endDate: null
-        };
+
+    // UI 즉시 업데이트 (사용자 경험을 위해)
+    const isCurrentlyRead = buttonElement.classList.contains('bg-green-500');
+    buttonElement.disabled = true; // 중복 클릭 방지
+
+    try {
+        if (isCurrentlyRead) {
+            // --- 삭제 로직 ---
+            buttonElement.className = 'p-2 rounded border transition-colors duration-200 chapter-btn-animate bg-white hover:bg-green-100';
+            
+            const result = await window.gapi.deleteData({
+                type: 'reading',
+                userId,
+                bookName,
+                chapter: chapterNumber
+            });
+
+            // 서버 결과에 따라 비전통장 로컬 데이터 업데이트
+            if (result.data.deletedTransactionInfo) {
+                const allowance = window.stateManager.getState('allowance');
+                const info = result.data.deletedTransactionInfo;
+                const filteredAllowance = allowance.filter(t => 
+                    !(t.user_id == info.userId && t.description === info.description && t.amount > 0)
+                );
+                window.stateManager.updateState('allowance', filteredAllowance);
+            }
+
+        } else {
+            // --- 추가 로직 ---
+            buttonElement.className = 'p-2 rounded border transition-colors duration-200 chapter-btn-animate bg-green-500 text-white border-green-500 checked';
+            setTimeout(() => buttonElement.classList.remove('checked'), 600);
+            
+            const result = await window.gapi.saveData({
+                type: 'reading',
+                userId,
+                userName: getUserName(userId),
+                bookName,
+                chapter: chapterNumber
+            });
+
+            // 서버 결과에 따라 비전통장 로컬 데이터 업데이트
+            if (result.data.newAllowance) {
+                const allowance = window.stateManager.getState('allowance');
+                allowance.push(result.data.newAllowance);
+                window.stateManager.updateState('allowance', allowance);
+            }
+        }
+    } catch (error) {
+        console.error('읽기 상태 변경 실패:', error);
+        alert('오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+        // 오류 발생 시 UI 원상 복구 (필요 시)
+        buttonElement.className = isCurrentlyRead 
+            ? 'p-2 rounded border transition-colors duration-200 chapter-btn-animate bg-green-500 text-white border-green-500'
+            : 'p-2 rounded border transition-colors duration-200 chapter-btn-animate bg-white hover:bg-green-100';
+    } finally {
+        // 읽기 기록 자체는 항상 로컬 데이터를 기준으로 최종 업데이트
+        const readRecords = window.stateManager.getState('readRecords');
+        if (!readRecords[userId]) readRecords[userId] = {};
+        if (!readRecords[userId][bookName]) {
+            readRecords[userId][bookName] = { chapters: [], readDates: {} };
+        }
+        const readList = readRecords[userId][bookName].chapters;
+        const chapterIndex = readList.indexOf(chapterNumber);
+
+        if (isCurrentlyRead && chapterIndex > -1) {
+            readList.splice(chapterIndex, 1);
+        } else if (!isCurrentlyRead && chapterIndex === -1) {
+            readList.push(chapterNumber);
+        }
+        
+        window.stateManager.updateState('readRecords', readRecords);
+        buttonElement.disabled = false; // 버튼 다시 활성화
     }
-    
-    const bookData = readRecords[userId][bookName];
-    if (!bookData.chapters) bookData.chapters = [];
-    if (!bookData.readDates) bookData.readDates = {};
-    
-    const readList = bookData.chapters;
-    const chapterIndex = readList.indexOf(chapterNumber);
-    
-    // UI 업데이트
-    if (chapterIndex > -1) {
-        // 삭제
-        readList.splice(chapterIndex, 1);
-        delete bookData.readDates[chapterNumber];
-        buttonElement.className = 'p-2 rounded border transition-colors duration-200 chapter-btn-animate bg-white hover:bg-green-100';
-        
-        // API 호출
-        window.gapi.deleteData({
-            type: 'reading',
-            userId,
-            bookName,
-            chapter: chapterNumber
-        }).catch(error => console.error('읽기 삭제 실패:', error));
-    } else {
-        // 추가
-        readList.push(chapterNumber);
-        bookData.readDates[chapterNumber] = new Date().toISOString().split('T')[0];
-        buttonElement.className = 'p-2 rounded border transition-colors duration-200 chapter-btn-animate bg-green-500 text-white border-green-500 checked';
-        
-        // 체크 애니메이션 제거
-        setTimeout(() => buttonElement.classList.remove('checked'), 600);
-        
-        // API 호출
-        window.gapi.saveData({
-            type: 'reading',
-            userId,
-            userName: getUserName(userId), // ⭐ 사용자 이름 추가
-            bookName,
-            chapter: chapterNumber
-        }).catch(error => console.error('읽기 저장 실패:', error));
-    }
-    
-    // 상태 업데이트
-    window.stateManager.updateState('readRecords', readRecords);
 };
+
 
 /**
  * 모달 닫기
