@@ -60,7 +60,8 @@ body {
 .theme-exodus { 
     --bg-main: #f4eade; 
     --bg-container: #fff8f0; 
-    --bg-accent: #eaddc7;    --text-primary: #4a3f35; 
+    --bg-accent: #eaddc7; 
+    --text-primary: #4a3f35; 
     --text-accent: #a0522d; 
     --border-color: #d1c4b8; 
     --highlight-bg: #e6dace; 
