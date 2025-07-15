@@ -5,7 +5,7 @@
 
 // === API 설정 ===
 const API_CONFIG = {
-    scriptUrl: 'https://script.google.com/macros/s/AKfycbyCChinNY-NGJU2NXmMoDNk-4yAhhIGveRcAXbaHI-2oiiWH1Wr88MzzBsAnsoGjQqeKA/exec',
+    scriptUrl: 'https://script.google.com/macros/s/AKfycbzJF_KRYdVB0SmO1mrtIMTDT1iO_ANjMfXhjf4tQ4gr_8hUkKjKwiWVpachHRoi9VfIyg/exec',
     apiKey: 'bible_family_default',
     enableSecurity: false
 };
@@ -664,17 +664,8 @@ class EnhancedGoogleSheetsAPI {
                 console.log('현재 비전통장 데이터 개수:', allowance.length);
             }
             
-            // ⭐ 실시간 동기화를 위한 타임스탬프 업데이트
-            localStorage.setItem('bible_data_timestamp', new Date().toISOString());
+            // ⭐ 로컬 스토리지 업데이트 (서버 타임스탬프는 실시간 동기화에서 처리)
             this.saveToLocalStorage();
-            
-            // ⭐ 저장 완료 후 다른 클라이언트들의 즉시 업데이트를 위해 짧은 지연 후 서버 업데이트 확인
-            setTimeout(() => {
-                if (this.isConnected && this.realtimeSyncEnabled) {
-                    console.log('💾 저장 완료 후 서버 업데이트 확인 트리거');
-                    this.checkForServerUpdates();
-                }
-            }, 500); // ⭐ 0.5초로 단축하여 더 빠른 반영
             
             return result;
         } catch (error) {
@@ -703,17 +694,8 @@ class EnhancedGoogleSheetsAPI {
                 console.log('비전통장 적립 기록 삭제 완료:', info);
             }
             
-            // ⭐ 실시간 동기화를 위한 타임스탬프 업데이트
-            localStorage.setItem('bible_data_timestamp', new Date().toISOString());
+            // ⭐ 로컬 스토리지 업데이트 (서버 타임스탬프는 실시간 동기화에서 처리)
             this.saveToLocalStorage();
-            
-            // ⭐ 삭제 완료 후 다른 클라이언트들의 즉시 업데이트를 위해 짧은 지연 후 서버 업데이트 확인
-            setTimeout(() => {
-                if (this.isConnected && this.realtimeSyncEnabled) {
-                    console.log('🗑️ 삭제 완료 후 서버 업데이트 확인 트리거');
-                    this.checkForServerUpdates();
-                }
-            }, 500); // ⭐ 0.5초로 단축하여 더 빠른 반영
             
             return result;
         } catch (error) {

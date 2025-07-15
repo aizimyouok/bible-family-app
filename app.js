@@ -130,13 +130,15 @@ function switchTab(tabName) {
     }
 }
 /**
- * 데이터 초기화
+ * 데이터 초기화 (⭐ 즉시 로딩 최적화)
  */
 async function initializeData() {
     updateConnectionStatus('loading');
     
-    // 로컬 데이터 먼저 로드
+    // ⭐ 로컬 데이터 먼저 로드하고 즉시 UI 시작
     const localData = window.gapi.loadFromLocalStorage();
+    let hasLocalData = false;
+    
     if (localData && localData.family && localData.family.length > 0) {
         window.stateManager.updateMultipleStates({
             family: localData.family,
@@ -152,18 +154,12 @@ async function initializeData() {
             currentUserForModal = localData.family[0].id;
         }
         
-        console.log('로컬 데이터 로드 완료');
+        hasLocalData = true;
+        console.log('✅ 로컬 데이터 로드 완료 - 즉시 UI 시작');
     }
     
-    // 서버 연결 시도
-    try {
-        await window.gapi.testConnection();
-        updateConnectionStatus('connected');
-        await loadAllDataAndRender();
-    } catch (error) {
-        updateConnectionStatus('disconnected');
-        console.log('오프라인 모드로 시작합니다.');
-    }
+    // ⭐ 서버 연결을 백그라운드에서 시도 (기다리지 않음)
+    connectToServerInBackground(hasLocalData);
 }
 
 /**
@@ -193,6 +189,34 @@ async function loadAllDataAndRender() {
         }
     } catch (error) {
         console.error('전체 데이터 로드 실패:', error);
+    }
+}
+
+/**
+ * ⭐ 백그라운드 서버 연결 (UI 블로킹 없이)
+ */
+async function connectToServerInBackground(hasLocalData) {
+    try {
+        console.log('🔄 백그라운드에서 서버 연결 시도 중...');
+        await window.gapi.testConnection();
+        updateConnectionStatus('connected');
+        console.log('✅ 서버 연결 성공!');
+        
+        // ⭐ 로컬 데이터가 없었다면 서버 데이터 로드
+        if (!hasLocalData) {
+            console.log('📥 서버에서 전체 데이터 로드 중...');
+            await loadAllDataAndRender();
+        } else {
+            console.log('⚡ 로컬 데이터 있음 - 실시간 동기화만 활성화');
+        }
+    } catch (error) {
+        updateConnectionStatus('disconnected');
+        console.log('🔌 오프라인 모드로 시작 (로컬 데이터 사용)');
+        
+        // ⭐ 로컬 데이터도 없으면 알림
+        if (!hasLocalData) {
+            console.warn('❌ 로컬/서버 데이터 모두 없음 - 인터넷 연결 확인 필요');
+        }
     }
 }
 /**
