@@ -745,19 +745,36 @@ class AllowanceComponent extends BaseComponent {
         super('content-allowance');
         
         // ⭐ 상태 구독: 데이터 변경 시 전체를 다시 그리도록 render()를 직접 호출
-        this.subscribe('family', () => this.render());
-        this.subscribe('allowance', () => this.render());
+        this.subscribe('family', () => {
+            console.log('AllowanceComponent: family 상태 변경 감지');
+            this.render();
+        });
+        this.subscribe('allowance', () => {
+            console.log('AllowanceComponent: allowance 상태 변경 감지');
+            this.render();
+        });
+        this.subscribe('readRecords', () => {
+            console.log('AllowanceComponent: readRecords 상태 변경 감지 (비전통장 적립 가능성)');
+            this.render();
+        });
     }
     
     render() {
+        console.log('AllowanceComponent render 시작');
         const family = window.stateManager.getState('family');
         if (!family || family.length === 0) {
             this.container.innerHTML = '<div class="text-center p-8">가족 정보를 로드하는 중...</div>';
             return;
         }
         
+        // ⭐ 현재 비전통장 데이터 로깅
+        const allowanceData = window.stateManager.getState('allowance') || [];
+        console.log('AllowanceComponent render - 현재 비전통장 데이터:', allowanceData.length, '개 항목');
+        console.log('AllowanceComponent render - 비전통장 데이터 샘플:', allowanceData.slice(-3));
+        
         // 적립 대상자 필터링
         const allowanceTargets = family.filter(member => member.is_allowance_target === true);
+        console.log('AllowanceComponent render - 적립 대상자:', allowanceTargets.length, '명');
         
         if (allowanceTargets.length === 0) {
             this.container.innerHTML = `
@@ -814,7 +831,7 @@ class AllowanceComponent extends BaseComponent {
         const balance = this.calculateBalance(member.id, allowanceData);
         const totalEarned = this.calculateTotalEarned(member.id, allowanceData);
         const totalWithdrawn = this.calculateTotalWithdrawn(member.id, allowanceData);
-        const goalAmount = member.goal_amount || 50000; // 목표 금액 (없으면 50,000원)
+        const goalAmount = member.goal_amount || 118900; // 목표 금액 (없으면 118,900원)
         
         return `
             <div class="bg-white rounded-lg p-4 shadow-md">
