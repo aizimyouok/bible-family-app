@@ -5,7 +5,7 @@
 
 // === API 설정 ===
 const API_CONFIG = {
-    scriptUrl: 'https://script.google.com/macros/s/AKfycbzJF_KRYdVB0SmO1mrtIMTDT1iO_ANjMfXhjf4tQ4gr_8hUkKjKwiWVpachHRoi9VfIyg/exec',
+    scriptUrl: 'https://script.google.com/macros/s/AKfycbx6it5kHR633l5C2AF4e5_sDvoDKx15PwcwT8bA3iGJMEXHX5MpyIIi8yGROLrHx9Zq0g/exec',
     apiKey: 'bible_family_default',
     enableSecurity: false
 };
@@ -557,10 +557,12 @@ class EnhancedGoogleSheetsAPI {
      * 로컬 스토리지에 데이터 저장
      */
     saveToLocalStorage() {
-        const timestamp = Date.now();
         const state = window.stateManager.getAllState();
         
-        localStorage.setItem('bible_data_timestamp', timestamp.toString());
+        // ⭐ 타임스탬프 형식 통일 (ISO 문자열 사용)
+        const currentTimestamp = localStorage.getItem('bible_data_timestamp') || new Date().toISOString();
+        
+        localStorage.setItem('bible_data_timestamp', currentTimestamp);
         localStorage.setItem('bible_family', JSON.stringify(state.family));
         localStorage.setItem('bible_readRecords', JSON.stringify(state.readRecords));
         localStorage.setItem('bible_badges', JSON.stringify(state.badges));
@@ -585,7 +587,7 @@ class EnhancedGoogleSheetsAPI {
             const allowance = JSON.parse(localStorage.getItem('bible_allowance') || '[]');
             
             return {
-                timestamp: timestamp ? parseInt(timestamp) : null,
+                timestamp: timestamp || null,  // ⭐ ISO 문자열 그대로 사용
                 family, readRecords, badges, meditations, prayers, 
                 messages, allowance
             };
@@ -617,12 +619,12 @@ class EnhancedGoogleSheetsAPI {
         return true;
     }    
     /**
-     * 모든 데이터 로드
+     * 모든 데이터 로드 (⭐ 타임스탬프도 함께 가져와서 동기화)
      */
     async loadAllData() {
         const result = await this._request('loadAll');
         
-        // 서버 데이터를 상태 관리자에 저장
+        // ⭐ 서버 데이터를 상태 관리자에 저장
         const stateManager = window.stateManager;
         stateManager.updateState('family', result.data.family_members || []);
         stateManager.updateState('readRecords', result.data.reading_records || {});
@@ -631,6 +633,18 @@ class EnhancedGoogleSheetsAPI {
         stateManager.updateState('prayers', result.data.prayers || []);
         stateManager.updateState('messages', result.data.messages || []);
         stateManager.updateState('allowance', result.data.allowance_ledger || []);
+        
+        // ⭐ 서버의 현재 타임스탬프를 가져와서 로컬에 저장
+        try {
+            const timestampResult = await this._request('getLastModified');
+            const serverTimestamp = timestampResult.data.lastModified;
+            localStorage.setItem('bible_data_timestamp', serverTimestamp);
+            console.log('✅ 서버 타임스탬프 동기화 완료:', serverTimestamp);
+        } catch (error) {
+            console.warn('⚠️ 서버 타임스탬프 가져오기 실패:', error);
+            // 실패하면 현재 시간으로 설정
+            localStorage.setItem('bible_data_timestamp', new Date().toISOString());
+        }
         
         this.saveToLocalStorage();
         return result.data;

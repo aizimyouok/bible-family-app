@@ -77,7 +77,7 @@ function initializeComponents() {
 }
 
 /**
- * 탭 전환 함수 (⭐ 백그라운드 업데이트를 위한 탭 상태 저장 + 애니메이션 제어)
+ * 탭 전환 함수 (⭐ 부드러운 탭 전환만, 데이터 로드 제거)
  */
 function switchTab(tabName) {
     console.log('탭 전환:', tabName);
@@ -102,7 +102,6 @@ function switchTab(tabName) {
     // 모든 탭 콘텐츠 숨기기
     document.querySelectorAll('.tab-content').forEach(content => {
         content.classList.add('hidden');
-        // ⭐ 백그라운드 업데이트 클래스 제거 (애니메이션 활성화를 위해)
         content.classList.remove('background-update', 'no-animation');
     });
     
@@ -114,12 +113,11 @@ function switchTab(tabName) {
         selectedTab.classList.add('tab-active');
         selectedContent.classList.remove('hidden');
         
-        // ⭐ 애니메이션이 완전히 실행되도록 약간의 지연 후 컴포넌트 렌더링
+        // ⭐ 간단하게 렌더링만 (데이터 로드 없음)
         setTimeout(() => {
             if (window.components[tabName]) {
                 window.components[tabName].render();
             }
-            // ⭐ 사용자 탭 전환 플래그 해제
             window.isUserTabSwitch = false;
         }, 50);
         
@@ -129,6 +127,7 @@ function switchTab(tabName) {
         window.isUserTabSwitch = false;
     }
 }
+
 /**
  * 데이터 초기화 (⭐ 즉시 로딩 최적화)
  */
@@ -152,6 +151,16 @@ async function initializeData() {
         
         if (localData.family.length > 0) {
             currentUserForModal = localData.family[0].id;
+        }
+        
+        // ⭐ 로컬 데이터의 타임스탬프 확인 및 설정
+        if (localData.timestamp) {
+            console.log('✅ 로컬 타임스탬프 발견:', localData.timestamp);
+            // 타임스탬프가 이미 localStorage에 있는지 확인
+            if (!localStorage.getItem('bible_data_timestamp')) {
+                localStorage.setItem('bible_data_timestamp', localData.timestamp);
+                console.log('✅ 로컬 타임스탬프 localStorage에 설정');
+            }
         }
         
         hasLocalData = true;
@@ -202,13 +211,11 @@ async function connectToServerInBackground(hasLocalData) {
         updateConnectionStatus('connected');
         console.log('✅ 서버 연결 성공!');
         
-        // ⭐ 로컬 데이터가 없었다면 서버 데이터 로드
-        if (!hasLocalData) {
-            console.log('📥 서버에서 전체 데이터 로드 중...');
-            await loadAllDataAndRender();
-        } else {
-            console.log('⚡ 로컬 데이터 있음 - 실시간 동기화만 활성화');
-        }
+        // ⭐ 항상 서버 데이터를 로드해서 최신 상태 유지
+        console.log('📥 서버에서 최신 데이터 로드 중...');
+        await loadAllDataAndRender();
+        console.log('✅ 서버 데이터로 업데이트 완료');
+        
     } catch (error) {
         updateConnectionStatus('disconnected');
         console.log('🔌 오프라인 모드로 시작 (로컬 데이터 사용)');

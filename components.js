@@ -293,6 +293,34 @@ class ReadingComponent extends BaseComponent {
             </button>
         `).join('');
     }
+    
+    /**
+     * ⭐ 데이터 전용 업데이트 (읽기 탭 - 부분 업데이트로 깜빡임 방지)
+     */
+    updateDataOnly() {
+        if (this.container && !this.container.classList.contains('hidden')) {
+            console.log('ReadingComponent: 부분 데이터 업데이트 (깜빡임 방지)');
+            
+            try {
+                // ⭐ 리더보드만 조용히 업데이트
+                const leaderboard = document.getElementById('leaderboard');
+                if (leaderboard) {
+                    leaderboard.innerHTML = this.renderLeaderboard();
+                }
+                
+                // ⭐ 가족 대시보드만 조용히 업데이트
+                const familyDashboard = document.getElementById('family-dashboard');
+                if (familyDashboard) {
+                    familyDashboard.innerHTML = this.renderFamilyDashboard();
+                }
+                
+                console.log('✅ ReadingComponent 부분 업데이트 완료');
+            } catch (error) {
+                console.warn('ReadingComponent 부분 업데이트 실패, 전체 렌더링:', error);
+                this.render();
+            }
+        }
+    }
 }
 
 /**
