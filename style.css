@@ -1,167 +1,194 @@
-/* =================================================================
- * Bible Time for Family - Cascading Style Sheets (CSS)
- * ================================================================= */
+/* ============================================
+   Bible Time for Family - 스타일시트
+   ============================================ */
 
-/* --- 1. 기본 폰트 및 테마 변수 --- */
-body {
-    font-family: 'Noto Sans KR', sans-serif;
-    transition: background-color 0.5s, color 0.5s;
+/* === 기본 폰트 설정 === */
+body { 
+    font-family: 'Noto Sans KR', sans-serif; 
 }
 
-.font-myeongjo {
-    font-family: 'Nanum Myeongjo', serif;
+.font-myeongjo { 
+    font-family: 'Nanum Myeongjo', serif; 
 }
 
-/* 테마 정의 */
-.theme-jerusalem {
-    --bg-main: #fdfaf6;
-    --bg-container: #ffffff;
-    --bg-accent: #f8f1e9;
-    --text-primary: #5a4b42;
-    --text-accent: #8d6e63;
-    --border-color: #d7ccc8;
-    --highlight-bg: #f5e1d3;
+/* === 스크롤바 커스텀 === */
+.custom-scrollbar::-webkit-scrollbar { 
+    width: 8px; 
 }
 
-.theme-creation {
-    --bg-main: #f0f4f8;
-    --bg-container: #ffffff;
-    --bg-accent: #e6f0e6;
-    --text-primary: #2c3e50;
-    --text-accent: #1e8449;
-    --border-color: #d4e6d4;
-    --highlight-bg: #d4edda;
+.custom-scrollbar::-webkit-scrollbar-track { 
+    background: #f1f1f1; 
+    border-radius: 10px; 
 }
 
-.theme-exodus {
-    --bg-main: #f4eade;
-    --bg-container: #fff8f0;
-    --bg-accent: #eaddc7;
-    --text-primary: #4a3f35;
-    --text-accent: #a0522d;
-    --border-color: #d1c4b8;
-    --highlight-bg: #e6dace;
+.custom-scrollbar::-webkit-scrollbar-thumb { 
+    background: #c5a992; 
+    border-radius: 10px; 
 }
 
-.theme-kingdom {
-    --bg-main: #f0f2f5;
-    --bg-container: #ffffff;
-    --bg-accent: #e8eaf6;
-    --text-primary: #37474f;
-    --text-accent: #3f51b5;
-    --border-color: #c5cae9;
-    --highlight-bg: #d9dcf2;
+/* === 탭 네비게이션 스크롤바 숨기기 === */
+.tab-nav::-webkit-scrollbar { 
+    display: none; 
 }
 
-/* --- 2. 테마 적용 및 기본 스타일 --- */
-body {
-    background-color: var(--bg-main);
-    color: var(--text-primary);
+.tab-nav { 
+    -ms-overflow-style: none; 
+    scrollbar-width: none; 
 }
 
-.main-container { background-color: var(--bg-container); }
-.accent-bg { background-color: var(--bg-accent); }
-.accent-text { color: var(--text-accent); }
-.highlight-bg { background-color: var(--highlight-bg); }
-.progress-bar-fill { background-color: var(--text-accent); transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
-details > summary { list-style: none; }
-details > summary::-webkit-details-marker { display: none; }
+/* === 테마 변수 정의 === */
+.theme-jerusalem { 
+    --bg-main: #fdfaf6; 
+    --bg-container: #ffffff; 
+    --bg-accent: #f8f1e9; 
+    --text-primary: #5a4b42; 
+    --text-accent: #8d6e63; 
+    --border-color: #d7ccc8; 
+    --highlight-bg: #f5e1d3; 
+}
 
-/* --- 3. 스크롤바 디자인 --- */
-.custom-scrollbar::-webkit-scrollbar { width: 8px; }
-.custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
-.custom-scrollbar::-webkit-scrollbar-thumb { background: #c5a992; border-radius: 10px; }
+.theme-creation { 
+    --bg-main: #f0f4f8; 
+    --bg-container: #ffffff; 
+    --bg-accent: #e6f0e6; 
+    --text-primary: #2c3e50; 
+    --text-accent: #1e8449; 
+    --border-color: #d4e6d4; 
+    --highlight-bg: #d4edda; 
+}
 
-/* 탭 네비게이션 스크롤바 숨기기 */
-.tab-nav::-webkit-scrollbar { display: none; }
-.tab-nav { -ms-overflow-style: none; scrollbar-width: none; }
+.theme-exodus { 
+    --bg-main: #f4eade; 
+    --bg-container: #fff8f0; 
+    --bg-accent: #eaddc7;    --text-primary: #4a3f35; 
+    --text-accent: #a0522d; 
+    --border-color: #d1c4b8; 
+    --highlight-bg: #e6dace; 
+}
 
-/* --- 4. 탭 스타일 --- */
+.theme-kingdom { 
+    --bg-main: #f0f2f5; 
+    --bg-container: #ffffff; 
+    --bg-accent: #e8eaf6; 
+    --text-primary: #37474f; 
+    --text-accent: #3f51b5; 
+    --border-color: #c5cae9; 
+    --highlight-bg: #d9dcf2; 
+}
+
+/* === 테마 적용 === */
+body { 
+    background-color: var(--bg-main); 
+    color: var(--text-primary); 
+    transition: background-color 0.5s, color 0.5s; 
+}
+
+.main-container { 
+    background-color: var(--bg-container); 
+}
+
+.accent-bg { 
+    background-color: var(--bg-accent); 
+}
+
+.accent-text { 
+    color: var(--text-accent); 
+}
+
+.highlight-bg { 
+    background-color: var(--highlight-bg); 
+}
+
+.theme-select {
+    border-color: var(--border-color); 
+    background-color: var(--bg-accent);
+}
+/* === 프로그레스 바 === */
+.progress-bar-fill { 
+    background-color: var(--text-accent); 
+    transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1); 
+}
+
+/* === 탭 스타일 === */
+details > summary { 
+    list-style: none; 
+}
+
+details > summary::-webkit-details-marker { 
+    display: none; 
+}
+
+.tab-active { 
+    border-color: var(--text-accent); 
+    color: var(--text-accent); 
+}
+
+/* === 메인 탭 스타일 === */
 .main-tab {
     transition: all 0.3s ease;
 }
+
 .main-tab.tab-active {
     border-color: var(--text-accent);
     color: var(--text-accent);
 }
+
 .main-tab:not(.tab-active) {
     border-color: transparent;
     color: #6b7280;
 }
+
 .main-tab:not(.tab-active):hover {
     color: #374151;
     border-color: #d1d5db;
 }
 
-/* --- 5. 애니메이션 및 효과 --- */
-
-/* 탭 콘텐츠 페이드인 */
+/* === 탭 콘텐츠 애니메이션 === */
 .tab-content {
     animation: fadeIn 0.5s ease-in-out;
 }
+
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
 }
-
-/* 버튼 애니메이션 */
-.chapter-btn-animate {
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+/* === 버튼 애니메이션 효과 === */
+.chapter-btn-animate { 
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
     transform: scale(1);
 }
-.chapter-btn-animate:hover {
-    transform: scale(1.05);
+
+.chapter-btn-animate:hover { 
+    transform: scale(1.05); 
     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
-.chapter-btn-animate.checked {
+
+.chapter-btn-animate.checked { 
     animation: checkPulse 0.6s ease-out;
 }
+
 @keyframes checkPulse {
     0% { transform: scale(1); }
     50% { transform: scale(1.2); box-shadow: 0 0 20px rgba(34, 197, 94, 0.6); }
     100% { transform: scale(1); }
 }
 
-/* 슬라이드 업 애니메이션 */
+/* === 슬라이드 애니메이션 === */
 @keyframes slideInUp {
     from { transform: translateY(20px); opacity: 0; }
     to { transform: translateY(0); opacity: 1; }
 }
-.slide-in {
-    animation: slideInUp 0.5s ease-out;
+
+.slide-in { 
+    animation: slideInUp 0.5s ease-out; 
 }
 
-/* --- 6. 컴포넌트별 스타일 --- */
-
-/* 로딩 스피너 */
-.loading-spinner {
-    border: 3px solid #f3f3f3;
-    border-top: 3px solid var(--text-accent);
-    border-radius: 50%;
-    width: 24px;
-    height: 24px;
-    animation: spin 1s linear infinite;
-}
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+/* === 리더보드 애니메이션 === */
+.leaderboard-animate {
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* 오프라인 배지 */
-.offline-badge {
-    background: linear-gradient(45deg, #ff6b6b, #ff8e8e);
-    color: white;
-    padding: 4px 8px;
-    border-radius: 12px;
-    font-size: 12px;
-    animation: pulse 2s infinite;
-}
-@keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.7; }
-}
-
-/* 통계 차트 */
+/* === 통계 차트 스타일 === */
 .chart-container {
     position: relative;
     height: 300px;
@@ -170,34 +197,44 @@ details > summary::-webkit-details-marker { display: none; }
     padding: 16px;
     box-shadow: 0 4px 6px rgba(0,0,0,0.1);
 }
+/* === 로딩 스피너 === */
+.loading-spinner {
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid var(--text-accent);
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    animation: spin 1s linear infinite;
+}
 
-/* 비전 통장(용돈) 시스템 */
-.allowance-card {
-    transition: all 0.3s ease;
-    border: 1px solid var(--border-color);
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
 }
-.allowance-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 20px rgba(0,0,0,0.08);
+
+/* === 오프라인 인디케이터 === */
+.offline-badge {
+    background: linear-gradient(45deg, #ff6b6b, #ff8e8e);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    animation: pulse 2s infinite;
 }
-.allowance-history-table {
-    width: 100%;
-    border-collapse: collapse;
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
 }
-.allowance-history-table th, 
-.allowance-history-table td {
-    padding: 10px 12px;
-    border-bottom: 1px solid var(--border-color);
-    text-align: left;
-    vertical-align: middle;
-}
-.allowance-history-table th {
-    font-weight: bold;
-    background-color: var(--bg-accent);
-}
-.transaction-deposit {
-    color: #1e8449; /* theme-creation의 accent */
-}
-.transaction-withdrawal {
-    color: #a0522d; /* theme-exodus의 accent */
+
+/* === 모달 스타일 === */
+.modal {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    z-index: 20;
 }
