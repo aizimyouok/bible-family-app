@@ -66,6 +66,14 @@ class BaseComponent {
      * 렌더링 메서드 (하위 클래스에서 구현)
      */
     render() {
+        // 탭이 활성화 상태일 때만 렌더링하도록 하여 불필요한 렌더링 방지
+        if (this.container && !this.container.classList.contains('hidden')) {
+            this._doRender();
+        }
+    }
+
+    // 실제 렌더링 로직
+    _doRender() {
         throw new Error('render() method must be implemented by subclass');
     }
 }
@@ -139,8 +147,6 @@ class ReadingComponent extends BaseComponent {
                 </details>
             </section>
         `;
-        
-        this.attachEventListeners();
     }
     getRandomVerse() {
         const verses = [
@@ -276,11 +282,6 @@ class ReadingComponent extends BaseComponent {
             </button>
         `).join('');
     }
-    
-    attachEventListeners() {
-        // 이벤트 리스너들은 전역 함수로 처리 (window 객체에 등록)
-        // 이는 HTML onclick 속성과의 호환성을 위함
-    }
 }
 
 /**
@@ -293,7 +294,7 @@ class MeditationComponent extends BaseComponent {
         // 상태 구독
         this.subscribe('family', () => this.render());
         this.subscribe('meditations', () => this.renderMeditations());
-        this.subscribe('prayers', () => this.renderPrayers()); // ⭐ prayers 상태 변화 감지
+        this.subscribe('prayers', () => this.renderPrayers());
     }
     
     render() {
@@ -305,10 +306,12 @@ class MeditationComponent extends BaseComponent {
         
         this.container.innerHTML = `
             <div class="grid grid-cols-1 gap-6">
+                <!-- 가족 기도 노트 (위로 이동) -->
                 <div class="accent-bg rounded-lg p-4">
                     <h3 class="text-xl font-bold mb-3">🙏 가족 기도 노트</h3>
                     <div id="prayer-list" class="h-64 overflow-y-auto custom-scrollbar pr-2 mb-3 bg-white/50 rounded p-2">
-                        </div>
+                        <!-- 기도 목록이 여기에 렌더링됩니다 -->
+                    </div>
                     <div class="flex flex-col sm:flex-row gap-2">
                         <select id="prayer-user" class="p-2 rounded-md w-full sm:w-auto" style="border-color: var(--border-color);">
                             ${this.renderUserOptions()}
@@ -318,10 +321,12 @@ class MeditationComponent extends BaseComponent {
                     </div>
                 </div>
 
+                <!-- 가족 묵상 나눔 (아래로 이동) -->
                 <div class="accent-bg rounded-lg p-4">
                     <h3 class="text-xl font-bold mb-3">💬 가족 묵상 나눔</h3>
                     <div id="meditation-list" class="h-64 overflow-y-auto custom-scrollbar pr-2 mb-3 bg-white/50 rounded p-2">
-                        </div>
+                        <!-- 묵상 목록이 여기에 렌더링됩니다 -->
+                    </div>
                     <div class="flex flex-col sm:flex-row gap-2">
                         <select id="meditation-user" class="p-2 rounded-md w-full sm:w-auto" style="border-color: var(--border-color);">
                             ${this.renderUserOptions()}
@@ -668,48 +673,6 @@ class MessageBoardComponent extends BaseComponent {
             list.appendChild(messageEl);
         });
     }
-    renderComments(messageId, parentId, comments, family, currentUserId) {
-        const messageComments = comments
-            .filter(c => c.message_id === messageId && c.parent_id === parentId)
-            .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-            
-        return messageComments.map(comment => {
-            const user = family.find(u => u.id === comment.user_id);
-            const likeCount = comment.like_count || 0;
-            const isCurrentUser = comment.user_id === currentUserId;
-            
-            return `
-                <div class="flex items-start gap-2">
-                    <img src="${user ? user.photo : 'https://placehold.co/32x32'}" class="w-8 h-8 rounded-full object-cover mt-1" referrerpolicy="no-referrer">
-                    <div class="flex-grow bg-gray-100 p-2 rounded-lg">
-                        <div class="flex justify-between items-center">
-                            <span class="font-semibold text-sm">${user ? user.name : '알 수 없음'}</span>
-                            <span class="text-xs text-gray-400">${new Date(comment.timestamp).toLocaleString('ko-KR')}</span>
-                        </div>
-                        <p class="mt-1 text-sm whitespace-pre-wrap">${comment.content}</p>
-                        <div class="mt-1 flex items-center gap-3 text-xs">
-                            <button onclick="window.likeComment('${comment.id}')" class="text-gray-500 hover:text-red-500">❤️ (${likeCount})</button>
-                            <button onclick="window.toggleCommentForm('${messageId}', '${comment.id}')" class="text-gray-500 hover:text-blue-500">↪️ 답글</button>
-                            ${isCurrentUser ? `
-                                <button onclick="window.editComment('${comment.id}')" class="text-blue-500 hover:underline">수정</button>
-                                <button onclick="window.deleteComment('${comment.id}')" class="text-red-500 hover:underline">삭제</button>
-                            ` : ''}
-                        </div>
-                        
-                        <div id="replies-to-${comment.id}" class="mt-2 space-y-2">
-                            ${this.renderComments(messageId, comment.id, comments, family, currentUserId)}
-                        </div>
-                        <div id="comment-form-${comment.id}" class="mt-2 hidden">
-                            <div class="flex gap-2">
-                                <textarea id="comment-input-${comment.id}" class="flex-grow p-2 text-xs rounded-md min-w-0" placeholder="@${user.name}에게 답글..." rows="1" style="border-color: var(--border-color);"></textarea>
-                                <button onclick="window.addComment('${messageId}', '${comment.id}')" class="bg-white hover:bg-white/80 p-1 px-2 rounded-md shadow text-xs">등록</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }).join('');
-    }
     
     attachEventListeners() {
         // 메시지 추가
@@ -781,9 +744,9 @@ class AllowanceComponent extends BaseComponent {
     constructor() {
         super('content-allowance');
         
-        // 상태 구독
+        // ⭐ 상태 구독: 데이터 변경 시 전체를 다시 그리도록 render()를 직접 호출
         this.subscribe('family', () => this.render());
-        this.subscribe('allowance', () => this.renderTransactions());
+        this.subscribe('allowance', () => this.render());
     }
     
     render() {
@@ -836,13 +799,12 @@ class AllowanceComponent extends BaseComponent {
             <div class="accent-bg rounded-lg p-4">
                 <h4 class="text-lg font-bold mb-3">📋 거래 내역</h4>
                 <div id="transaction-list" class="h-64 overflow-y-auto custom-scrollbar pr-2 bg-white/50 rounded p-2">
-                    <!-- 거래 내역이 여기에 렌더링됩니다 -->
+                    ${this.renderTransactions()}
                 </div>
             </div>
         `;
         
         this.attachEventListeners();
-        this.renderTransactions();
     }
     
     renderBalanceCard(member) {
@@ -852,6 +814,7 @@ class AllowanceComponent extends BaseComponent {
         const balance = this.calculateBalance(member.id, allowanceData);
         const totalEarned = this.calculateTotalEarned(member.id, allowanceData);
         const totalWithdrawn = this.calculateTotalWithdrawn(member.id, allowanceData);
+        const goalAmount = member.goal_amount || 50000; // 목표 금액 (없으면 50,000원)
         
         return `
             <div class="bg-white rounded-lg p-4 shadow-md">
@@ -879,11 +842,11 @@ class AllowanceComponent extends BaseComponent {
                 <div class="mt-3 bg-gray-100 rounded p-2">
                     <div class="text-xs text-gray-600 mb-1">목표까지</div>
                     <div class="flex justify-between items-center">
-                        <span class="text-sm font-medium">${Math.max(0, 118900 - balance).toLocaleString()}원</span>
-                        <span class="text-xs text-gray-500">/118,900원</span>
+                        <span class="text-sm font-medium">${Math.max(0, goalAmount - balance).toLocaleString()}원</span>
+                        <span class="text-xs text-gray-500">/${goalAmount.toLocaleString()}원</span>
                     </div>
                     <div class="w-full bg-gray-200 rounded-full h-2 mt-1">
-                        <div class="bg-green-500 h-2 rounded-full transition-all" style="width: ${Math.min(100, (balance / 118900) * 100)}%"></div>
+                        <div class="bg-green-500 h-2 rounded-full transition-all" style="width: ${Math.min(100, (balance / goalAmount) * 100)}%"></div>
                     </div>
                 </div>
             </div>
@@ -892,66 +855,57 @@ class AllowanceComponent extends BaseComponent {
     calculateBalance(userId, allowanceData) {
         return allowanceData
             .filter(transaction => transaction.user_id === userId)
-            .reduce((sum, transaction) => sum + (transaction.amount || 0), 0);
+            .reduce((sum, transaction) => sum + (Number(transaction.amount) || 0), 0);
     }
     
     calculateTotalEarned(userId, allowanceData) {
         return allowanceData
-            .filter(transaction => transaction.user_id === userId && transaction.amount > 0)
-            .reduce((sum, transaction) => sum + transaction.amount, 0);
+            .filter(transaction => transaction.user_id === userId && Number(transaction.amount) > 0)
+            .reduce((sum, transaction) => sum + Number(transaction.amount), 0);
     }
     
     calculateTotalWithdrawn(userId, allowanceData) {
         return Math.abs(allowanceData
-            .filter(transaction => transaction.user_id === userId && transaction.amount < 0)
-            .reduce((sum, transaction) => sum + transaction.amount, 0));
+            .filter(transaction => transaction.user_id === userId && Number(transaction.amount) < 0)
+            .reduce((sum, transaction) => sum + Number(transaction.amount), 0));
     }
     
     renderTransactions() {
-        const list = document.getElementById('transaction-list');
-        if (!list) return;
-        
-        list.innerHTML = '';
-        
         const family = window.stateManager.getState('family');
         const allowanceData = window.stateManager.getState('allowance') || [];
         
         const sortedTransactions = allowanceData.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
         
         if (sortedTransactions.length === 0) {
-            list.innerHTML = '<div class="text-center text-gray-500 p-8">아직 거래 내역이 없습니다.</div>';
-            return;
+            return '<div class="text-center text-gray-500 p-8">아직 거래 내역이 없습니다.</div>';
         }
         
-        sortedTransactions.forEach(transaction => {
+        return sortedTransactions.map(transaction => {
             const user = family.find(u => u.id === transaction.user_id);
-            const isEarning = transaction.amount > 0;
+            const isEarning = Number(transaction.amount) > 0;
             
-            const transactionEl = document.createElement('div');
-            transactionEl.className = `p-3 mb-2 rounded-lg ${isEarning ? 'bg-green-50 border-l-4 border-green-500' : 'bg-red-50 border-l-4 border-red-500'}`;
-            
-            transactionEl.innerHTML = `
-                <div class="flex justify-between items-center">
-                    <div class="flex items-center">
-                        <img src="${user ? user.photo : 'https://placehold.co/32x32'}" class="w-8 h-8 rounded-full mr-2 object-cover" referrerpolicy="no-referrer">
-                        <div>
-                            <div class="font-medium">${user ? user.name : '알 수 없음'}</div>
-                            <div class="text-sm text-gray-600">${transaction.description || '설명 없음'}</div>
+            return `
+                <div class="p-3 mb-2 rounded-lg ${isEarning ? 'bg-green-50 border-l-4 border-green-500' : 'bg-red-50 border-l-4 border-red-500'}">
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center">
+                            <img src="${user ? user.photo : 'https://placehold.co/32x32'}" class="w-8 h-8 rounded-full mr-2 object-cover" referrerpolicy="no-referrer">
+                            <div>
+                                <div class="font-medium">${user ? user.name : '알 수 없음'}</div>
+                                <div class="text-sm text-gray-600">${transaction.description || '설명 없음'}</div>
+                            </div>
                         </div>
-                    </div>
-                    <div class="text-right">
-                        <div class="font-bold ${isEarning ? 'text-green-600' : 'text-red-600'}">
-                            ${isEarning ? '+' : ''}${transaction.amount.toLocaleString()}원
-                        </div>
-                        <div class="text-xs text-gray-500">
-                            ${new Date(transaction.timestamp).toLocaleString('ko-KR')}
+                        <div class="text-right">
+                            <div class="font-bold ${isEarning ? 'text-green-600' : 'text-red-600'}">
+                                ${isEarning ? '+' : ''}${Number(transaction.amount).toLocaleString()}원
+                            </div>
+                            <div class="text-xs text-gray-500">
+                                ${new Date(transaction.timestamp).toLocaleString('ko-KR')}
+                            </div>
                         </div>
                     </div>
                 </div>
             `;
-            
-            list.appendChild(transactionEl);
-        });
+        }).join('');
     }
     attachEventListeners() {
         const withdrawBtn = document.getElementById('withdraw-btn');
@@ -1033,9 +987,9 @@ class StatsComponent extends BaseComponent {
         super('content-stats');
         this.weeklyChart = null;
         
-        // 상태 구독
+        // ⭐ 상태 구독: 데이터 변경 시 전체를 다시 그리도록 render()를 직접 호출
         this.subscribe('family', () => this.render());
-        this.subscribe('readRecords', () => this.updateCharts());
+        this.subscribe('readRecords', () => this.render());
     }
     
     render() {
@@ -1072,7 +1026,7 @@ class StatsComponent extends BaseComponent {
         `;
         
         // 차트 초기화는 DOM 렌더링 후에 실행
-        setTimeout(() => this.initChart(), 100);
+        setTimeout(() => this.initChart(), 50);
     }
     initChart() {
         const ctx = document.getElementById('weeklyChart');
@@ -1397,20 +1351,6 @@ class StatsComponent extends BaseComponent {
         };
         
         return topics[bookName] || "오늘 읽은 말씀이 우리 가족에게 주는 교훈은 무엇일까요?";
-    }
-    
-    updateCharts() {
-        if (this.weeklyChart) {
-            const data = this.getWeeklyData();
-            this.weeklyChart.data.datasets = data.datasets;
-            this.weeklyChart.update('active');
-        }
-        
-        // 상세 진행 현황도 업데이트
-        const detailedProgress = document.getElementById('detailed-progress');
-        if (detailedProgress) {
-            detailedProgress.innerHTML = this.renderDetailedProgress();
-        }
     }
 }
 // === 전역 컴포넌트 인스턴스들 ===
