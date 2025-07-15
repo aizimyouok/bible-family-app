@@ -165,7 +165,6 @@
         </header>
 
         <div class="main-container shadow-xl rounded-2xl p-3 sm:p-4 md:p-6">
-            <!-- 메인 탭 네비게이션 -->
             <div class="border-b border-gray-200 mb-6">
                 <nav class="-mb-px flex space-x-2 sm:space-x-4 md:space-x-8 overflow-x-auto tab-nav" aria-label="Main Tabs">
                     <button id="tab-main" class="main-tab whitespace-nowrap py-3 px-2 sm:px-3 md:px-4 border-b-2 font-medium text-xs sm:text-sm tab-active flex-shrink-0" data-tab="main">
@@ -180,21 +179,16 @@
                 </nav>
             </div>
 
-            <!-- 첫번째 탭: 말씀과 읽기 -->
             <div id="content-main" class="tab-content">
-                <!-- 오늘의 지혜 말씀 -->
                 <section class="mb-8 text-center p-6 border-2 border-dashed slide-in" style="border-color: var(--border-color);">
                     <h2 class="text-xl font-bold font-myeongjo accent-text mb-2">오늘의 지혜 말씀</h2>
                     <p id="wisdom-verse" class="text-lg"></p>
                 </section>
 
-                <!-- 말씀 읽기 순위 (리더보드) -->
                 <section id="leaderboard" class="mb-8 leaderboard-animate"></section>
                 
-                <!-- 가족 프로필 대시보드 -->
                 <section id="family-dashboard" class="mb-8 accent-bg rounded-lg p-4 grid grid-cols-2 md:grid-cols-4 gap-4 items-center text-center"></section>
                 
-                <!-- 구약/신약 성경 펼치기 -->
                 <section class="mb-8 space-y-4">
                     <details class="group">
                         <summary class="text-2xl font-bold text-center cursor-pointer p-2 rounded-lg hover:bg-gray-100 transition">
@@ -219,10 +213,19 @@
                 </section>
             </div>
 
-            <!-- 두번째 탭: 묵상과 기도 -->
             <div id="content-sharing" class="tab-content hidden">
+                 <section class="mb-6 accent-bg rounded-lg p-4">
+                    <h3 class="text-xl font-bold mb-3">💌 가족 메시지 보드</h3>
+                    <div id="message-board-list" class="h-96 overflow-y-auto custom-scrollbar pr-2 mb-3 bg-white/50 rounded p-2 space-y-4">
+                        </div>
+                    <div class="flex flex-col sm:flex-row gap-2">
+                        <select id="message-user" class="p-2 rounded-md w-full sm:w-auto" style="border-color: var(--border-color);"></select>
+                        <textarea id="message-input" class="flex-grow p-2 rounded-md min-w-0" placeholder="가족에게 남길 메시지를 작성하세요..." rows="1" style="border-color: var(--border-color);"></textarea>
+                        <button id="add-message" class="bg-white/80 hover:bg-white p-2 rounded-md shadow whitespace-nowrap">메시지 남기기</button>
+                    </div>
+                </section>
+
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <!-- 가족 묵상 나눔 -->
                     <div class="accent-bg rounded-lg p-4">
                         <h3 class="text-xl font-bold mb-3">💬 가족 묵상 나눔</h3>
                         <div id="meditation-list" class="h-64 overflow-y-auto custom-scrollbar pr-2 mb-3 bg-white/50 rounded p-2"></div>
@@ -233,7 +236,6 @@
                         </div>
                     </div>
                     
-                    <!-- 가족 기도 노트 -->
                     <div class="accent-bg rounded-lg p-4">
                         <h3 class="text-xl font-bold mb-3">🙏 가족 기도 노트</h3>
                         <div id="prayer-list" class="h-64 overflow-y-auto custom-scrollbar pr-2 mb-3 bg-white/50 rounded p-2"></div>
@@ -245,7 +247,6 @@
                     </div>
                 </div>
 
-                <!-- 추가 묵상 도구들 (향후 확장 가능) -->
                 <div class="mt-6 accent-bg rounded-lg p-4">
                     <h3 class="text-lg font-bold mb-3 accent-text">💡 묵상 도우미</h3>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
@@ -265,9 +266,7 @@
                 </div>
             </div>
 
-            <!-- 세번째 탭: 통계와 현황 -->
             <div id="content-stats" class="tab-content hidden">
-                <!-- 최근 7일 읽기 추이 -->
                 <section id="statistics-section" class="mb-8 accent-bg rounded-lg p-4">
                     <h3 class="text-xl font-bold mb-4 accent-text text-center">📈 최근 7일 읽기 추이</h3>
                     <div class="chart-container">
@@ -275,13 +274,11 @@
                     </div>
                 </section>
 
-                <!-- 개인별 상세 진행 현황 -->
                 <section class="mb-8">
                     <h3 class="text-xl font-bold mb-4 accent-text text-center">👥 개인별 상세 진행 현황</h3>
                     <div id="detailed-progress" class="grid grid-cols-1 gap-6"></div>
                 </section>
 
-                <!-- 가족 대화 주제 (AI 기능) -->
                 <section class="accent-bg rounded-lg p-4">
                     <h3 class="text-lg font-bold mb-3 accent-text">💬 오늘의 가족 대화 주제</h3>
                     <div id="family-discussion-topic" class="bg-white/50 p-4 rounded-lg">
@@ -298,7 +295,6 @@
     <div id="chapter-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-20"><div class="bg-white rounded-lg shadow-2xl p-6 w-full max-w-2xl max-h-[80vh] flex flex-col"><div class="flex justify-between items-center mb-4"><h2 id="modal-title" class="text-2xl font-bold"></h2><button id="close-modal" class="text-3xl">&times;</button></div><div id="modal-user-selector-container" class="flex items-center gap-2 mb-4"><label for="modal-user-selector">체크할 사람:</label><select id="modal-user-selector" class="p-1 border rounded"></select></div><div id="modal-chapters" class="flex-grow overflow-y-auto grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 gap-2 p-2 accent-bg rounded custom-scrollbar"></div></div></div>
     <div id="progress-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-30"><div class="bg-white rounded-lg shadow-2xl p-6 w-full max-w-lg max-h-[80vh] flex flex-col"><div class="flex items-center mb-4"><img id="progress-modal-photo" class="w-16 h-16 rounded-full mr-4" src="" alt="프로필 사진" referrerpolicy="no-referrer"><div class="flex-grow"><h2 id="progress-modal-title" class="text-2xl font-bold"></h2></div><button id="close-progress-modal" class="text-3xl">&times;</button></div><div class="border-b border-gray-200 mb-4"><nav class="-mb-px flex space-x-8" aria-label="Tabs"><button id="tab-ot" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm tab-active">구약</button><button id="tab-nt" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">신약</button></nav></div><div id="progress-modal-content" class="flex-grow overflow-y-auto custom-scrollbar pr-4"><div id="content-ot"></div><div id="content-nt" class="hidden"></div></div></div></div>
 
-    <!-- 관리자 모달 -->
     <div id="admin-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-40">
         <div class="bg-white rounded-lg shadow-2xl p-6 w-full max-w-2xl max-h-[80vh] flex flex-col">
             <div class="flex justify-between items-center mb-4">
@@ -306,7 +302,6 @@
                 <button id="close-admin-modal" class="text-3xl">&times;</button>
             </div>
             
-            <!-- 비밀번호 입력 섹션 -->
             <div id="password-section" class="border border-gray-200 rounded-lg p-4 mb-4">
                 <h3 class="text-lg font-bold mb-2 text-purple-600">🔐 관리자 인증</h3>
                 <div class="flex gap-2 items-center">
@@ -320,7 +315,6 @@
             </div>
             
             <div id="admin-functions" class="flex-grow overflow-y-auto space-y-4 hidden">
-                <!-- 보안 설정 확인 -->
                 <div class="border border-blue-200 rounded-lg p-4 bg-blue-50">
                     <h3 class="text-lg font-bold mb-2 text-blue-700">🔒 시스템 정보</h3>
                     <div class="text-sm space-y-1">
@@ -332,7 +326,6 @@
                     </div>
                 </div>
                 
-                <!-- 백업 섹션 -->
                 <div class="border border-gray-200 rounded-lg p-4">
                     <h3 class="text-lg font-bold mb-2 text-green-600">💾 데이터 백업</h3>
                     <p class="text-sm text-gray-600 mb-3">현재 모든 데이터를 새 시트에 백업합니다.</p>
@@ -342,7 +335,6 @@
                     <div id="backup-result" class="mt-2 p-2 bg-gray-100 rounded text-sm hidden"></div>
                 </div>
                 
-                <!-- 데이터 정리 섹션 -->
                 <div class="border border-gray-200 rounded-lg p-4">
                     <h3 class="text-lg font-bold mb-2 text-red-600">⚠️ 데이터 정리</h3>
                     <p class="text-sm text-gray-600 mb-3">중복된 읽기 기록을 정리합니다. <strong>백업 후 실행하세요!</strong></p>
@@ -353,14 +345,12 @@
                     <div id="cleanup-result" class="mt-2 p-2 bg-gray-100 rounded text-sm hidden"></div>
                 </div>
                 
-                <!-- 진단 정보 섹션 -->
                 <div class="border border-gray-200 rounded-lg p-4">
                     <h3 class="text-lg font-bold mb-2 text-blue-600">🔍 시스템 진단</h3>
                     <button id="diagnostic-btn" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 mb-3">진단 실행</button>
                     <div id="diagnostic-result" class="text-sm bg-gray-100 rounded p-2 hidden overflow-auto max-h-40"></div>
                 </div>
                 
-                <!-- 연결 정보 섹션 -->
                 <div class="border border-gray-200 rounded-lg p-4">
                     <h3 class="text-lg font-bold mb-2 text-purple-600">📡 연결 상태</h3>
                     <div id="connection-info" class="text-sm space-y-1">
@@ -376,7 +366,7 @@
 <script>
 // === 기본 설정 ===
 const API_CONFIG = {
-    scriptUrl: 'https://script.google.com/macros/s/AKfycbzvPb4jXaUv01A7RoDggvRoyccLJoFSq-jsKCyQ4tL2bfHAsKqDDR0Jy7gRPNjeMsVjpA/exec',
+    scriptUrl: 'https://script.google.com/macros/s/AKfycbyntjuDtRw4MdLb5ySF5mRbX1bbNly66cNpe6S0lZwlNnbK6Nzeqn1JgLgQ_3onDmRRhw/exec',
     apiKey: 'bible_family_default',
     enableSecurity: false // 가족용이므로 보안 기능 비활성화
 };
@@ -530,7 +520,9 @@ class EnhancedGoogleSheetsAPI {
                             userId: change.userId,
                             bookName: change.bookName,
                             chapter: change.chapter,
-                            content: change.content
+                            content: change.content,
+                            messageId: change.messageId, // ⭐ 추가
+                            parentId: change.parentId, // ⭐ 추가
                         });
                     } else if (change.action === 'delete') {
                         await this._request('delete', {
@@ -570,6 +562,8 @@ class EnhancedGoogleSheetsAPI {
         localStorage.setItem('bible_badges', JSON.stringify(db.badges));
         localStorage.setItem('bible_meditations', JSON.stringify(db.meditations));
         localStorage.setItem('bible_prayers', JSON.stringify(db.prayers));
+        localStorage.setItem('bible_messages', JSON.stringify(db.messages)); // ⭐ 추가
+        localStorage.setItem('bible_comments', JSON.stringify(db.comments)); // ⭐ 추가
     }
     
     loadFromLocalStorage() {
@@ -580,10 +574,12 @@ class EnhancedGoogleSheetsAPI {
             const badges = JSON.parse(localStorage.getItem('bible_badges') || '{}');
             const meditations = JSON.parse(localStorage.getItem('bible_meditations') || '[]');
             const prayers = JSON.parse(localStorage.getItem('bible_prayers') || '[]');
+            const messages = JSON.parse(localStorage.getItem('bible_messages') || '[]'); // ⭐ 추가
+            const comments = JSON.parse(localStorage.getItem('bible_comments') || '[]'); // ⭐ 추가
             
             return {
                 timestamp: timestamp ? parseInt(timestamp) : null,
-                family, readRecords, badges, meditations, prayers
+                family, readRecords, badges, meditations, prayers, messages, comments // ⭐ 추가
             };
         } catch (error) {
             console.error('로컬 데이터 로드 실패:', error);
@@ -605,6 +601,8 @@ class EnhancedGoogleSheetsAPI {
         db.badges = result.data.badges || {};
         db.meditations = result.data.meditations || [];
         db.prayers = result.data.prayers || [];
+        db.messages = result.data.messages || []; // ⭐ 추가
+        db.comments = result.data.comments || []; // ⭐ 추가
         
         this.saveToLocalStorage();
         return result.data;
@@ -694,9 +692,7 @@ class StatisticsManager {
                 maintainAspectRatio: false,
                 plugins: {
                     title: {
-                        display: true,
-                        text: '최근 7일 읽기 추이',
-                        font: { size: 16, weight: 'bold' }
+                        display: false // 개인별 차트에서 제목을 사용하므로 전체 차트에서는 숨김
                     }
                 },
                 scales: {
@@ -868,7 +864,8 @@ const FAMILY_DISCUSSION_TEMPLATES = {
 // === 전역 변수 ===
 let gapi = new EnhancedGoogleSheetsAPI();
 let statisticsManager = new StatisticsManager();
-let db = { family: [], readRecords: {}, badges: {}, meditations: [], prayers: [] };
+// ⭐ messages, comments 추가
+let db = { family: [], readRecords: {}, badges: {}, meditations: [], prayers: [], messages: [], comments: [] };
 let currentUserForModal = null, currentBook = null, currentProgressUserId = null;
 
 // === 메인 초기화 (수정됨) ===
@@ -921,6 +918,8 @@ async function initializeApp() {
         db.badges = localData.badges;
         db.meditations = localData.meditations;
         db.prayers = localData.prayers;
+        db.messages = localData.messages; // ⭐ 추가
+        db.comments = localData.comments; // ⭐ 추가
         
         currentUserForModal = db.family[0].id;
         populateUserDropdowns();
@@ -949,6 +948,8 @@ async function loadAllDataAndRender() {
         db.badges = allData.badges || {}; 
         db.meditations = allData.meditations || []; 
         db.prayers = allData.prayers || []; 
+        db.messages = allData.messages || []; // ⭐ 추가
+        db.comments = allData.comments || []; // ⭐ 추가
         
         if (db.family?.length > 0) { 
             currentUserForModal = db.family[0].id; 
@@ -968,6 +969,7 @@ function renderAll() {
     renderFamilyDashboard(); 
     renderMeditations(); 
     renderPrayers(); 
+    renderMessageBoard(); // ⭐ 메시지 보드 렌더링 추가
     renderDetailedProgress();
     renderFamilyDiscussionTopic();
     
@@ -1156,16 +1158,19 @@ function populateUserDropdowns() {
     const meditationUser = document.getElementById('meditation-user'); 
     const prayerUser = document.getElementById('prayer-user'); 
     const modalUser = document.getElementById('modal-user-selector'); 
+    const messageUser = document.getElementById('message-user'); // ⭐ 추가
     
     meditationUser.innerHTML = ''; 
     prayerUser.innerHTML = ''; 
     modalUser.innerHTML = ''; 
+    messageUser.innerHTML = ''; // ⭐ 추가
     
     db.family.forEach(member => { 
         const option = `<option value="${member.id}">${member.name}</option>`; 
         meditationUser.innerHTML += option; 
         prayerUser.innerHTML += option; 
         modalUser.innerHTML += option; 
+        messageUser.innerHTML += option; // ⭐ 추가
     }); 
 }
 
@@ -1187,6 +1192,15 @@ function setupEventListeners() {
     }); 
     document.getElementById('prayer-user').addEventListener('change', renderPrayers); 
     
+    // ⭐ 메시지 보드 이벤트 리스너 추가
+    document.getElementById('add-message').addEventListener('click', addMessage);
+    document.getElementById('message-input').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            addMessage();
+        }
+    });
+
     document.getElementById('sync-btn').addEventListener('click', () => { 
         initializeApp(); 
     }); 
@@ -1357,6 +1371,219 @@ async function editPrayer(id) {
         alert('기도제목 수정 실패: ' + error.message); 
     } 
 }
+
+// ⭐ === 가족 메시지 보드 기능 ===
+
+function renderMessageBoard() {
+    const list = document.getElementById('message-board-list');
+    if (!list) return;
+    list.innerHTML = '';
+
+    const sortedMessages = (db.messages || []).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+    if (sortedMessages.length === 0) {
+        list.innerHTML = `<div class="text-center text-gray-500 p-8">가족에게 첫 메시지를 남겨보세요! 👋</div>`;
+        return;
+    }
+
+    sortedMessages.forEach(message => {
+        const user = db.family.find(u => u.id === message.userId);
+        const currentUserId = document.getElementById('message-user').value;
+
+        const messageEl = document.createElement('div');
+        messageEl.className = 'p-3 bg-white/80 rounded-lg shadow-sm';
+
+        messageEl.innerHTML = `
+            <div class="flex items-start gap-3">
+                <img src="${user ? user.photo : 'https://placehold.co/40x40'}" class="w-10 h-10 rounded-full object-cover" referrerpolicy="no-referrer">
+                <div class="flex-grow">
+                    <div class="flex justify-between items-center">
+                        <span class="font-bold">${user ? user.name : '알 수 없음'}</span>
+                        <span class="text-xs text-gray-500">${new Date(message.timestamp).toLocaleString('ko-KR')}</span>
+                    </div>
+                    <p class="mt-1 text-sm whitespace-pre-wrap">${message.content}</p>
+                    <div class="mt-2 flex items-center gap-4 text-xs">
+                        <button class="text-gray-600 hover:text-red-500">❤️ 좋아요 (${message.likeCount || 0})</button>
+                        <button class="text-gray-600 hover:text-blue-500" onclick="toggleCommentForm('${message.id}')">💬 댓글 달기</button>
+                        ${message.userId === currentUserId ? `
+                            <button class="text-blue-600 hover:underline" onclick="editMessage('${message.id}')">수정</button>
+                            <button class="text-red-600 hover:underline" onclick="deleteMessage('${message.id}')">삭제</button>
+                        ` : ''}
+                    </div>
+                </div>
+            </div>
+            <div id="comments-for-${message.id}" class="ml-12 mt-3 space-y-3">
+                </div>
+            <div id="comment-form-${message.id}" class="ml-12 mt-3 hidden">
+                <div class="flex gap-2">
+                    <textarea id="comment-input-${message.id}" class="flex-grow p-2 text-sm rounded-md min-w-0" placeholder="댓글을 입력하세요..." rows="1" style="border-color: var(--border-color);"></textarea>
+                    <button class="bg-white/80 hover:bg-white p-2 rounded-md shadow text-sm" onclick="addComment('${message.id}', null)">등록</button>
+                </div>
+            </div>
+        `;
+        list.appendChild(messageEl);
+        renderComments(message.id, null); // 메시지에 대한 최상위 댓글 렌더링
+    });
+}
+
+function renderComments(messageId, parentId) {
+    const containerId = parentId ? `replies-to-${parentId}` : `comments-for-${messageId}`;
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    container.innerHTML = '';
+    const currentUserId = document.getElementById('message-user').value;
+
+    const comments = (db.comments || [])
+        .filter(c => c.messageId === messageId && c.parentId === parentId)
+        .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+
+    comments.forEach(comment => {
+        const user = db.family.find(u => u.id === comment.userId);
+        const commentEl = document.createElement('div');
+        commentEl.className = 'flex items-start gap-2';
+
+        commentEl.innerHTML = `
+            <img src="${user ? user.photo : 'https://placehold.co/32x32'}" class="w-8 h-8 rounded-full object-cover mt-1" referrerpolicy="no-referrer">
+            <div class="flex-grow bg-gray-100 p-2 rounded-lg">
+                <div class="flex justify-between items-center">
+                    <span class="font-semibold text-sm">${user ? user.name : '알 수 없음'}</span>
+                    <span class="text-xs text-gray-400">${new Date(comment.timestamp).toLocaleString('ko-KR')}</span>
+                </div>
+                <p class="mt-1 text-sm whitespace-pre-wrap">${comment.content}</p>
+                <div class="mt-1 flex items-center gap-3 text-xs">
+                    <button class="text-gray-500 hover:text-red-500">❤️ (${comment.likeCount || 0})</button>
+                    <button class="text-gray-500 hover:text-blue-500" onclick="toggleCommentForm('${messageId}', '${comment.id}')">↪️ 답글</button>
+                    ${comment.userId === currentUserId ? `
+                        <button class="text-blue-500 hover:underline" onclick="editComment('${comment.id}')">수정</button>
+                        <button class="text-red-500 hover:underline" onclick="deleteComment('${comment.id}')">삭제</button>
+                    ` : ''}
+                </div>
+                
+                <div id="replies-to-${comment.id}" class="mt-2 space-y-2">
+                    </div>
+                 <div id="comment-form-${comment.id}" class="mt-2 hidden">
+                    <div class="flex gap-2">
+                        <textarea id="comment-input-${comment.id}" class="flex-grow p-2 text-xs rounded-md min-w-0" placeholder="@${user.name}에게 답글..." rows="1" style="border-color: var(--border-color);"></textarea>
+                        <button class="bg-white hover:bg-white/80 p-1 px-2 rounded-md shadow text-xs" onclick="addComment('${messageId}', '${comment.id}')">등록</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        container.appendChild(commentEl);
+        renderComments(messageId, comment.id); // 재귀 호출로 답글 렌더링
+    });
+}
+
+function toggleCommentForm(messageId, parentId = null) {
+    const formId = parentId ? `comment-form-${parentId}` : `comment-form-${messageId}`;
+    const form = document.getElementById(formId);
+    if (form) {
+        form.classList.toggle('hidden');
+        if (!form.classList.contains('hidden')) {
+            form.querySelector('textarea').focus();
+        }
+    }
+}
+
+
+async function addMessage() {
+    const userInput = document.getElementById('message-user');
+    const textInput = document.getElementById('message-input');
+    const content = textInput.value.trim();
+    if (!content) return;
+
+    try {
+        const result = await gapi.saveData({
+            type: 'message',
+            userId: userInput.value,
+            content: content
+        });
+        db.messages.push({ ...result.data, id: String(result.data.id), timestamp: new Date().toISOString(), likeCount: 0 }); // 즉시 반영을 위해 로컬에 추가
+        textInput.value = '';
+        renderMessageBoard();
+    } catch (e) {
+        alert('메시지 저장 실패: ' + e.message);
+    }
+}
+
+async function addComment(messageId, parentId) {
+    const inputId = parentId ? `comment-input-${parentId}` : `comment-input-${messageId}`;
+    const textInput = document.getElementById(inputId);
+    const content = textInput.value.trim();
+    const userId = document.getElementById('message-user').value;
+    if (!content) return;
+
+    try {
+        const result = await gapi.saveData({
+            type: 'comment',
+            userId: userId,
+            messageId: messageId,
+            parentId: parentId,
+            content: content
+        });
+        db.comments.push({ ...result.data, id: String(result.data.id), timestamp: new Date().toISOString(), likeCount: 0 });
+        textInput.value = '';
+        renderMessageBoard();
+    } catch (e) {
+        alert('댓글 저장 실패: ' + e.message);
+    }
+}
+
+async function deleteMessage(id) {
+    if (!confirm('메시지를 삭제하면 관련 댓글도 모두 삭제됩니다.\n정말로 삭제하시겠습니까?')) return;
+    try {
+        await gapi.deleteData({ type: 'message', id });
+        db.messages = db.messages.filter(m => m.id !== id);
+        // 관련 댓글도 로컬에서 삭제
+        db.comments = db.comments.filter(c => c.messageId !== id);
+        renderMessageBoard();
+    } catch (e) {
+        alert('메시지 삭제 실패: ' + e.message);
+    }
+}
+
+async function deleteComment(id) {
+    if (!confirm('정말로 댓글을 삭제하시겠습니까?')) return;
+    try {
+        await gapi.deleteData({ type: 'comment', id });
+        db.comments = db.comments.filter(c => c.id !== id && c.parentId !== id); // 답글도 함께 삭제
+        renderMessageBoard();
+    } catch (e) {
+        alert('댓글 삭제 실패: ' + e.message);
+    }
+}
+
+async function editMessage(id) {
+    const message = db.messages.find(m => m.id === id);
+    const newContent = prompt('메시지 수정:', message.content);
+    if (newContent === null || newContent.trim() === '' || newContent.trim() === message.content) return;
+    
+    try {
+        await gapi.editData({ type: 'message', id, content: newContent.trim() });
+        message.content = newContent.trim();
+        renderMessageBoard();
+    } catch (e) {
+        alert('메시지 수정 실패: ' + e.message);
+    }
+}
+
+async function editComment(id) {
+    const comment = db.comments.find(c => c.id === id);
+    const newContent = prompt('댓글 수정:', comment.content);
+    if (newContent === null || newContent.trim() === '' || newContent.trim() === comment.content) return;
+
+    try {
+        await gapi.editData({ type: 'comment', id, content: newContent.trim() });
+        comment.content = newContent.trim();
+        renderMessageBoard();
+    } catch (e) {
+        alert('댓글 수정 실패: ' + e.message);
+    }
+}
+
+
+// === 이하 기존 함수들 ===
 
 function openProgressModal(userId) { 
     currentProgressUserId = userId; 
@@ -1699,7 +1926,6 @@ function renderDetailedProgress() {
                 </div>
             </div>
             
-            <!-- 전체 진도 바 -->
             <div class="mb-4">
                 <div class="flex justify-between text-sm mb-1">
                     <span>전체 진도</span>
@@ -1710,7 +1936,6 @@ function renderDetailedProgress() {
                 </div>
             </div>
             
-            <!-- 최근 7일 읽기 차트 -->
             <div class="mb-4">
                 <h5 class="font-semibold text-sm mb-2">📈 최근 7일 읽기</h5>
                 <div class="flex items-end justify-between h-12 bg-white/50 rounded p-2">
@@ -1730,7 +1955,6 @@ function renderDetailedProgress() {
                 </div>
             </div>
             
-            <!-- 완독한 책들 -->
             ${completedBooks.length > 0 ? `
                 <div class="mb-4">
                     <h5 class="font-semibold text-sm mb-2">🎉 완독한 책</h5>
@@ -1745,7 +1969,6 @@ function renderDetailedProgress() {
                 </div>
             ` : ''}
             
-            <!-- 격려 메시지 -->
             <div class="bg-white/70 rounded-lg p-3 text-sm">
                 <div class="flex items-start">
                     <span class="text-lg mr-2">${encouragement.emoji}</span>
