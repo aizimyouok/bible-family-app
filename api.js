@@ -305,20 +305,18 @@ class EnhancedGoogleSheetsAPI {
     }
     
     /**
-     * 데이터 삭제 (큐 시스템 사용)
+     * 데이터 삭제 (⭐ 즉시 실행 방식으로 변경)
      */
     async deleteData(params) {
-        const changeId = this.addPendingChange({
-            action: 'delete',
-            ...params
-        });
-        
-        // 온라인이면 즉시 동기화 시도
-        if (this.isConnected) {
-            setTimeout(() => this.processPendingChanges(), 100);
+        try {
+            // ⭐ 즉시 서버에 삭제 요청하고 결과를 반환
+            const result = await this._request('delete', params);
+            console.log('즉시 삭제 완료:', params.type, result);
+            return result;
+        } catch (error) {
+            console.error('즉시 삭제 실패:', error);
+            throw error;
         }
-        
-        return { success: true };
     }
     
     /**
