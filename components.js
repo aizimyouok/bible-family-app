@@ -635,9 +635,16 @@ class MessageBoardComponent extends BaseComponent {
     constructor() {
         super('content-messages');
         
-        // 상태 구독 (댓글 제거)
+        // 페이지네이션을 위한 상태 변수 추가
+        this.currentPage = 1;
+        this.itemsPerPage = 10;
+
         this.subscribe('family', () => this.render());
-        this.subscribe('messages', () => this.renderMessages());
+        this.subscribe('messages', () => {
+            // 메시지가 업데이트되면 첫 페이지로 이동하여 보여주기
+            this.currentPage = 1;
+            this.renderMessages();
+        });
     }
     
     render() {
@@ -648,12 +655,14 @@ class MessageBoardComponent extends BaseComponent {
         }
         
         this.container.innerHTML = `
-            <!-- 사랑의 대화 -->
             <section class="mb-6 accent-bg rounded-lg p-4">
                 <h3 class="text-xl font-bold mb-3">💝 사랑의 대화</h3>
-                <div id="message-board-list" class="h-[32rem] overflow-y-auto custom-scrollbar pr-2 mb-3 bg-white/50 rounded p-2 space-y-3">
-                    <!-- 메시지 목록이 여기에 렌더링됩니다 -->
-                </div>
+                
+                <div id="message-board-list" class="h-[40rem] overflow-y-auto custom-scrollbar pr-2 mb-3 bg-white/50 rounded p-2 space-y-3">
+                    </div>
+
+                <div id="message-pagination" class="flex justify-center items-center my-4"></div>
+
                 <div class="flex flex-col sm:flex-row gap-2">
                     <select id="message-user" class="p-2 rounded-md w-full sm:w-auto" style="border-color: var(--border-color);">
                         ${this.renderUserOptions()}
@@ -677,10 +686,12 @@ class MessageBoardComponent extends BaseComponent {
     
     renderMessages() {
         const list = document.getElementById('message-board-list');
-        if (!list) return;
-        
+        const paginationContainer = document.getElementById('message-pagination');
+        if (!list || !paginationContainer) return;
+
         list.innerHTML = '';
-        
+        paginationContainer.innerHTML = '';
+
         const family = window.stateManager.getState('family');
         const messages = window.stateManager.getState('messages') || [];
         const currentUserId = document.getElementById('message-user')?.value;
@@ -688,31 +699,50 @@ class MessageBoardComponent extends BaseComponent {
         // 공지와 일반 메시지 분리
         const notices = messages.filter(m => m.is_notice === true);
         const regularMessages = messages.filter(m => m.is_notice !== true);
-        
         const sortedMessages = regularMessages.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
         
+        // --- [추가] 페이지네이션 로직 ---
+        const totalPages = Math.ceil(sortedMessages.length / this.itemsPerPage);
+        const startIndex = (this.currentPage - 1) * this.itemsPerPage;
+        const endIndex = startIndex + this.itemsPerPage;
+        const paginatedMessages = sortedMessages.slice(startIndex, endIndex);
+        // ---------------------------------
+
         if (messages.length === 0) {
             list.innerHTML = '<div class="text-center text-gray-500 p-8">가족에게 따뜻한 첫 메시지를 남겨보세요! 💝</div>';
             return;
         }
 
-        // 공지 먼저 렌더링
+        // 공지는 항상 모든 페이지 상단에 표시
         notices.forEach(message => {
             list.appendChild(this.createMessageElement(message, family, currentUserId, true));
         });
         
-        // 일반 메시지 렌더링
-        sortedMessages.forEach(message => {
+        // 현재 페이지의 메시지 렌더링
+        paginatedMessages.forEach(message => {
             list.appendChild(this.createMessageElement(message, family, currentUserId, false));
         });
+
+        // 페이지네이션 컨트롤 렌더링
+        if (totalPages > 1) {
+            let paginationHTML = '';
+            for (let i = 1; i <= totalPages; i++) {
+                paginationHTML += `
+                    <button 
+                        onclick="window.changeMessagePage(${i})" 
+                        class="px-3 py-1 mx-1 rounded ${i === this.currentPage ? 'bg-blue-500 text-white' : 'bg-white text-gray-700'}">
+                        ${i}
+                    </button>
+                `;
+            }
+            paginationContainer.innerHTML = paginationHTML;
+        }
     }
 
-    // [새로 추가] 메시지 HTML 요소를 생성하는 헬퍼 함수
     createMessageElement(message, family, currentUserId, isNotice) {
         const user = family.find(u => u.id === message.user_id);
         const messageEl = document.createElement('div');
         
-        // 공지일 경우 스타일 변경
         messageEl.className = isNotice 
             ? 'p-3 bg-yellow-100 rounded-lg shadow-md border-l-4 border-yellow-400' 
             : 'p-3 bg-white/80 rounded-lg shadow-sm';
@@ -722,20 +752,24 @@ class MessageBoardComponent extends BaseComponent {
         
         messageEl.innerHTML = `
             <div class="flex items-start gap-3">
-                <img src="${user ? user.photo : 'https://placehold.co/40x40'}" class="w-10 h-10 rounded-full object-cover" referrerpolicy="no-referrer">
+                <img src="${user ? user.photo : 'https://placehold.co/40x40'}" class="w-10 h-10 rounded-full object-cover flex-shrink-0" referrerpolicy="no-referrer">
+                
                 <div class="flex-grow min-w-0">
-                    <div class="flex items-center gap-2 mb-1">
-                        ${isNotice ? '<span class="text-yellow-600 font-bold">📌 공지</span>' : ''}
-                        <span class="font-bold text-sm flex-shrink-0">${user ? user.name : '알 수 없음'}:</span>
+                    
+                    <div class="text-sm mb-2">
+                        ${isNotice ? '<span class="text-yellow-600 font-bold">📌 공지</span> ' : ''}
+                        <strong class="font-bold">${user ? user.name : '알 수 없음'}:</strong>
+                        <span class="whitespace-pre-wrap">${message.content}</span>
                     </div>
-                    <p class="text-sm whitespace-pre-wrap flex-grow min-w-0 mb-2">${message.content}</p>
-                    <div class="flex items-center justify-between text-xs">
+
+                    <div class="flex justify-between items-center text-xs">
                         <span class="text-gray-500">${new Date(message.timestamp).toLocaleString('ko-KR')}</span>
+                        
                         <div class="flex items-center gap-3">
-                            <button onclick="window.toggleMessageNotice('${message.id}')" class="text-gray-600 hover:text-blue-500 flex items-center gap-1">
-                                📌 ${isNotice ? '공지 해제' : '공지로 등록'}
+                            <button onclick="window.toggleMessageNotice('${message.id}')" class="text-gray-500 hover:text-blue-500 flex items-center gap-1">
+                                📌 ${isNotice ? '해제' : '등록'}
                             </button>
-                            <button onclick="window.likeMessage('${message.id}')" class="text-gray-600 hover:text-red-500 flex items-center gap-1">
+                            <button onclick="window.likeMessage('${message.id}')" class="text-gray-500 hover:text-red-500 flex items-center gap-1">
                                 ❤️ ${likeCount}
                             </button>
                             ${isCurrentUser ? `
@@ -749,9 +783,9 @@ class MessageBoardComponent extends BaseComponent {
         `;
         return messageEl;
     }
+
     
     attachEventListeners() {
-        // 메시지 추가
         const addMessageBtn = document.getElementById('add-message');
         const messageInput = document.getElementById('message-input');
         
@@ -780,7 +814,6 @@ class MessageBoardComponent extends BaseComponent {
             const family = window.stateManager.getState('family');
             const user = family.find(u => u.id === userInput.value);
             
-            // ⭐ 서버에 즉시 저장 (낙관적 업데이트 제거)
             textInput.value = '';
             textInput.disabled = true;
             
@@ -791,7 +824,6 @@ class MessageBoardComponent extends BaseComponent {
                 content: content
             });
             
-            // 서버 저장 성공 시 로컬 상태 업데이트
             const messages = window.stateManager.getState('messages');
             messages.push({
                 id: result.data.id,
@@ -812,14 +844,9 @@ class MessageBoardComponent extends BaseComponent {
         }
     }
     
-    /**
-     * ⭐ 데이터만 업데이트 (메시지 보드 - 애니메이션 없이 부분 업데이트)
-     */
     updateDataOnly() {
         if (this.container && !this.container.classList.contains('hidden')) {
             console.log('MessageBoardComponent: 데이터 전용 업데이트 (깜빡거림 방지)');
-            
-            // ⭐ 메시지 목록만 업데이트
             this.renderMessages();
         }
     }
@@ -1613,11 +1640,27 @@ window.likeMessage = async function(id) {
 };
 
 window.toggleMessageNotice = async function(id) {
-    if (!confirm('메시지의 공지 상태를 변경하시겠습니까?')) return;
+    // 1. 비밀번호를 먼저 묻습니다.
+    const password = prompt('관리자 비밀번호를 입력하세요:');
+    if (!password) {
+        return; // 사용자가 취소하거나 아무것도 입력하지 않으면 종료
+    }
+
     try {
+        // 2. 서버에 비밀번호가 맞는지 확인 요청
+        const verifyResult = await window.gapi.verifyAdminPassword(password);
+        if (!verifyResult.data.isValid) {
+            alert('비밀번호가 올바르지 않습니다.');
+            return;
+        }
+
+        // 3. 비밀번호가 맞으면, 기존 로직을 실행
+        const confirmAction = confirm('메시지의 공지 상태를 변경하시겠습니까?');
+        if (!confirmAction) return;
+
         const result = await window.gapi.toggleNotice(id);
-        
-        // 서버 응답 성공 후, 로컬 데이터를 직접 업데이트하여 즉시 반영
+
+        // 로컬 데이터를 즉시 업데이트하여 바로 반영
         const messages = window.stateManager.getState('messages');
         const message = messages.find(m => m.id === id);
         if (message) {
@@ -1632,7 +1675,7 @@ window.toggleMessageNotice = async function(id) {
         window.stateManager.updateState('messages', messages);
 
     } catch (e) {
-        alert('공지 상태 변경 실패: ' + e.message);
+        alert('작업 중 오류가 발생했습니다: ' + e.message);
     }
 };
 
@@ -1683,3 +1726,13 @@ function formatDate(dateInput) {
 }
 
 console.log('컴포넌트 모듈이 로드되었습니다.');
+
+/**
+ * 메시지 보드 페이지 변경
+ */
+window.changeMessagePage = function(page) {
+    if (window.components.messages) {
+        window.components.messages.currentPage = page;
+        window.components.messages.renderMessages();
+    }
+};

@@ -5,7 +5,7 @@
 
 // === API 설정 ===
 const API_CONFIG = {
-    scriptUrl: 'https://script.google.com/macros/s/AKfycbx6it5kHR633l5C2AF4e5_sDvoDKx15PwcwT8bA3iGJMEXHX5MpyIIi8yGROLrHx9Zq0g/exec',
+    scriptUrl: 'https://script.google.com/macros/s/AKfycbxkNqHWGCljrhhDAug6M--q1eHI8Yv1CtUo4Y1ZeBOs3nHHXh-cemzcTdUKCAglyrUgMQ/exec',
     apiKey: 'bible_family_default',
     enableSecurity: false
 };
@@ -36,7 +36,14 @@ class EnhancedGoogleSheetsAPI {
         this.loadPendingChangesFromLocal();
         this.startRealtimeSync();
     }
-    
+
+    /**
+     * 메시지 공지 상태 토글
+     */
+    async toggleNotice(messageId) {
+        return this._request('toggleNotice', { messageId });
+    }
+
     // ⭐ === 실시간 다중 기기 동기화 시스템 ===
     
     /**
@@ -320,6 +327,14 @@ class EnhancedGoogleSheetsAPI {
         const url = new URL(this.scriptUrl);
         url.searchParams.set('action', action);
         
+        // [추가] 보호된 기능 목록
+        const protectedActions = ['verifyAdmin', 'cleanup', 'backup', 'migrateDates'];
+
+        // [추가] 만약 요청이 보호된 기능이라면, API 키를 자동으로 추가
+        if (protectedActions.includes(action)) {
+            url.searchParams.set('apiKey', this.apiKey);
+        }
+
         for (const key in params) {
             url.searchParams.set(key, params[key]);
         }
@@ -338,7 +353,8 @@ class EnhancedGoogleSheetsAPI {
             console.error(`API Error (${action}):`, error);
             throw error;
         }
-    }    
+    }
+   
     /**
      * 변경사항을 큐에 추가하고 로컬에 즉시 저장
      */
@@ -641,6 +657,7 @@ class EnhancedGoogleSheetsAPI {
      * 모든 데이터 로드 (⭐ 타임스탬프도 함께 가져와서 동기화)
      */
     async loadAllData() {
+        // 서버에서 모든 데이터 로드 요청
         const result = await this._request('loadAll');
         
         // ⭐ 서버 데이터를 상태 관리자에 저장
@@ -652,20 +669,11 @@ class EnhancedGoogleSheetsAPI {
         stateManager.updateState('prayers', result.data.prayers || []);
         stateManager.updateState('messages', result.data.messages || []);
         stateManager.updateState('allowance', result.data.allowance_ledger || []);
-        
-        // ⭐ 서버의 현재 타임스탬프를 가져와서 로컬에 저장
-        try {
-            const timestampResult = await this._request('getLastModified');
-            const serverTimestamp = timestampResult.data.lastModified;
-            localStorage.setItem('bible_data_timestamp', serverTimestamp);
-            console.log('✅ 서버 타임스탬프 동기화 완료:', serverTimestamp);
-        } catch (error) {
-            console.warn('⚠️ 서버 타임스탬프 가져오기 실패:', error);
-            // 실패하면 현재 시간으로 설정
-            localStorage.setItem('bible_data_timestamp', new Date().toISOString());
-        }
-        
+
+        // 로컬 스토리지에 저장
         this.saveToLocalStorage();
+
+        // 서버에서 받은 데이터 그대로 반환
         return result.data;
     }
     

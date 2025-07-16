@@ -150,25 +150,21 @@ function switchTab(tabName) {
 async function initializeData() {
     updateConnectionStatus('loading');
     
-    // ⭐ 서버 연결을 최우선으로 시도
     try {
-        console.log('🚀 서버 데이터 우선 로딩 시작...');
-        await window.gapi.testConnection();
+        // 1. 서버에서 모든 데이터를 로드하고 화면에 렌더링
+        await loadAllDataAndRender(); 
         updateConnectionStatus('connected');
-        console.log('✅ 서버 연결 성공!');
-        
-        // ⭐ 서버에서 최신 데이터 즉시 로드
-        console.log('📥 서버에서 최신 데이터 로드 중...');
-        await loadAllDataAndRender();
-        console.log('✅ 서버 데이터 로드 완료!');
-        
+        console.log('✅ 서버 데이터 로드 및 렌더링 완료!');
+
+        // 2. 모든 초기 작업이 끝난 후, 실시간 동기화를 시작
+        window.gapi.startRealtimeSync();
+
     } catch (error) {
-        console.log('❌ 서버 연결 실패 - 로컬 데이터로 fallback');
+        console.log('❌ 서버 연결 또는 데이터 로드 실패 - 로컬 데이터로 fallback', error);
         updateConnectionStatus('disconnected');
         
-        // ⭐ 서버 연결 실패시에만 로컬 데이터 사용
+        // 서버 연결 실패시에만 로컬 데이터 사용
         const localData = window.gapi.loadFromLocalStorage();
-        
         if (localData && localData.family && localData.family.length > 0) {
             window.stateManager.updateMultipleStates({
                 family: localData.family,
@@ -183,7 +179,6 @@ async function initializeData() {
             if (localData.family.length > 0) {
                 currentUserForModal = localData.family[0].id;
             }
-            
             console.log('✅ 로컬 데이터로 UI 시작 (오프라인 모드)');
         } else {
             console.warn('❌ 로컬/서버 데이터 모두 없음 - 인터넷 연결 확인 필요');
