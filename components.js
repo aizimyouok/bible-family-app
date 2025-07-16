@@ -648,18 +648,18 @@ class MessageBoardComponent extends BaseComponent {
         }
         
         this.container.innerHTML = `
-            <!-- 가족 메시지 보드 -->
+            <!-- 사랑의 대화 -->
             <section class="mb-6 accent-bg rounded-lg p-4">
-                <h3 class="text-xl font-bold mb-3">💌 가족 메시지 보드</h3>
-                <div id="message-board-list" class="h-96 overflow-y-auto custom-scrollbar pr-2 mb-3 bg-white/50 rounded p-2 space-y-4">
+                <h3 class="text-xl font-bold mb-3">💝 사랑의 대화</h3>
+                <div id="message-board-list" class="h-[32rem] overflow-y-auto custom-scrollbar pr-2 mb-3 bg-white/50 rounded p-2 space-y-3">
                     <!-- 메시지 목록이 여기에 렌더링됩니다 -->
                 </div>
                 <div class="flex flex-col sm:flex-row gap-2">
                     <select id="message-user" class="p-2 rounded-md w-full sm:w-auto" style="border-color: var(--border-color);">
                         ${this.renderUserOptions()}
                     </select>
-                    <textarea id="message-input" class="flex-grow p-2 rounded-md min-w-0" placeholder="가족에게 남길 메시지를 작성하세요..." rows="1" style="border-color: var(--border-color);"></textarea>
-                    <button id="add-message" class="bg-white/80 hover:bg-white p-2 rounded-md shadow whitespace-nowrap">메시지 남기기</button>
+                    <textarea id="message-input" class="flex-grow p-2 rounded-md min-w-0" placeholder="가족에게 남길 따뜻한 메시지를 작성하세요..." rows="1" style="border-color: var(--border-color);"></textarea>
+                    <button id="add-message" class="bg-white/80 hover:bg-white p-2 rounded-md shadow whitespace-nowrap">💌 메시지 남기기</button>
                 </div>
             </section>
         `;
@@ -688,7 +688,7 @@ class MessageBoardComponent extends BaseComponent {
         const sortedMessages = messages.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
         
         if (sortedMessages.length === 0) {
-            list.innerHTML = '<div class="text-center text-gray-500 p-8">가족에게 첫 메시지를 남겨보세요! 👋</div>';
+            list.innerHTML = '<div class="text-center text-gray-500 p-8">가족에게 따뜻한 첫 메시지를 남겨보세요! 💝</div>';
             return;
         }
         
@@ -703,18 +703,22 @@ class MessageBoardComponent extends BaseComponent {
             messageEl.innerHTML = `
                 <div class="flex items-start gap-3">
                     <img src="${user ? user.photo : 'https://placehold.co/40x40'}" class="w-10 h-10 rounded-full object-cover" referrerpolicy="no-referrer">
-                    <div class="flex-grow">
-                        <div class="flex justify-between items-center">
-                            <span class="font-bold">${user ? user.name : '알 수 없음'}</span>
-                            <span class="text-xs text-gray-500">${new Date(message.timestamp).toLocaleString('ko-KR')}</span>
+                    <div class="flex-grow min-w-0">
+                        <div class="flex items-start gap-2 mb-1">
+                            <span class="font-bold text-sm flex-shrink-0">${user ? user.name : '알 수 없음'}:</span>
+                            <p class="text-sm whitespace-pre-wrap flex-grow min-w-0">${message.content}</p>
                         </div>
-                        <p class="mt-1 text-sm whitespace-pre-wrap">${message.content}</p>
-                        <div class="mt-2 flex items-center gap-4 text-xs">
-                            <button onclick="window.likeMessage('${message.id}')" class="text-gray-600 hover:text-red-500">❤️ 좋아요 (${likeCount})</button>
-                            ${isCurrentUser ? `
-                                <button onclick="window.editMessage('${message.id}')" class="text-blue-600 hover:underline">수정</button>
-                                <button onclick="window.deleteMessage('${message.id}')" class="text-red-600 hover:underline">삭제</button>
-                            ` : ''}
+                        <div class="flex items-center justify-between text-xs">
+                            <span class="text-gray-500">${new Date(message.timestamp).toLocaleString('ko-KR')}</span>
+                            <div class="flex items-center gap-3">
+                                <button onclick="window.likeMessage('${message.id}')" class="text-gray-600 hover:text-red-500 flex items-center gap-1">
+                                    ❤️ ${likeCount}
+                                </button>
+                                ${isCurrentUser ? `
+                                    <button onclick="window.editMessage('${message.id}')" class="text-blue-600 hover:underline">수정</button>
+                                    <button onclick="window.deleteMessage('${message.id}')" class="text-red-600 hover:underline">삭제</button>
+                                ` : ''}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -860,22 +864,9 @@ class AllowanceComponent extends BaseComponent {
                 ${allowanceTargets.map(member => this.renderBalanceCard(member)).join('')}
             </div>
             
-            <!-- 인출 섹션 -->
-            <div class="accent-bg rounded-lg p-4 mb-6">
-                <h4 class="text-lg font-bold mb-3">💸 용돈 인출</h4>
-                <div class="flex flex-col sm:flex-row gap-2">
-                    <select id="withdraw-user" class="p-2 rounded-md w-full sm:w-auto" style="border-color: var(--border-color);">
-                        ${allowanceTargets.map(member => `<option value="${member.id}">${member.name}</option>`).join('')}
-                    </select>
-                    <input type="number" id="withdraw-amount" class="p-2 rounded-md w-full sm:w-32" placeholder="금액" min="100" step="100" style="border-color: var(--border-color);">
-                    <button id="withdraw-btn" class="bg-red-500 hover:bg-red-600 text-white p-2 rounded-md shadow whitespace-nowrap">인출하기</button>
-                </div>
-                <p class="text-xs text-gray-500 mt-2">※ 100원 단위로만 인출 가능합니다</p>
-            </div>
-            
-            <!-- 거래 내역 -->
+            <!-- 적립 내역 -->
             <div class="accent-bg rounded-lg p-4">
-                <h4 class="text-lg font-bold mb-3">📋 거래 내역</h4>
+                <h4 class="text-lg font-bold mb-3">📋 적립 내역</h4>
                 <div id="transaction-list" class="h-64 overflow-y-auto custom-scrollbar pr-2 bg-white/50 rounded p-2">
                     ${this.renderTransactions()}
                 </div>
@@ -893,6 +884,8 @@ class AllowanceComponent extends BaseComponent {
         const totalEarned = this.calculateTotalEarned(member.id, allowanceData);
         const totalWithdrawn = this.calculateTotalWithdrawn(member.id, allowanceData);
         const goalAmount = member.goal_amount || 118900; // 목표 금액 (없으면 118,900원)
+        const achievementPercentage = Math.min(100, (balance / goalAmount) * 100);
+        const remainingPercentage = Math.max(0, 100 - achievementPercentage);
         
         return `
             <div class="bg-white rounded-lg p-4 shadow-md balance-card">
@@ -918,14 +911,30 @@ class AllowanceComponent extends BaseComponent {
                     </div>
                 </div>
                 <div class="mt-3 bg-gray-100 rounded p-2">
-                    <div class="text-xs text-gray-600 mb-1">목표까지</div>
-                    <div class="flex justify-between items-center">
+                    <div class="flex justify-between items-center text-xs text-gray-600 mb-1">
+                        <span>목표까지</span>
+                        <span class="achievement-percentage">${achievementPercentage.toFixed(1)}% 달성 (${remainingPercentage.toFixed(1)}% 남음)</span>
+                    </div>
+                    <div class="flex justify-between items-center mb-2">
                         <span class="text-sm font-medium remaining-amount">${Math.max(0, goalAmount - balance).toLocaleString()}원</span>
                         <span class="text-xs text-gray-500">/${goalAmount.toLocaleString()}원</span>
                     </div>
-                    <div class="w-full bg-gray-200 rounded-full h-2 mt-1">
-                        <div class="bg-green-500 h-2 rounded-full transition-all progress-bar" style="width: ${Math.min(100, (balance / goalAmount) * 100)}%"></div>
+                    <div class="w-full bg-gray-200 rounded-full h-2 mb-3">
+                        <div class="bg-green-500 h-2 rounded-full transition-all progress-bar" style="width: ${achievementPercentage}%"></div>
                     </div>
+                    <div class="flex gap-2">
+                        <input type="number" 
+                               id="withdraw-amount-${member.id}" 
+                               class="flex-1 p-2 text-sm rounded border border-gray-300" 
+                               placeholder="인출 금액" 
+                               min="100" 
+                               step="100">
+                        <button onclick="window.handleIndividualWithdraw('${member.id}')" 
+                                class="px-3 py-2 bg-red-500 hover:bg-red-600 text-white text-sm rounded whitespace-nowrap">
+                            💸 인출
+                        </button>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-1 text-center">※ 100원 단위로만 인출 가능</p>
                 </div>
             </div>
         `;
@@ -986,18 +995,8 @@ class AllowanceComponent extends BaseComponent {
         }).join('');
     }
     attachEventListeners() {
-        const withdrawBtn = document.getElementById('withdraw-btn');
-        const withdrawAmount = document.getElementById('withdraw-amount');
-        
-        if (withdrawBtn) {
-            withdrawBtn.addEventListener('click', () => this.handleWithdraw());
-        }
-        
-        if (withdrawAmount) {
-            withdrawAmount.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') this.handleWithdraw();
-            });
-        }
+        // 중앙 인출 섹션이 제거되었으므로 개별 인출 이벤트 리스너는 전역 함수로 처리
+        // handleIndividualWithdraw 함수는 app.js나 전역에서 정의됨
     }
     
     /**
@@ -1032,6 +1031,8 @@ class AllowanceComponent extends BaseComponent {
         const totalEarned = this.calculateTotalEarned(member.id, allowanceData);
         const totalWithdrawn = this.calculateTotalWithdrawn(member.id, allowanceData);
         const goalAmount = member.goal_amount || 118900;
+        const achievementPercentage = Math.min(100, (balance / goalAmount) * 100);
+        const remainingPercentage = Math.max(0, 100 - achievementPercentage);
         
         // DOM 요소를 찾아서 텍스트만 업데이트 (애니메이션 방지)
         const balanceElements = this.container.querySelectorAll('.balance-card');
@@ -1043,12 +1044,14 @@ class AllowanceComponent extends BaseComponent {
                 const withdrawnElement = card.querySelector('.total-withdrawn');
                 const progressBar = card.querySelector('.progress-bar');
                 const remainingElement = card.querySelector('.remaining-amount');
+                const achievementElement = card.querySelector('.achievement-percentage');
                 
                 if (balanceElement) balanceElement.textContent = `${balance.toLocaleString()}원`;
                 if (earnedElement) earnedElement.textContent = `+${totalEarned.toLocaleString()}원`;
                 if (withdrawnElement) withdrawnElement.textContent = `-${totalWithdrawn.toLocaleString()}원`;
                 if (remainingElement) remainingElement.textContent = `${Math.max(0, goalAmount - balance).toLocaleString()}원`;
-                if (progressBar) progressBar.style.width = `${Math.min(100, (balance / goalAmount) * 100)}%`;
+                if (progressBar) progressBar.style.width = `${achievementPercentage}%`;
+                if (achievementElement) achievementElement.textContent = `${achievementPercentage.toFixed(1)}% 달성 (${remainingPercentage.toFixed(1)}% 남음)`;
             }
         });
     }
@@ -1061,63 +1064,6 @@ class AllowanceComponent extends BaseComponent {
         if (transactionList) {
             // 거래 내역은 전체 업데이트가 필요하므로 HTML 재생성
             transactionList.innerHTML = this.renderTransactions();
-        }
-    }
-    
-    async handleWithdraw() {
-        const userSelect = document.getElementById('withdraw-user');
-        const amountInput = document.getElementById('withdraw-amount');
-        
-        if (!userSelect || !amountInput) return;
-        
-        const userId = userSelect.value;
-        const amount = parseInt(amountInput.value);
-        
-        if (!amount || amount < 100 || amount % 100 !== 0) {
-            alert('100원 단위로만 인출 가능합니다.');
-            return;
-        }
-        
-        const family = window.stateManager.getState('family');
-        const user = family.find(u => u.id === userId);
-        const allowanceData = window.stateManager.getState('allowance');
-        const currentBalance = this.calculateBalance(userId, allowanceData);
-        
-        if (amount > currentBalance) {
-            alert(`잔액이 부족합니다. 현재 잔액: ${currentBalance.toLocaleString()}원`);
-            return;
-        }
-        
-        if (!confirm(`${user.name}님의 용돈 ${amount.toLocaleString()}원을 인출하시겠습니까?`)) {
-            return;
-        }
-        
-        try {
-            await window.gapi.withdrawAllowance({
-                userId: userId,
-                userName: user.name,
-                amount: amount
-            });
-            
-            // 로컬 상태 업데이트
-            const newTransaction = {
-                transaction_id: `W${Date.now()}`,
-                user_id: userId,
-                name: user.name,
-                timestamp: new Date().toISOString(),
-                type: '인출',
-                amount: -amount,
-                description: '용돈 인출'
-            };
-            
-            allowanceData.push(newTransaction);
-            window.stateManager.updateState('allowance', allowanceData);
-            
-            amountInput.value = '';
-            alert('인출이 완료되었습니다!');
-            
-        } catch (error) {
-            alert('인출 실패: ' + error.message);
         }
     }
 }
@@ -1142,14 +1088,6 @@ class StatsComponent extends BaseComponent {
         }
         
         this.container.innerHTML = `
-            <!-- 최근 7일 읽기 추이 -->
-            <section id="statistics-section" class="mb-8 accent-bg rounded-lg p-4">
-                <h3 class="text-xl font-bold mb-4 accent-text text-center">📈 최근 7일 읽기 추이</h3>
-                <div class="chart-container">
-                    <canvas id="weeklyChart"></canvas>
-                </div>
-            </section>
-
             <!-- 개인별 상세 진행 현황 -->
             <section class="mb-8">
                 <h3 class="text-xl font-bold mb-4 accent-text text-center">👥 개인별 상세 진행 현황</h3>
@@ -1157,116 +1095,136 @@ class StatsComponent extends BaseComponent {
                     ${this.renderDetailedProgress()}
                 </div>
             </section>
-
-            <!-- 가족 대화 주제 -->
-            <section class="accent-bg rounded-lg p-4">
-                <h3 class="text-lg font-bold mb-3 accent-text">💬 오늘의 가족 대화 주제</h3>
-                <div id="family-discussion-topic" class="bg-white/50 p-4 rounded-lg">
-                    ${this.renderFamilyDiscussionTopic()}
-                </div>
-            </section>
         `;
         
-        // 차트 초기화는 DOM 렌더링 후에 실행
-        setTimeout(() => this.initChart(), 50);
+        // 개인별 미니 차트 초기화
+        setTimeout(() => {
+            this.initMiniCharts();
+        }, 50);
     }
-    initChart() {
-        const ctx = document.getElementById('weeklyChart');
-        if (!ctx) return;
+    
+    initMiniCharts() {
+        const family = window.stateManager.getState('family');
+        if (!family || family.length === 0) return;
         
-        // 기존 차트가 있으면 먼저 파괴
-        if (this.weeklyChart) {
-            this.weeklyChart.destroy();
-            this.weeklyChart = null;
-        }
-        
-        const data = this.getWeeklyData();
-        
-        this.weeklyChart = new Chart(ctx.getContext('2d'), {
-            type: 'line',
-            data: {
-                labels: data.labels,
-                datasets: data.datasets
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    title: { display: false }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: { stepSize: 1 }
-                    }
-                },
-                animation: {
-                    duration: 1000,
-                    easing: 'easeInOutQuart'
+        family.forEach(member => {
+            const canvas = document.getElementById(`mini-chart-${member.id}`);
+            if (!canvas) return;
+            
+            const ctx = canvas.getContext('2d');
+            const weeklyResult = this.getWeeklyReadingData(member.id);
+            const weeklyData = weeklyResult.data;
+            
+            console.log(`[DEBUG] ${member.name} 미니차트:`, {
+                weeklyData,
+                hasCanvas: !!canvas,
+                totalWeeklyChapters: weeklyResult.totalChapters
+            });
+            
+            // 간단한 라인 차트 그리기
+            const width = canvas.width;
+            const height = canvas.height;
+            const padding = 10;
+            const chartWidth = width - padding * 2;
+            const chartHeight = height - padding * 2;
+            
+            // 캔버스 클리어
+            ctx.clearRect(0, 0, width, height);
+            
+            // 배경
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            ctx.fillRect(0, 0, width, height);
+            
+            if (weeklyData.length === 0 || weeklyData.every(d => d === 0)) {
+                ctx.fillStyle = '#666';
+                ctx.font = '12px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('이번주 읽은 장이 없습니다', width / 2, height / 2);
+                return;
+            }
+            
+            const maxValue = Math.max(...weeklyData, 1);
+            const stepX = chartWidth / Math.max(weeklyData.length - 1, 1);
+            
+            // 그리드 라인
+            ctx.strokeStyle = '#e0e0e0';
+            ctx.lineWidth = 1;
+            for (let i = 0; i < weeklyData.length; i++) {
+                const x = padding + i * stepX;
+                ctx.beginPath();
+                ctx.moveTo(x, padding);
+                ctx.lineTo(x, height - padding);
+                ctx.stroke();
+            }
+            
+            // 데이터 라인
+            ctx.strokeStyle = '#8d6e63';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            
+            for (let i = 0; i < weeklyData.length; i++) {
+                const x = padding + i * stepX;
+                const y = height - padding - (weeklyData[i] / maxValue) * chartHeight;
+                
+                if (i === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
                 }
+            }
+            ctx.stroke();
+            
+            // 데이터 포인트
+            ctx.fillStyle = '#8d6e63';
+            for (let i = 0; i < weeklyData.length; i++) {
+                const x = padding + i * stepX;
+                const y = height - padding - (weeklyData[i] / maxValue) * chartHeight;
+                
+                ctx.beginPath();
+                ctx.arc(x, y, 3, 0, 2 * Math.PI);
+                ctx.fill();
             }
         });
     }
     
-    getWeeklyData() {
-        const family = window.stateManager.getState('family');
-        const readRecords = window.stateManager.getState('readRecords');
-        const days = [];
-        const today = new Date();        
-        // 최근 7일 날짜 생성
-        for (let i = 6; i >= 0; i--) {
-            const date = new Date(today);
-            date.setDate(date.getDate() - i);
-            days.push({
-                date: date,
-                label: date.toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' }),
-                dateStr: date.toISOString().split('T')[0]
-            });
-        }
-        
-        const datasets = family.map((member, index) => {
-            const colors = ['#8d6e63', '#1e8449', '#a0522d', '#3f51b5', '#e91e63', '#ff9800'];
-            
-            const data = days.map(day => {
-                let chaptersReadOnDay = 0;
-                const userRecords = readRecords[member.id] || {};
-                
-                Object.values(userRecords).forEach(bookData => {
-                    if (bookData && bookData.readDates) {
-                        Object.values(bookData.readDates).forEach(readDate => {
-                            if (readDate === day.dateStr) {
-                                chaptersReadOnDay++;
-                            }
-                        });
-                    }
-                });
-                
-                return chaptersReadOnDay;
-            });
-            
-            return {
-                label: member.name,
-                data: data,
-                borderColor: colors[index % colors.length],
-                backgroundColor: colors[index % colors.length] + '20',
-                tension: 0.4,
-                fill: false
-            };
-        });
-        
-        return {
-            labels: days.map(d => d.label),
-            datasets: datasets
-        };
-    }
     renderDetailedProgress() {
         const family = window.stateManager.getState('family');
-        const readRecords = window.stateManager.getState('readRecords');
+        const readRecordsRaw = window.stateManager.getState('readRecords');
+        
+        console.log('[DEBUG] 통계현황 렌더링:', {
+            family: family?.length,
+            readRecordsRaw: readRecordsRaw,
+            isArray: Array.isArray(readRecordsRaw)
+        });
+        
+        // 데이터 구조 변환: 배열 → 객체
+        const readRecords = {};
+        if (Array.isArray(readRecordsRaw)) {
+            readRecordsRaw.forEach(record => {
+                if (record.user_id && record.book_name) {
+                    if (!readRecords[record.user_id]) {
+                        readRecords[record.user_id] = {};
+                    }
+                    readRecords[record.user_id][record.book_name] = record;
+                }
+            });
+        } else {
+            // 이미 객체 형태라면 그대로 사용
+            Object.assign(readRecords, readRecordsRaw || {});
+        }
+        
+        console.log('[DEBUG] 변환된 readRecords:', readRecords);
         
         if (!family || family.length === 0) return '';
         
         return family.map(member => {
             const userRecords = readRecords[member.id] || {};
+            
+            console.log(`[DEBUG] ${member.name} 데이터:`, {
+                userRecords: Object.keys(userRecords),
+                sampleBook: Object.values(userRecords)[0],
+                fullUserRecords: userRecords  // 전체 사용자 기록 확인
+            });
             
             // 기본 통계 계산
             let totalRead = 0;
@@ -1291,12 +1249,28 @@ class StatsComponent extends BaseComponent {
                         chapters: book.chapters
                     });
                 }
+                
+                console.log(`[DEBUG] ${bookName}:`, {
+                    chapters: chapters.length,
+                    totalChapters: book?.chapters,
+                    completed: book && chapters.length === book.chapters
+                });
             });
             
             const totalChapters = TOTAL_OT_CHAPTERS + TOTAL_NT_CHAPTERS;
             const percentage = totalChapters > 0 ? ((totalRead / totalChapters) * 100).toFixed(1) : 0;
-            const weeklyData = this.getWeeklyReadingData(member.id);
-            const encouragement = this.generateEncouragementMessage(member, percentage, weeklyData, completedBooks);            
+            const weeklyResult = this.getWeeklyReadingData(member.id);
+            const weeklyData = weeklyResult.data;
+            const thisWeekSummary = weeklyResult.summary;
+            const thisWeekTotal = weeklyResult.totalChapters;
+            
+            console.log(`[DEBUG] ${member.name} 렌더링:`, {
+                totalRead,
+                completedBooks: completedBooks.length,
+                thisWeekTotal,
+                thisWeekSummary
+            });
+            
             return `
                 <div class="accent-bg rounded-lg p-4 cursor-pointer hover:opacity-90 transition slide-in" onclick="window.openProgressModal('${member.id}')">
                     <div class="flex items-center mb-4">
@@ -1321,35 +1295,28 @@ class StatsComponent extends BaseComponent {
                     </div>
                     
                     <div class="mb-4">
-                        <h5 class="font-semibold text-sm mb-2">📈 최근 7일 읽기</h5>
-                        <div class="flex items-end justify-between h-12 bg-white/50 rounded p-2">
-                            ${weeklyData.map((count, index) => `
-                                <div class="flex flex-col items-center flex-1">
-                                    <div class="bg-blue-400 rounded-t" style="height: ${Math.max(count * 8, 2)}px; width: 8px; margin-bottom: 2px;"></div>
-                                    <span class="text-xs text-gray-500">${count}</span>
-                                </div>
-                            `).join('')}
+                        <div class="text-sm mb-2 font-medium">📊 이번주 읽기 현황 (일~${['일', '월', '화', '수', '목', '금', '토'][new Date().getDay()]})</div>
+                        <div class="bg-white/50 p-3 rounded">
+                            <canvas id="mini-chart-${member.id}" width="300" height="100" class="w-full h-16"></canvas>
                         </div>
                     </div>
                     
-                    ${completedBooks.length > 0 ? `
-                        <div class="mb-4">
-                            <h5 class="font-semibold text-sm mb-2">🎉 완독한 책</h5>
-                            <div class="flex flex-wrap gap-1">
-                                ${completedBooks.slice(0, 3).map(book => `
-                                    <span class="inline-block bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
-                                        ${book.name}
-                                    </span>
-                                `).join('')}
-                                ${completedBooks.length > 3 ? `<span class="text-xs text-gray-500">외 ${completedBooks.length - 3}권</span>` : ''}
-                            </div>
+                    <div class="space-y-3">
+                        <!-- 완독한 책 -->
+                        <div class="bg-white/40 rounded p-3">
+                            <div class="text-sm font-medium mb-1">🎉 완독한 책 (${completedBooks.length}권)</div>
+                            ${completedBooks.length > 0 ? `
+                                <div class="text-xs text-gray-700">
+                                    ${completedBooks.slice(0, 3).map(book => book.name).join(', ')}
+                                    ${completedBooks.length > 3 ? ` 외 ${completedBooks.length - 3}권` : ''}
+                                </div>
+                            ` : '<div class="text-xs text-gray-500">아직 완독한 책이 없습니다</div>'}
                         </div>
-                    ` : ''}
-                    
-                    <div class="bg-white/70 rounded-lg p-3 text-sm">
-                        <div class="flex items-start">
-                            <span class="text-lg mr-2">${encouragement.emoji}</span>
-                            <p class="flex-grow leading-relaxed">${encouragement.message}</p>
+                        
+                        <!-- 이번주 읽은 장 -->
+                        <div class="bg-white/40 rounded p-3">
+                            <div class="text-sm font-medium mb-1">📚 이번주 읽은 장 (총 ${thisWeekTotal}장)</div>
+                            <div class="text-xs text-gray-700">${thisWeekSummary}</div>
                         </div>
                     </div>
                 </div>
@@ -1357,97 +1324,132 @@ class StatsComponent extends BaseComponent {
         }).join('');
     }
     getWeeklyReadingData(userId) {
-        const readRecords = window.stateManager.getState('readRecords');
-        const weeklyData = [];
+        const readRecordsRaw = window.stateManager.getState('readRecords');
+        
+        // 데이터 구조 변환: 배열 → 객체
+        const readRecords = {};
+        if (Array.isArray(readRecordsRaw)) {
+            readRecordsRaw.forEach(record => {
+                if (record.user_id && record.book_name) {
+                    if (!readRecords[record.user_id]) {
+                        readRecords[record.user_id] = {};
+                    }
+                    readRecords[record.user_id][record.book_name] = record;
+                }
+            });
+        } else {
+            Object.assign(readRecords, readRecordsRaw || {});
+        }
+        
         const userRecords = readRecords[userId] || {};
         
-        for (let i = 6; i >= 0; i--) {
-            const date = new Date();
-            date.setDate(date.getDate() - i);
+        // 이번주 일요일부터 토요일까지 계산
+        const today = new Date();
+        const dayOfWeek = today.getDay(); // 0=일요일, 1=월요일, ..., 6=토요일
+        
+        // 이번주 일요일 찾기
+        const thisWeekSunday = new Date(today);
+        thisWeekSunday.setDate(today.getDate() - dayOfWeek);
+        
+        const weeklyData = [];
+        const weeklyDetails = []; // 각 날짜별 읽은 책과 장 정보
+        const thisWeekBooks = {}; // 이번주 읽은 책들을 정리
+        
+        console.log(`[DEBUG] ${userId} - 이번주 계산:`, {
+            today: today.toDateString(),
+            dayOfWeek,
+            thisWeekSunday: thisWeekSunday.toDateString(),
+            userRecords: Object.keys(userRecords),
+            sampleBook: Object.values(userRecords)[0]
+        });
+        
+        // 일요일부터 토요일까지 7일간 (오늘까지만)
+        for (let i = 0; i <= Math.min(6, dayOfWeek); i++) {
+            const date = new Date(thisWeekSunday);
+            date.setDate(thisWeekSunday.getDate() + i);
             const dateStr = date.toISOString().split('T')[0];
             
             let chaptersReadOnDay = 0;
-            Object.values(userRecords).forEach(bookData => {
-                if (bookData && bookData.readDates) {
-                    Object.values(bookData.readDates).forEach(readDate => {
+            let dayDetails = [];
+            
+            // 개선된 데이터 구조에 맞게 수정
+            Object.entries(userRecords).forEach(([bookName, bookData]) => {
+                console.log(`[DEBUG] ${bookName} 상세 분석:`, {
+                    bookData,
+                    keys: Object.keys(bookData),
+                    read_dates_value: bookData.read_dates,
+                    read_dates_type: typeof bookData.read_dates,
+                    empty_column: bookData[""], // 빈 헤더 컬럼 확인
+                    all_values: Object.values(bookData)
+                });
+                
+                // 구글시트 read_dates 컬럼에서 날짜 정보 가져오기
+                let dateInfo = bookData.read_dates;
+                
+                // 빈 헤더 컬럼에 날짜 정보가 있을 수도 있음
+                if (!dateInfo && bookData[""]) {
+                    dateInfo = bookData[""];
+                    console.log('[DEBUG] 빈 헤더 컬럼에서 날짜 정보 발견:', dateInfo);
+                }
+                
+                // 문자열 형태의 JSON 파싱
+                if (typeof dateInfo === 'string' && dateInfo.trim().startsWith('{')) {
+                    try {
+                        dateInfo = JSON.parse(dateInfo);
+                        console.log(`[DEBUG] ${bookName} JSON 파싱 성공:`, dateInfo);
+                    } catch (e) {
+                        console.warn(`[DEBUG] ${bookName} JSON 파싱 실패:`, dateInfo, e);
+                        dateInfo = null;
+                    }
+                }
+                
+                console.log(`[DEBUG] ${bookName} 최종 날짜 정보:`, {
+                    dateInfo,
+                    isObject: typeof dateInfo === 'object',
+                    entries: dateInfo ? Object.entries(dateInfo) : []
+                });
+                
+                if (dateInfo && typeof dateInfo === 'object') {
+                    Object.entries(dateInfo).forEach(([chapter, readDate]) => {
+                        console.log(`[DEBUG] 체크: 장 ${chapter}, 날짜 ${readDate}, 찾는날짜 ${dateStr}`);
                         if (readDate === dateStr) {
                             chaptersReadOnDay++;
+                            dayDetails.push({ book: bookName, chapter: parseInt(chapter) });
+                            
+                            // 이번주 책 정리
+                            if (!thisWeekBooks[bookName]) {
+                                thisWeekBooks[bookName] = [];
+                            }
+                            thisWeekBooks[bookName].push(parseInt(chapter));
+                            
+                            console.log(`[DEBUG] 매치 발견! ${bookName} ${chapter}장 - ${readDate}`);
                         }
                     });
                 }
             });
             
             weeklyData.push(chaptersReadOnDay);
+            weeklyDetails.push(dayDetails);
+            
+            console.log(`[DEBUG] ${dateStr} (${date.toLocaleDateString('ko-KR', {weekday: 'short'})}): ${chaptersReadOnDay}장`, dayDetails);
         }
         
-        return weeklyData;
+        // 이번주 읽은 내용을 문자열로 정리
+        const thisWeekSummary = Object.entries(thisWeekBooks).map(([book, chapters]) => {
+            const sortedChapters = [...new Set(chapters)].sort((a, b) => a - b);
+            return `${book} ${sortedChapters.length}장`;
+        }).join(', ') || '이번주 읽은 장이 없습니다';
+        
+        console.log(`[DEBUG] ${userId} - 이번주 요약:`, thisWeekSummary);
+        
+        return { 
+            data: weeklyData, 
+            details: weeklyDetails, 
+            summary: thisWeekSummary,
+            totalChapters: weeklyData.reduce((a, b) => a + b, 0)
+        };
     }
     
-    generateEncouragementMessage(member, percentage, weeklyData, completedBooks) {
-        // 최근 완독한 책이 있는지 확인
-        const recentCompletion = completedBooks.find(book => {
-            if (!book.endDate) return false;
-            const endDate = new Date(book.endDate);
-            const weekAgo = new Date();
-            weekAgo.setDate(weekAgo.getDate() - 7);
-            return endDate >= weekAgo;
-        });
-        
-        if (recentCompletion) {
-            return {
-                emoji: '🎉',
-                message: `와! ${recentCompletion.name}을 완독하셨네요! 바울처럼 '선한 싸움을 싸우고 달려갈 길을 마쳤습니다!'`
-            };
-        }        
-        // 최근 7일 읽기 활동 분석
-        const recentTotal = weeklyData.reduce((sum, count) => sum + count, 0);
-        const avgPerDay = recentTotal / 7;
-        
-        let emoji, message;
-        if (avgPerDay >= 2) {
-            emoji = '🌟';
-            message = '바울처럼 푯대를 향해 달려가고 계시네요! "나는 선한 싸움을 싸우고 달려갈 길을 마치고 믿음을 지켰노라" 🏃‍♂️';
-        } else if (avgPerDay >= 0.5) {
-            emoji = '💪';
-            message = '아브라함처럼 꾸준히 걸어가고 계시네요! "믿음으로 아브라함은... 갈 바를 알지 못하고 나아갔느니라" 👣';
-        } else {
-            emoji = '🤗';
-            message = '괜찮아요! 베드로도 넘어졌지만 다시 일어났어요. "일곱 번 넘어져도 여덟 번 일어나라" 🌅';
-        }
-        
-        return { emoji, message };
-    }
-    
-    renderFamilyDiscussionTopic() {
-        const commonBooks = this.findCommonReadBooks();
-        
-        if (commonBooks.length === 0) {
-            return `
-                <div class="text-center text-gray-500">
-                    <div class="text-4xl mb-2">📚</div>
-                    <p>가족이 함께 읽은 성경이 있으면 대화 주제를 제안해드려요!</p>
-                    <p class="text-sm mt-2">같은 책을 읽기 시작해보세요.</p>
-                </div>
-            `;
-        }
-        
-        const latestBook = commonBooks[0];
-        const topic = this.generateDiscussionTopic(latestBook);
-        
-        return `
-            <div class="space-y-3">
-                <div class="flex items-center justify-between">
-                    <h4 class="font-semibold text-lg">📖 ${latestBook}</h4>
-                    <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">AI 추천</span>
-                </div>
-                <p class="text-gray-700 leading-relaxed">${topic}</p>
-                <div class="flex items-center justify-between text-sm">
-                    <span class="text-gray-500">💡 가족이 함께 나눠보세요</span>
-                    <button onclick="window.regenerateDiscussionTopic()" class="text-blue-600 hover:underline">다른 주제 보기</button>
-                </div>
-            </div>
-        `;
-    }
     findCommonReadBooks() {
         const family = window.stateManager.getState('family');
         const readRecords = window.stateManager.getState('readRecords');
@@ -1495,14 +1497,6 @@ class StatsComponent extends BaseComponent {
         return topics[bookName] || "오늘 읽은 말씀이 우리 가족에게 주는 교훈은 무엇일까요?";
     }
 }
-// === 전역 컴포넌트 인스턴스들 ===
-window.components = {
-    reading: null,
-    meditation: null,
-    messages: null,
-    allowance: null,
-    stats: null
-};
 
 // === 전역 함수들 (HTML onclick 속성용) ===
 

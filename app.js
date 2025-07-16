@@ -920,4 +920,65 @@ window.testBackgroundUpdate = function() {
     }
 };
 
+/**
+ * ⭐ 개별 인출 처리 함수 (비전통장)
+ */
+window.handleIndividualWithdraw = async function(userId) {
+    const amountInput = document.getElementById(`withdraw-amount-${userId}`);
+    if (!amountInput) return;
+    
+    const amount = parseInt(amountInput.value);
+    
+    if (!amount || amount < 100 || amount % 100 !== 0) {
+        alert('100원 단위로만 인출 가능합니다.');
+        return;
+    }
+    
+    const family = window.stateManager.getState('family');
+    const user = family.find(u => u.id === userId);
+    const allowanceData = window.stateManager.getState('allowance');
+    
+    // 잔액 계산 (AllowanceComponent의 메서드 재사용)
+    const currentBalance = allowanceData
+        .filter(transaction => transaction.user_id === userId)
+        .reduce((sum, transaction) => sum + (Number(transaction.amount) || 0), 0);
+    
+    if (amount > currentBalance) {
+        alert(`잔액이 부족합니다. 현재 잔액: ${currentBalance.toLocaleString()}원`);
+        return;
+    }
+    
+    if (!confirm(`${user.name}님의 용돈 ${amount.toLocaleString()}원을 인출하시겠습니까?`)) {
+        return;
+    }
+    
+    try {
+        await window.gapi.withdrawAllowance({
+            userId: userId,
+            userName: user.name,
+            amount: amount
+        });
+        
+        // 로컬 상태 업데이트
+        const newTransaction = {
+            transaction_id: `W${Date.now()}`,
+            user_id: userId,
+            name: user.name,
+            timestamp: new Date().toISOString(),
+            type: '인출',
+            amount: -amount,
+            description: '용돈 인출'
+        };
+        
+        allowanceData.push(newTransaction);
+        window.stateManager.updateState('allowance', allowanceData);
+        
+        amountInput.value = '';
+        alert('인출이 완료되었습니다!');
+        
+    } catch (error) {
+        alert('인출 실패: ' + error.message);
+    }
+};
+
 console.log('앱 모듈이 로드되었습니다.');
