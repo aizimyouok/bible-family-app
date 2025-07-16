@@ -148,22 +148,23 @@ function switchTab(tabName) {
  * 데이터 초기화 (⭐ 서버 데이터 우선 로딩)
  */
 async function initializeData() {
-    updateConnectionStatus('loading');
-    
+    const loadingOverlay = document.getElementById('loading-overlay');
+    const appContainer = document.getElementById('app');
+
     try {
-        // 1. 서버에서 모든 데이터를 로드하고 화면에 렌더링
-        await loadAllDataAndRender(); 
+        // 서버에서 모든 데이터를 로드하고 렌더링
+        await loadAllDataAndRender();
         updateConnectionStatus('connected');
         console.log('✅ 서버 데이터 로드 및 렌더링 완료!');
 
-        // 2. 모든 초기 작업이 끝난 후, 실시간 동기화를 시작
+        // 실시간 동기화 시작
         window.gapi.startRealtimeSync();
 
     } catch (error) {
         console.log('❌ 서버 연결 또는 데이터 로드 실패 - 로컬 데이터로 fallback', error);
         updateConnectionStatus('disconnected');
         
-        // 서버 연결 실패시에만 로컬 데이터 사용
+        // 로컬 데이터로 시도
         const localData = window.gapi.loadFromLocalStorage();
         if (localData && localData.family && localData.family.length > 0) {
             window.stateManager.updateMultipleStates({
@@ -183,6 +184,18 @@ async function initializeData() {
         } else {
             console.warn('❌ 로컬/서버 데이터 모두 없음 - 인터넷 연결 확인 필요');
             alert('데이터를 불러올 수 없습니다. 인터넷 연결을 확인해주세요.');
+        }
+    } finally {
+        // [추가] 성공하든 실패하든, 로딩 화면을 서서히 사라지게 함
+        if (loadingOverlay) {
+            loadingOverlay.style.opacity = '0';
+            setTimeout(() => {
+                loadingOverlay.style.display = 'none';
+            }, 500); // 0.5초 후 완전히 제거
+        }
+        // [추가] 앱 컨테이너를 서서히 나타나게 함
+        if (appContainer) {
+            appContainer.style.opacity = '1';
         }
     }
 }
