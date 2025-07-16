@@ -329,10 +329,14 @@ class MeditationComponent extends BaseComponent {
     constructor() {
         super('content-meditation');
         
-        // 상태 구독
+        this.currentPage = 1;
+        this.itemsPerPage = 10;
+
         this.subscribe('family', () => this.render());
-        this.subscribe('meditations', () => this.renderMeditations());
-        this.subscribe('prayers', () => this.renderPrayers());
+        this.subscribe('prayers', () => {
+            this.currentPage = 1;
+            this.renderItems();
+        });
     }
     
     render() {
@@ -343,62 +347,25 @@ class MeditationComponent extends BaseComponent {
         }
         
         this.container.innerHTML = `
-            <div class="grid grid-cols-1 gap-6">
-                <!-- 가족 기도 노트 (위로 이동) -->
-                <div class="accent-bg rounded-lg p-4">
-                    <h3 class="text-xl font-bold mb-3">🙏 가족 기도 노트</h3>
-                    <div id="prayer-list" class="h-64 overflow-y-auto custom-scrollbar pr-2 mb-3 bg-white/50 rounded p-2">
-                        <!-- 기도 목록이 여기에 렌더링됩니다 -->
+            <section class="mb-6 accent-bg rounded-lg p-4">
+                <h3 class="text-xl font-bold mb-3">🙏 기도 노트</h3>
+                <div id="prayer-list" class="h-[40rem] overflow-y-auto custom-scrollbar pr-2 mb-3 bg-white/50 rounded p-2 space-y-3">
                     </div>
-                    <div class="flex flex-col sm:flex-row gap-2">
-                        <select id="prayer-user" class="p-2 rounded-md w-full sm:w-auto" style="border-color: var(--border-color);">
-                            ${this.renderUserOptions()}
-                        </select>
-                        <input type="text" id="prayer-input" class="flex-grow p-2 rounded-md min-w-0" placeholder="함께 기도할 제목을 나눠요..." style="border-color: var(--border-color);">
-                        <button id="add-prayer" class="bg-white/80 hover:bg-white p-2 rounded-md shadow whitespace-nowrap">등록</button>
-                    </div>
+                <div id="prayer-pagination" class="flex justify-center items-center my-4"></div>
+                <div class="flex flex-col sm:flex-row gap-2">
+                    <select id="prayer-user" class="p-2 rounded-md w-full sm:w-auto" style="border-color: var(--border-color);">
+                        ${this.renderUserOptions()}
+                    </select>
+                    <input type="text" id="prayer-input" class="flex-grow p-2 rounded-md min-w-0" placeholder="함께 기도할 제목을 나눠요..." style="border-color: var(--border-color);">
+                    <button id="add-prayer" class="bg-white/80 hover:bg-white p-2 rounded-md shadow whitespace-nowrap">🙏 기도 등록</button>
                 </div>
-
-                <!-- 가족 묵상 나눔 (아래로 이동) -->
-                <div class="accent-bg rounded-lg p-4">
-                    <h3 class="text-xl font-bold mb-3">💬 가족 묵상 나눔</h3>
-                    <div id="meditation-list" class="h-64 overflow-y-auto custom-scrollbar pr-2 mb-3 bg-white/50 rounded p-2">
-                        <!-- 묵상 목록이 여기에 렌더링됩니다 -->
-                    </div>
-                    <div class="flex flex-col sm:flex-row gap-2">
-                        <select id="meditation-user" class="p-2 rounded-md w-full sm:w-auto" style="border-color: var(--border-color);">
-                            ${this.renderUserOptions()}
-                        </select>
-                        <input type="text" id="meditation-input" class="flex-grow p-2 rounded-md min-w-0" placeholder="오늘의 묵상을 나눠보세요..." style="border-color: var(--border-color);">
-                        <button id="add-meditation" class="bg-white/80 hover:bg-white p-2 rounded-md shadow whitespace-nowrap">등록</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 묵상 도우미 -->
-            <div class="mt-6 accent-bg rounded-lg p-4">
-                <h3 class="text-lg font-bold mb-3 accent-text">💡 묵상 도우미</h3>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                    <div class="bg-white/50 p-3 rounded">
-                        <h4 class="font-semibold mb-2">🤔 질문하기</h4>
-                        <p class="text-gray-600">이 말씀이 내 삶에 어떤 의미일까?</p>
-                    </div>
-                    <div class="bg-white/50 p-3 rounded">
-                        <h4 class="font-semibold mb-2">❤️ 감사하기</h4>
-                        <p class="text-gray-600">오늘 하나님께 감사한 일은?</p>
-                    </div>
-                    <div class="bg-white/50 p-3 rounded">
-                        <h4 class="font-semibold mb-2">🎯 적용하기</h4>
-                        <p class="text-gray-600">내일 실천할 수 있는 것은?</p>
-                    </div>
-                </div>
-            </div>
+            </section>
         `;
         
         this.attachEventListeners();
-        this.renderMeditations();
-        this.renderPrayers();
+        this.renderItems();
     }
+    
     renderUserOptions() {
         const family = window.stateManager.getState('family');
         return family.map(member => 
@@ -406,180 +373,97 @@ class MeditationComponent extends BaseComponent {
         ).join('');
     }
     
-    renderMeditations() {
-        const list = document.getElementById('meditation-list');
-        if (!list) return;
-        
-        list.innerHTML = '';
-        
-        const family = window.stateManager.getState('family');
-        const meditations = window.stateManager.getState('meditations') || [];
-        const currentUserId = document.getElementById('meditation-user')?.value;
-        
-        meditations.forEach(item => {
-            const user = family.find(u => u.id === item.user_id);
-            const itemEl = document.createElement('div');
-            itemEl.className = 'p-2 mb-2 rounded bg-white/70 text-sm slide-in';
-            
-            const likeCount = item.like_count || 0;
-            const isCurrentUser = item.user_id === currentUserId;
-            
-            let buttons = '';
-            if (isCurrentUser) {
-                buttons += `<button onclick="window.editMeditation('${item.id}')" class="text-xs text-blue-600 hover:underline mr-2">수정</button>`;
-                buttons += `<button onclick="window.deleteMeditation('${item.id}')" class="text-xs text-red-600 hover:underline">삭제</button>`;
-            }
-            
-            itemEl.innerHTML = `
-                <div><strong class="accent-text">${user ? user.name : '?'}:</strong> ${item.content}</div>
-                <div class="flex justify-between items-center mt-2">
-                    <div class="text-gray-500 text-xs">${formatDate(item.timestamp || item.id)}</div>
-                    <div class="flex items-center gap-2">
-                        <button onclick="window.likeMeditation('${item.id}')" class="flex items-center gap-1 text-xs text-red-500 hover:text-red-700">
-                            ❤️ <span>${likeCount}</span>
-                        </button>
-                        <div class="text-xs">${buttons}</div>
-                    </div>
-                </div>
-            `;
-            list.appendChild(itemEl);
-        });
-        
-        list.scrollTop = list.scrollHeight;
-    }
-    
-    renderPrayers() {
+    renderItems() {
         const list = document.getElementById('prayer-list');
-        if (!list) return;
+        const paginationContainer = document.getElementById('prayer-pagination');
+        if (!list || !paginationContainer) return;
         
         list.innerHTML = '';
+        paginationContainer.innerHTML = '';
         
         const family = window.stateManager.getState('family');
-        const prayers = window.stateManager.getState('prayers') || [];
+        const items = window.stateManager.getState('prayers') || [];
         const currentUserId = document.getElementById('prayer-user')?.value;
         
-        prayers.forEach(item => {
-            const user = family.find(u => u.id === item.user_id);
-            const itemEl = document.createElement('div');
-            itemEl.className = 'p-2 mb-2 rounded bg-white/70 text-sm slide-in';
-            
-            const likeCount = item.like_count || 0;
-            const isCurrentUser = item.user_id === currentUserId;
-            
-            let buttons = '';
-            if (isCurrentUser) {
-                buttons += `<button onclick="window.editPrayer('${item.id}')" class="text-xs text-blue-600 hover:underline mr-2">수정</button>`;
-                buttons += `<button onclick="window.deletePrayer('${item.id}')" class="text-xs text-red-600 hover:underline">삭제</button>`;
+        const sortedItems = items.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        
+        const totalPages = Math.ceil(sortedItems.length / this.itemsPerPage);
+        const startIndex = (this.currentPage - 1) * this.itemsPerPage;
+        const endIndex = startIndex + this.itemsPerPage;
+        const paginatedItems = sortedItems.slice(startIndex, endIndex);
+
+        if (items.length === 0) {
+            list.innerHTML = '<div class="text-center text-gray-500 p-8">가족의 첫 기도제목을 나눠주세요 🙏</div>';
+            return;
+        }
+        
+        paginatedItems.forEach(item => {
+            list.appendChild(this.createItemElement(item, family, currentUserId));
+        });
+
+        if (totalPages > 1) {
+            let paginationHTML = '';
+            for (let i = 1; i <= totalPages; i++) {
+                paginationHTML += `
+                    <button onclick="window.changePrayerPage(${i})" class="px-3 py-1 mx-1 rounded ${i === this.currentPage ? 'bg-blue-500 text-white' : 'bg-white text-gray-700'}">
+                        ${i}
+                    </button>
+                `;
             }
-            
-            itemEl.innerHTML = `
-                <div><strong class="accent-text">${user ? user.name : '?'}:</strong> ${item.content}</div>
-                <div class="flex justify-between items-center mt-2">
-                    <div class="text-gray-500 text-xs">${formatDate(item.timestamp || item.id)}</div>
-                    <div class="flex items-center gap-2">
-                        <button onclick="window.likePrayer('${item.id}')" class="flex items-center gap-1 text-xs text-red-500 hover:text-red-700">
-                            ❤️ <span>${likeCount}</span>
+            paginationContainer.innerHTML = paginationHTML;
+        }
+    }
+
+    createItemElement(item, family, currentUserId) {
+    const user = family.find(u => u.id === item.user_id);
+    const itemEl = document.createElement('div');
+    itemEl.className = 'p-3 bg-white/80 rounded-lg shadow-sm';
+    
+    const likeCount = item.like_count || 0;
+    const isCurrentUser = item.user_id === currentUserId;
+    
+    itemEl.innerHTML = `
+        <div class="flex items-start gap-3">
+            <img src="${user ? user.photo : 'https://placehold.co/40x40'}" class="w-10 h-10 rounded-full object-cover flex-shrink-0" referrerpolicy="no-referrer">
+            <div class="flex-grow min-w-0">
+                <div class="text-sm mb-2">
+                    <strong class="font-bold">${user ? user.name : '알 수 없음'}:</strong>
+                    <span class="whitespace-pre-wrap">${item.content}</span>
+                </div>
+                <div class="flex justify-between items-center text-xs">
+                    <span class="text-gray-500">${new Date(item.timestamp).toLocaleString('ko-KR')}</span>
+                    <div class="flex items-center gap-3">
+                        <button onclick="window.likePrayer('${item.id}')" class="text-gray-500 hover:text-red-500 flex items-center gap-1">
+                            ❤️ ${likeCount}
                         </button>
-                        <div class="text-xs">${buttons}</div>
+                        ${isCurrentUser ? `
+                            <button onclick="window.editPrayer('${item.id}')" class="text-blue-600 hover:underline">수정</button>
+                            <button onclick="window.deletePrayer('${item.id}')" class="text-red-600 hover:underline">삭제</button>
+                        ` : ''}
                     </div>
                 </div>
-            `;
-            list.appendChild(itemEl);
-        });
-        
-        list.scrollTop = list.scrollHeight;
-    }
+            </div>
+        </div>
+    `;
+    return itemEl;
+}
+    
     attachEventListeners() {
-        // 묵상 추가
-        const addMeditationBtn = document.getElementById('add-meditation');
-        const meditationInput = document.getElementById('meditation-input');
-        const meditationUser = document.getElementById('meditation-user');
-        
-        if (addMeditationBtn) {
-            addMeditationBtn.addEventListener('click', () => this.addMeditation());
-        }
-        
-        if (meditationInput) {
-            meditationInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') this.addMeditation();
-            });
-        }
-        
-        if (meditationUser) {
-            meditationUser.addEventListener('change', () => this.renderMeditations());
-        }
-        
-        // 기도 추가
-        const addPrayerBtn = document.getElementById('add-prayer');
-        const prayerInput = document.getElementById('prayer-input');
-        const prayerUser = document.getElementById('prayer-user');
-        
-        if (addPrayerBtn) {
-            addPrayerBtn.addEventListener('click', () => this.addPrayer());
-        }
-        
-        if (prayerInput) {
-            prayerInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') this.addPrayer();
-            });
-        }
-        
-        if (prayerUser) {
-            prayerUser.addEventListener('change', () => this.renderPrayers());
-        }
+        const addBtn = document.getElementById('add-prayer');
+        const input = document.getElementById('prayer-input');
+        const userSelect = document.getElementById('prayer-user');
+
+        if (addBtn) addBtn.addEventListener('click', () => this.addItem());
+        if (input) input.addEventListener('keypress', (e) => { if (e.key === 'Enter') this.addItem(); });
+        if (userSelect) userSelect.addEventListener('change', () => this.renderItems());
     }
     
-    async addMeditation() {
-        const userInput = document.getElementById('meditation-user');
-        const textInput = document.getElementById('meditation-input');
-        
-        if (!textInput || textInput.value.trim() === '') return;
-        
-        const content = textInput.value.trim();
-        textInput.value = '';
-        textInput.disabled = true;
-        
-        try {
-            const family = window.stateManager.getState('family');
-            const user = family.find(u => u.id === userInput.value);
-            
-            // ⭐ 서버에 즉시 저장
-            const result = await window.gapi.saveData({
-                type: 'meditation',
-                userId: userInput.value,
-                userName: user ? user.name : '알 수 없음',
-                content: content
-            });
-            
-            // 서버 저장 성공 시 로컬 상태 업데이트
-            const meditations = window.stateManager.getState('meditations');
-            meditations.push({
-                id: result.data.id,
-                user_id: userInput.value,
-                user_name: user ? user.name : '알 수 없음',
-                timestamp: result.data.timestamp,
-                content: content,
-                like_count: 0
-            });
-            window.stateManager.updateState('meditations', meditations);
-            
-            textInput.disabled = false;
-            
-        } catch (error) {
-            console.error('묵상 저장 실패:', error);
-            alert('묵상 저장에 실패했습니다. 다시 시도해주세요.');
-            textInput.value = content; // 내용 복구
-            textInput.disabled = false;
-        }
-    }
-    
-    async addPrayer() {
+    async addItem() {
         const userInput = document.getElementById('prayer-user');
         const textInput = document.getElementById('prayer-input');
-        
-        if (!textInput || textInput.value.trim() === '') return;
-        
         const content = textInput.value.trim();
+        if (!content) return;
+        
         textInput.value = '';
         textInput.disabled = true;
         
@@ -587,7 +471,6 @@ class MeditationComponent extends BaseComponent {
             const family = window.stateManager.getState('family');
             const user = family.find(u => u.id === userInput.value);
             
-            // ⭐ 서버에 즉시 저장
             const result = await window.gapi.saveData({
                 type: 'prayer',
                 userId: userInput.value,
@@ -595,41 +478,30 @@ class MeditationComponent extends BaseComponent {
                 content: content
             });
             
-            // 서버 저장 성공 시 로컬 상태 업데이트
-            const prayers = window.stateManager.getState('prayers');
-            prayers.push({
-                id: result.data.id,
-                user_id: userInput.value,
-                user_name: user ? user.name : '알 수 없음',
-                timestamp: result.data.timestamp,
-                content: content,
-                like_count: 0
+            const items = window.stateManager.getState('prayers');
+            items.push({
+                id: result.data.id, user_id: userInput.value, user_name: user ? user.name : '알 수 없음',
+                timestamp: result.data.timestamp, content: content, like_count: 0
             });
-            window.stateManager.updateState('prayers', prayers);
+            window.stateManager.updateState('prayers', items);
             
-            textInput.disabled = false;
-            
-        } catch (error) {
-            console.error('기도제목 저장 실패:', error);
-            alert('기도제목 저장에 실패했습니다. 다시 시도해주세요.');
-            textInput.value = content; // 내용 복구
+        } catch (e) {
+            console.error('기도 등록 실패:', e);
+            alert('기도 등록에 실패했습니다. 다시 시도해주세요.');
+            textInput.value = content;
+        } finally {
             textInput.disabled = false;
         }
     }
     
-    /**
-     * ⭐ 데이터만 업데이트 (묵상 기도 - 애니메이션 없이 부분 업데이트)
-     */
     updateDataOnly() {
         if (this.container && !this.container.classList.contains('hidden')) {
-            console.log('MeditationComponent: 데이터 전용 업데이트 (깜빡거림 방지)');
-            
-            // ⭐ 묵상 목록과 기도 목록만 업데이트
-            this.renderMeditations();
-            this.renderPrayers();
+            this.renderItems();
         }
     }
 }
+
+
 /**
  * 메시지보드 탭 컴포넌트
  */
@@ -1750,5 +1622,15 @@ window.changeMessagePage = function(page) {
     if (window.components.messages) {
         window.components.messages.currentPage = page;
         window.components.messages.renderMessages();
+    }
+};
+
+/**
+ * 기도 노트 페이지 변경
+ */
+window.changePrayerPage = function(page) {
+    if (window.components.meditation) {
+        window.components.meditation.currentPage = page;
+        window.components.meditation.renderPrayers();
     }
 };

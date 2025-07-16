@@ -21,6 +21,7 @@
     </audio>
 
     <div id="loading-overlay" class="fixed inset-0 bg-white z-50 flex flex-col items-center justify-center">
+            </button>
         <div class="loader-cross mb-6"></div>
 
         <div class="animated-text-container text-4xl mb-4 main-title">
@@ -61,6 +62,7 @@
 
     <div id="app" class="relative p-2 sm:p-4 md:p-8 max-w-6xl mx-auto opacity-0 transition-opacity duration-500">
         <div id="header-top-right" class="absolute top-2 right-2 sm:top-4 sm:right-4 md:top-8 md:right-8 flex flex-col items-end gap-2 z-10">
+
             <div id="connection-status" class="flex items-center justify-center gap-2">
                 <div id="status-indicator" class="w-3 h-3 rounded-full bg-gray-400"></div>
                 <span id="status-text" class="text-xs sm:text-sm">연결 중...</span>
@@ -92,7 +94,7 @@
                         📖 <span class="hidden sm:inline">말씀</span> 읽기
                     </button>
                     <button id="tab-meditation" class="main-tab whitespace-nowrap py-3 px-2 sm:px-3 md:px-4 border-b-2 font-medium text-xs sm:text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 flex-shrink-0" data-tab="meditation">
-                        🙏 <span class="hidden sm:inline">묵상과</span> 기도
+                        🙏 <span class="hidden sm:inline"></span>기도 노트
                     </button>
                     <button id="tab-messages" class="main-tab whitespace-nowrap py-3 px-2 sm:px-3 md:px-4 border-b-2 font-medium text-xs sm:text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 flex-shrink-0" data-tab="messages">
                         💝 <span class="hidden sm:inline">사랑의</span> 대화
@@ -124,6 +126,8 @@
             </div>
         </div>
     </div>
+<button id="play-pause-btn" class="play-pause-btn">
+        </button>
 
     <div id="modals">
         <div id="chapter-modal" class="modal">

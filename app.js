@@ -48,7 +48,31 @@ function setupGlobalEventListeners() {
             window.openAdminModal();
         });
     }
-    
+    // [추가] 음악 재생/일시정지 버튼 로직
+    const bgmPlayer = document.getElementById('bgm-player');
+    const playPauseBtn = document.getElementById('play-pause-btn');
+
+    if (bgmPlayer && playPauseBtn) {
+        const updateButtonIcon = () => {
+            playPauseBtn.innerHTML = bgmPlayer.paused ? '▶️' : '⏸️';
+        };
+
+        playPauseBtn.addEventListener('click', () => {
+            if (bgmPlayer.paused) {
+                bgmPlayer.play();
+            } else {
+                bgmPlayer.pause();
+            }
+        });
+
+        // 음악의 상태가 바뀔 때마다 버튼 아이콘도 자동으로 변경
+        bgmPlayer.addEventListener('play', updateButtonIcon);
+        bgmPlayer.addEventListener('pause', updateButtonIcon);
+        
+        // 페이지가 처음 로드될 때 버튼 초기 아이콘 설정
+        updateButtonIcon();
+    }
+
     // ⭐ 새로고침 감지 (F5, Ctrl+R, Cmd+R)
     document.addEventListener('keydown', (e) => {
         if (e.key === 'F5' || 
