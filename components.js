@@ -684,47 +684,70 @@ class MessageBoardComponent extends BaseComponent {
         const family = window.stateManager.getState('family');
         const messages = window.stateManager.getState('messages') || [];
         const currentUserId = document.getElementById('message-user')?.value;
+
+        // 공지와 일반 메시지 분리
+        const notices = messages.filter(m => m.is_notice === true);
+        const regularMessages = messages.filter(m => m.is_notice !== true);
         
-        const sortedMessages = messages.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        const sortedMessages = regularMessages.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
         
-        if (sortedMessages.length === 0) {
+        if (messages.length === 0) {
             list.innerHTML = '<div class="text-center text-gray-500 p-8">가족에게 따뜻한 첫 메시지를 남겨보세요! 💝</div>';
             return;
         }
+
+        // 공지 먼저 렌더링
+        notices.forEach(message => {
+            list.appendChild(this.createMessageElement(message, family, currentUserId, true));
+        });
         
+        // 일반 메시지 렌더링
         sortedMessages.forEach(message => {
-            const user = family.find(u => u.id === message.user_id);
-            const messageEl = document.createElement('div');
-            messageEl.className = 'p-3 bg-white/80 rounded-lg shadow-sm';
-            
-            const likeCount = message.like_count || 0;
-            const isCurrentUser = message.user_id === currentUserId;
-            
-            messageEl.innerHTML = `
-                <div class="flex items-start gap-3">
-                    <img src="${user ? user.photo : 'https://placehold.co/40x40'}" class="w-10 h-10 rounded-full object-cover" referrerpolicy="no-referrer">
-                    <div class="flex-grow min-w-0">
-                        <div class="flex items-start gap-2 mb-1">
-                            <span class="font-bold text-sm flex-shrink-0">${user ? user.name : '알 수 없음'}:</span>
-                            <p class="text-sm whitespace-pre-wrap flex-grow min-w-0">${message.content}</p>
-                        </div>
-                        <div class="flex items-center justify-between text-xs">
-                            <span class="text-gray-500">${new Date(message.timestamp).toLocaleString('ko-KR')}</span>
-                            <div class="flex items-center gap-3">
-                                <button onclick="window.likeMessage('${message.id}')" class="text-gray-600 hover:text-red-500 flex items-center gap-1">
-                                    ❤️ ${likeCount}
-                                </button>
-                                ${isCurrentUser ? `
-                                    <button onclick="window.editMessage('${message.id}')" class="text-blue-600 hover:underline">수정</button>
-                                    <button onclick="window.deleteMessage('${message.id}')" class="text-red-600 hover:underline">삭제</button>
-                                ` : ''}
-                            </div>
+            list.appendChild(this.createMessageElement(message, family, currentUserId, false));
+        });
+    }
+
+    // [새로 추가] 메시지 HTML 요소를 생성하는 헬퍼 함수
+    createMessageElement(message, family, currentUserId, isNotice) {
+        const user = family.find(u => u.id === message.user_id);
+        const messageEl = document.createElement('div');
+        
+        // 공지일 경우 스타일 변경
+        messageEl.className = isNotice 
+            ? 'p-3 bg-yellow-100 rounded-lg shadow-md border-l-4 border-yellow-400' 
+            : 'p-3 bg-white/80 rounded-lg shadow-sm';
+        
+        const likeCount = message.like_count || 0;
+        const isCurrentUser = message.user_id === currentUserId;
+        
+        messageEl.innerHTML = `
+            <div class="flex items-start gap-3">
+                <img src="${user ? user.photo : 'https://placehold.co/40x40'}" class="w-10 h-10 rounded-full object-cover" referrerpolicy="no-referrer">
+                <div class="flex-grow min-w-0">
+                    <div class="flex items-center gap-2 mb-1">
+                        ${isNotice ? '<span class="text-yellow-600 font-bold">📌 공지</span>' : ''}
+                        <span class="font-bold text-sm flex-shrink-0">${user ? user.name : '알 수 없음'}:</span>
+                    </div>
+                    <p class="text-sm whitespace-pre-wrap flex-grow min-w-0 mb-2">${message.content}</p>
+                    <div class="flex items-center justify-between text-xs">
+                        <span class="text-gray-500">${new Date(message.timestamp).toLocaleString('ko-KR')}</span>
+                        <div class="flex items-center gap-3">
+                            <button onclick="window.toggleMessageNotice('${message.id}')" class="text-gray-600 hover:text-blue-500 flex items-center gap-1">
+                                📌 ${isNotice ? '공지 해제' : '공지로 등록'}
+                            </button>
+                            <button onclick="window.likeMessage('${message.id}')" class="text-gray-600 hover:text-red-500 flex items-center gap-1">
+                                ❤️ ${likeCount}
+                            </button>
+                            ${isCurrentUser ? `
+                                <button onclick="window.editMessage('${message.id}')" class="text-blue-600 hover:underline">수정</button>
+                                <button onclick="window.deleteMessage('${message.id}')" class="text-red-600 hover:underline">삭제</button>
+                            ` : ''}
                         </div>
                     </div>
                 </div>
-            `;
-            list.appendChild(messageEl);
-        });
+            </div>
+        `;
+        return messageEl;
     }
     
     attachEventListeners() {
@@ -1537,6 +1560,7 @@ window.likePrayer = async function(id) {
         alert('좋아요 실패: ' + error.message);
     }
 };
+
 // 메시지 관련
 window.editMessage = async function(id) {
     const messages = window.stateManager.getState('messages');
@@ -1566,7 +1590,7 @@ window.deleteMessage = async function(id) {
 
 window.likeMessage = async function(id) {
     try {
-        // ⭐ 로컬 상태 먼저 즉시 업데이트
+        // 로컬 상태 먼저 즉시 업데이트 (사용자 경험 개선)
         const messages = window.stateManager.getState('messages');
         const message = messages.find(m => m.id === id);
         if (message) {
@@ -1577,7 +1601,7 @@ window.likeMessage = async function(id) {
         // 서버에 전송 (백그라운드)
         await window.gapi.likeItem({ type: 'message', id });
     } catch (error) {
-        // 오류 시 롤백
+        // 오류 시 롤백 (원상 복구)
         const messages = window.stateManager.getState('messages');
         const message = messages.find(m => m.id === id);
         if (message) {
@@ -1585,6 +1609,30 @@ window.likeMessage = async function(id) {
             window.stateManager.updateState('messages', messages);
         }
         alert('좋아요 실패: ' + error.message);
+    }
+};
+
+window.toggleMessageNotice = async function(id) {
+    if (!confirm('메시지의 공지 상태를 변경하시겠습니까?')) return;
+    try {
+        const result = await window.gapi.toggleNotice(id);
+        
+        // 서버 응답 성공 후, 로컬 데이터를 직접 업데이트하여 즉시 반영
+        const messages = window.stateManager.getState('messages');
+        const message = messages.find(m => m.id === id);
+        if (message) {
+            message.is_notice = result.data.isNotice;
+        }
+        // 다른 공지들은 해제
+        messages.forEach(m => {
+            if (m.id !== id) {
+                m.is_notice = false;
+            }
+        });
+        window.stateManager.updateState('messages', messages);
+
+    } catch (e) {
+        alert('공지 상태 변경 실패: ' + e.message);
     }
 };
 
