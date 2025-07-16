@@ -1073,9 +1073,10 @@ class AllowanceComponent extends BaseComponent {
 class StatsComponent extends BaseComponent {
     constructor() {
         super('content-stats');
-        this.weeklyChart = null;
+        // Chart.js 인스턴스를 관리하기 위한 객체
+        this.charts = {}; 
         
-        // ⭐ 상태 구독: 데이터 변경 시 전체를 다시 그리도록 render()를 직접 호출
+        // 상태 구독: 데이터 변경 시 전체를 다시 그리도록 render()를 직접 호출
         this.subscribe('family', () => this.render());
         this.subscribe('readRecords', () => this.render());
     }
@@ -1088,7 +1089,6 @@ class StatsComponent extends BaseComponent {
         }
         
         this.container.innerHTML = `
-            <!-- 개인별 상세 진행 현황 -->
             <section class="mb-8">
                 <h3 class="text-xl font-bold mb-4 accent-text text-center">👥 개인별 상세 진행 현황</h3>
                 <div id="detailed-progress" class="grid grid-cols-1 gap-6">
@@ -1097,13 +1097,16 @@ class StatsComponent extends BaseComponent {
             </section>
         `;
         
-        // 개인별 미니 차트 초기화
+        // 개인별 차트 초기화 (개선된 함수 호출)
         setTimeout(() => {
-            this.initMiniCharts();
+            this.initCharts();
         }, 50);
     }
     
-    initMiniCharts() {
+    /**
+     * Chart.js를 사용하여 통계 차트를 초기화하는 함수
+     */
+    initCharts() {
         const family = window.stateManager.getState('family');
         if (!family || family.length === 0) return;
         
@@ -1111,79 +1114,85 @@ class StatsComponent extends BaseComponent {
             const canvas = document.getElementById(`mini-chart-${member.id}`);
             if (!canvas) return;
             
-            const ctx = canvas.getContext('2d');
+            if (this.charts[member.id]) {
+                this.charts[member.id].destroy();
+            }
+            
             const weeklyResult = this.getWeeklyReadingData(member.id);
-            const weeklyData = weeklyResult.data;
             
-            console.log(`[DEBUG] ${member.name} 미니차트:`, {
-                weeklyData,
-                hasCanvas: !!canvas,
-                totalWeeklyChapters: weeklyResult.totalChapters
-            });
-            
-            // 간단한 라인 차트 그리기
-            const width = canvas.width;
-            const height = canvas.height;
-            const padding = 10;
-            const chartWidth = width - padding * 2;
-            const chartHeight = height - padding * 2;
-            
-            // 캔버스 클리어
-            ctx.clearRect(0, 0, width, height);
-            
-            // 배경
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-            ctx.fillRect(0, 0, width, height);
-            
-            if (weeklyData.length === 0 || weeklyData.every(d => d === 0)) {
-                ctx.fillStyle = '#666';
-                ctx.font = '12px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText('이번주 읽은 장이 없습니다', width / 2, height / 2);
-                return;
+            // --- [수정된 부분 1] ---
+            // 항상 일주일 전체의 라벨을 생성합니다.
+            const today = new Date();
+            const dayOfWeek = today.getDay();
+            const thisWeekSunday = new Date(today);
+            thisWeekSunday.setDate(today.getDate() - dayOfWeek);
+            const weekDays = ['일', '월', '화', '수', '목', '금', '토'];
+            const labels = [];
+
+            for (let i = 0; i < 7; i++) { // 오늘까지가 아닌, 7일 전체를 순회
+                const currentDate = new Date(thisWeekSunday);
+                currentDate.setDate(thisWeekSunday.getDate() + i);
+                const dateString = `${currentDate.getMonth() + 1}/${currentDate.getDate()}`;
+                labels.push(`${weekDays[i]} (${dateString})`);
             }
             
-            const maxValue = Math.max(...weeklyData, 1);
-            const stepX = chartWidth / Math.max(weeklyData.length - 1, 1);
+            const chartData = {
+                labels: labels,
+                datasets: [{
+                    label: '읽은 장 수',
+                    data: weeklyResult.data,
+                    backgroundColor: 'rgba(141, 110, 99, 0.6)',
+                    borderColor: 'rgba(141, 110, 99, 1)',
+                    borderWidth: 1,
+                    borderRadius: 4,
+                }]
+            };
             
-            // 그리드 라인
-            ctx.strokeStyle = '#e0e0e0';
-            ctx.lineWidth = 1;
-            for (let i = 0; i < weeklyData.length; i++) {
-                const x = padding + i * stepX;
-                ctx.beginPath();
-                ctx.moveTo(x, padding);
-                ctx.lineTo(x, height - padding);
-                ctx.stroke();
-            }
-            
-            // 데이터 라인
-            ctx.strokeStyle = '#8d6e63';
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            
-            for (let i = 0; i < weeklyData.length; i++) {
-                const x = padding + i * stepX;
-                const y = height - padding - (weeklyData[i] / maxValue) * chartHeight;
-                
-                if (i === 0) {
-                    ctx.moveTo(x, y);
-                } else {
-                    ctx.lineTo(x, y);
+            const config = {
+                type: 'bar',
+                data: chartData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                title: function(tooltipItems) {
+                                    return tooltipItems[0].label;
+                                },
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.y !== null) {
+                                        label += `${context.parsed.y}장`;
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1,
+                                callback: function(value) {
+                                    if (Math.floor(value) === value) {
+                                        return value;
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
-            }
-            ctx.stroke();
+            };
             
-            // 데이터 포인트
-            ctx.fillStyle = '#8d6e63';
-            for (let i = 0; i < weeklyData.length; i++) {
-                const x = padding + i * stepX;
-                const y = height - padding - (weeklyData[i] / maxValue) * chartHeight;
-                
-                ctx.beginPath();
-                ctx.arc(x, y, 3, 0, 2 * Math.PI);
-                ctx.fill();
-            }
+            this.charts[member.id] = new Chart(canvas.getContext('2d'), config);
         });
     }
     
@@ -1191,13 +1200,6 @@ class StatsComponent extends BaseComponent {
         const family = window.stateManager.getState('family');
         const readRecordsRaw = window.stateManager.getState('readRecords');
         
-        console.log('[DEBUG] 통계현황 렌더링:', {
-            family: family?.length,
-            readRecordsRaw: readRecordsRaw,
-            isArray: Array.isArray(readRecordsRaw)
-        });
-        
-        // 데이터 구조 변환: 배열 → 객체
         const readRecords = {};
         if (Array.isArray(readRecordsRaw)) {
             readRecordsRaw.forEach(record => {
@@ -1209,24 +1211,14 @@ class StatsComponent extends BaseComponent {
                 }
             });
         } else {
-            // 이미 객체 형태라면 그대로 사용
             Object.assign(readRecords, readRecordsRaw || {});
         }
-        
-        console.log('[DEBUG] 변환된 readRecords:', readRecords);
         
         if (!family || family.length === 0) return '';
         
         return family.map(member => {
             const userRecords = readRecords[member.id] || {};
             
-            console.log(`[DEBUG] ${member.name} 데이터:`, {
-                userRecords: Object.keys(userRecords),
-                sampleBook: Object.values(userRecords)[0],
-                fullUserRecords: userRecords  // 전체 사용자 기록 확인
-            });
-            
-            // 기본 통계 계산
             let totalRead = 0;
             let completedBooks = [];
             
@@ -1240,7 +1232,6 @@ class StatsComponent extends BaseComponent {
                 
                 totalRead += chapters.length;
                 
-                // 완독한 책 확인
                 const book = [...BIBLE_BOOKS.old, ...BIBLE_BOOKS.new].find(b => b.name === bookName);
                 if (book && chapters.length === book.chapters) {
                     completedBooks.push({
@@ -1249,27 +1240,13 @@ class StatsComponent extends BaseComponent {
                         chapters: book.chapters
                     });
                 }
-                
-                console.log(`[DEBUG] ${bookName}:`, {
-                    chapters: chapters.length,
-                    totalChapters: book?.chapters,
-                    completed: book && chapters.length === book.chapters
-                });
             });
             
             const totalChapters = TOTAL_OT_CHAPTERS + TOTAL_NT_CHAPTERS;
             const percentage = totalChapters > 0 ? ((totalRead / totalChapters) * 100).toFixed(1) : 0;
             const weeklyResult = this.getWeeklyReadingData(member.id);
-            const weeklyData = weeklyResult.data;
             const thisWeekSummary = weeklyResult.summary;
             const thisWeekTotal = weeklyResult.totalChapters;
-            
-            console.log(`[DEBUG] ${member.name} 렌더링:`, {
-                totalRead,
-                completedBooks: completedBooks.length,
-                thisWeekTotal,
-                thisWeekSummary
-            });
             
             return `
                 <div class="accent-bg rounded-lg p-4 cursor-pointer hover:opacity-90 transition slide-in" onclick="window.openProgressModal('${member.id}')">
@@ -1295,14 +1272,13 @@ class StatsComponent extends BaseComponent {
                     </div>
                     
                     <div class="mb-4">
-                        <div class="text-sm mb-2 font-medium">📊 이번주 읽기 현황 (일~${['일', '월', '화', '수', '목', '금', '토'][new Date().getDay()]})</div>
-                        <div class="bg-white/50 p-3 rounded">
-                            <canvas id="mini-chart-${member.id}" width="300" height="100" class="w-full h-16"></canvas>
+                        <div class="text-sm mb-2 font-medium">📊 이번주 읽기 현황 (일 ~ 토)</div>
+                        <div class="bg-white/50 p-3 rounded h-24">
+                            <canvas id="mini-chart-${member.id}"></canvas>
                         </div>
                     </div>
                     
                     <div class="space-y-3">
-                        <!-- 완독한 책 -->
                         <div class="bg-white/40 rounded p-3">
                             <div class="text-sm font-medium mb-1">🎉 완독한 책 (${completedBooks.length}권)</div>
                             ${completedBooks.length > 0 ? `
@@ -1313,7 +1289,6 @@ class StatsComponent extends BaseComponent {
                             ` : '<div class="text-xs text-gray-500">아직 완독한 책이 없습니다</div>'}
                         </div>
                         
-                        <!-- 이번주 읽은 장 -->
                         <div class="bg-white/40 rounded p-3">
                             <div class="text-sm font-medium mb-1">📚 이번주 읽은 장 (총 ${thisWeekTotal}장)</div>
                             <div class="text-xs text-gray-700">${thisWeekSummary}</div>
@@ -1323,10 +1298,10 @@ class StatsComponent extends BaseComponent {
             `;
         }).join('');
     }
+
     getWeeklyReadingData(userId) {
         const readRecordsRaw = window.stateManager.getState('readRecords');
         
-        // 데이터 구조 변환: 배열 → 객체
         const readRecords = {};
         if (Array.isArray(readRecordsRaw)) {
             readRecordsRaw.forEach(record => {
@@ -1343,113 +1318,68 @@ class StatsComponent extends BaseComponent {
         
         const userRecords = readRecords[userId] || {};
         
-        // 이번주 일요일부터 토요일까지 계산
         const today = new Date();
-        const dayOfWeek = today.getDay(); // 0=일요일, 1=월요일, ..., 6=토요일
+        const dayOfWeek = today.getDay();
         
-        // 이번주 일요일 찾기
         const thisWeekSunday = new Date(today);
         thisWeekSunday.setDate(today.getDate() - dayOfWeek);
         
         const weeklyData = [];
-        const weeklyDetails = []; // 각 날짜별 읽은 책과 장 정보
-        const thisWeekBooks = {}; // 이번주 읽은 책들을 정리
+        const thisWeekBooks = {};
         
-        console.log(`[DEBUG] ${userId} - 이번주 계산:`, {
-            today: today.toDateString(),
-            dayOfWeek,
-            thisWeekSunday: thisWeekSunday.toDateString(),
-            userRecords: Object.keys(userRecords),
-            sampleBook: Object.values(userRecords)[0]
-        });
-        
-        // 일요일부터 토요일까지 7일간 (오늘까지만)
-        for (let i = 0; i <= Math.min(6, dayOfWeek); i++) {
+        // --- [수정된 부분 2] ---
+        // 항상 일주일 전체의 데이터를 계산합니다.
+        for (let i = 0; i < 7; i++) { // 오늘까지가 아닌, 7일 전체를 순회
             const date = new Date(thisWeekSunday);
             date.setDate(thisWeekSunday.getDate() + i);
             const dateStr = date.toISOString().split('T')[0];
             
             let chaptersReadOnDay = 0;
-            let dayDetails = [];
             
-            // 개선된 데이터 구조에 맞게 수정
             Object.entries(userRecords).forEach(([bookName, bookData]) => {
-                console.log(`[DEBUG] ${bookName} 상세 분석:`, {
-                    bookData,
-                    keys: Object.keys(bookData),
-                    read_dates_value: bookData.read_dates,
-                    read_dates_type: typeof bookData.read_dates,
-                    empty_column: bookData[""], // 빈 헤더 컬럼 확인
-                    all_values: Object.values(bookData)
-                });
-                
-                // 구글시트 read_dates 컬럼에서 날짜 정보 가져오기
                 let dateInfo = bookData.read_dates;
                 
-                // 빈 헤더 컬럼에 날짜 정보가 있을 수도 있음
                 if (!dateInfo && bookData[""]) {
                     dateInfo = bookData[""];
-                    console.log('[DEBUG] 빈 헤더 컬럼에서 날짜 정보 발견:', dateInfo);
                 }
                 
-                // 문자열 형태의 JSON 파싱
                 if (typeof dateInfo === 'string' && dateInfo.trim().startsWith('{')) {
                     try {
                         dateInfo = JSON.parse(dateInfo);
-                        console.log(`[DEBUG] ${bookName} JSON 파싱 성공:`, dateInfo);
                     } catch (e) {
-                        console.warn(`[DEBUG] ${bookName} JSON 파싱 실패:`, dateInfo, e);
                         dateInfo = null;
                     }
                 }
                 
-                console.log(`[DEBUG] ${bookName} 최종 날짜 정보:`, {
-                    dateInfo,
-                    isObject: typeof dateInfo === 'object',
-                    entries: dateInfo ? Object.entries(dateInfo) : []
-                });
-                
                 if (dateInfo && typeof dateInfo === 'object') {
                     Object.entries(dateInfo).forEach(([chapter, readDate]) => {
-                        console.log(`[DEBUG] 체크: 장 ${chapter}, 날짜 ${readDate}, 찾는날짜 ${dateStr}`);
                         if (readDate === dateStr) {
                             chaptersReadOnDay++;
-                            dayDetails.push({ book: bookName, chapter: parseInt(chapter) });
-                            
-                            // 이번주 책 정리
                             if (!thisWeekBooks[bookName]) {
                                 thisWeekBooks[bookName] = [];
                             }
                             thisWeekBooks[bookName].push(parseInt(chapter));
-                            
-                            console.log(`[DEBUG] 매치 발견! ${bookName} ${chapter}장 - ${readDate}`);
                         }
                     });
                 }
             });
             
             weeklyData.push(chaptersReadOnDay);
-            weeklyDetails.push(dayDetails);
-            
-            console.log(`[DEBUG] ${dateStr} (${date.toLocaleDateString('ko-KR', {weekday: 'short'})}): ${chaptersReadOnDay}장`, dayDetails);
         }
         
-        // 이번주 읽은 내용을 문자열로 정리
         const thisWeekSummary = Object.entries(thisWeekBooks).map(([book, chapters]) => {
             const sortedChapters = [...new Set(chapters)].sort((a, b) => a - b);
             return `${book} ${sortedChapters.length}장`;
         }).join(', ') || '이번주 읽은 장이 없습니다';
         
-        console.log(`[DEBUG] ${userId} - 이번주 요약:`, thisWeekSummary);
-        
         return { 
             data: weeklyData, 
-            details: weeklyDetails, 
             summary: thisWeekSummary,
             totalChapters: weeklyData.reduce((a, b) => a + b, 0)
         };
     }
     
+    // ... (findCommonReadBooks, generateDiscussionTopic 함수는 기존과 동일)
     findCommonReadBooks() {
         const family = window.stateManager.getState('family');
         const readRecords = window.stateManager.getState('readRecords');
