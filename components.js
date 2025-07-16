@@ -3,6 +3,8 @@
  * 각 탭별 UI 컴포넌트와 모달 컴포넌트들을 관리
  */
 
+const likedMessageCooldown = new Set();
+
 // === 성경 책 정보 (클라이언트에서 사용) ===
 const BIBLE_BOOKS = {
     old: [
@@ -753,25 +755,23 @@ class MessageBoardComponent extends BaseComponent {
         messageEl.innerHTML = `
             <div class="flex items-start gap-3">
                 <img src="${user ? user.photo : 'https://placehold.co/40x40'}" class="w-10 h-10 rounded-full object-cover flex-shrink-0" referrerpolicy="no-referrer">
-                
                 <div class="flex-grow min-w-0">
-                    
                     <div class="text-sm mb-2">
                         ${isNotice ? '<span class="text-yellow-600 font-bold">📌 공지</span> ' : ''}
                         <strong class="font-bold">${user ? user.name : '알 수 없음'}:</strong>
                         <span class="whitespace-pre-wrap">${message.content}</span>
                     </div>
-
                     <div class="flex justify-between items-center text-xs">
                         <span class="text-gray-500">${new Date(message.timestamp).toLocaleString('ko-KR')}</span>
-                        
                         <div class="flex items-center gap-3">
                             <button onclick="window.toggleMessageNotice('${message.id}')" class="text-gray-500 hover:text-blue-500 flex items-center gap-1">
                                 📌 ${isNotice ? '해제' : '등록'}
                             </button>
-                            <button onclick="window.likeMessage('${message.id}')" class="text-gray-500 hover:text-red-500 flex items-center gap-1">
+                            
+                            <button onclick="window.likeMessage('${message.id}', this)" class="text-gray-500 hover:text-red-500 flex items-center gap-1">
                                 ❤️ ${likeCount}
                             </button>
+
                             ${isCurrentUser ? `
                                 <button onclick="window.editMessage('${message.id}')" class="text-blue-600 hover:underline">수정</button>
                                 <button onclick="window.deleteMessage('${message.id}')" class="text-red-600 hover:underline">삭제</button>
@@ -1616,19 +1616,29 @@ window.deleteMessage = async function(id) {
 };
 
 window.likeMessage = async function(id) {
+    // 1. 현재 메시지가 '좋아요 잠금' 상태인지 확인
+    if (likedMessageCooldown.has(id)) {
+        console.log(`메시지 ${id}는 현재 쿨다운 상태입니다.`);
+        return; // 잠금 상태이면 아무것도 하지 않고 종료
+    }
+
     try {
-        // 로컬 상태 먼저 즉시 업데이트 (사용자 경험 개선)
+        // 2. '좋아요'를 누르자마자 잠금 목록에 추가
+        likedMessageCooldown.add(id);
+
+        // 로컬 상태를 먼저 업데이트
         const messages = window.stateManager.getState('messages');
         const message = messages.find(m => m.id === id);
         if (message) {
             message.like_count = (message.like_count || 0) + 1;
             window.stateManager.updateState('messages', messages);
         }
-        
-        // 서버에 전송 (백그라운드)
+
+        // 서버에 좋아요 요청
         await window.gapi.likeItem({ type: 'message', id });
+
     } catch (error) {
-        // 오류 시 롤백 (원상 복구)
+        // 오류 발생 시 롤백
         const messages = window.stateManager.getState('messages');
         const message = messages.find(m => m.id === id);
         if (message) {
@@ -1636,6 +1646,12 @@ window.likeMessage = async function(id) {
             window.stateManager.updateState('messages', messages);
         }
         alert('좋아요 실패: ' + error.message);
+    } finally {
+        // 3. 10초 후에 잠금 목록에서 제거
+        setTimeout(() => {
+            likedMessageCooldown.delete(id);
+            console.log(`메시지 ${id} 쿨다운 해제.`);
+        }, 10000); // 10초
     }
 };
 
