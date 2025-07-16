@@ -250,3 +250,32 @@ details > summary::-webkit-details-marker {
     padding: 1rem;
     z-index: 20;
 }
+
+/* === ⭐ 부드러운 실시간 업데이트 스타일 === */
+.smooth-update {
+    transition: opacity 0.2s ease-in-out !important;
+}
+
+.smooth-update * {
+    transition: all 0.15s ease-in-out !important;
+}
+
+/* === 부드러운 데이터 변경 애니메이션 === */
+.smooth-update .progress-bar-fill {
+    transition: width 0.3s ease-in-out !important;
+}
+
+.smooth-update .card {
+    transition: transform 0.1s ease-in-out !important;
+}
+
+/* === 새로운 메시지/콘텐츠 하이라이트 (선택사항) === */
+.new-content-highlight {
+    animation: gentle-highlight 1s ease-in-out;
+}
+
+@keyframes gentle-highlight {
+    0% { background-color: rgba(59, 130, 246, 0.1); }
+    50% { background-color: rgba(59, 130, 246, 0.05); }
+    100% { background-color: transparent; }
+}

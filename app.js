@@ -48,6 +48,22 @@ function setupGlobalEventListeners() {
             window.openAdminModal();
         });
     }
+    
+    // ⭐ 새로고침 감지 (F5, Ctrl+R, Cmd+R)
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'F5' || 
+            (e.ctrlKey && e.key === 'r') || 
+            (e.metaKey && e.key === 'r')) {
+            console.log('🔄 새로고침 감지 - 서버 데이터 우선 로딩 모드');
+            localStorage.setItem('force_server_reload', 'true');
+        }
+    });
+    
+    // ⭐ 페이지 로드시 강제 서버 로딩 플래그 확인
+    if (localStorage.getItem('force_server_reload') === 'true') {
+        localStorage.removeItem('force_server_reload');
+        console.log('🚀 강제 서버 로딩 모드 활성화');
+    }
 }
 /**
  * 컴포넌트 초기화
@@ -77,7 +93,7 @@ function initializeComponents() {
 }
 
 /**
- * 탭 전환 함수 (⭐ 부드러운 탭 전환만, 데이터 로드 제거)
+ * 탭 전환 함수 (⭐ 완전 조용한 백그라운드 동기화 + 탭 전환시에만 UI 업데이트)
  */
 function switchTab(tabName) {
     console.log('탭 전환:', tabName);
@@ -87,11 +103,11 @@ function switchTab(tabName) {
         return;
     }
     
-    // ⭐ 현재 탭을 전역 변수에 저장 (백그라운드 업데이트용)
+    // ⭐ 현재 탭을 전역 변수에 저장
     window.currentTab = tabName;
     currentTab = tabName;
     
-    // ⭐ 사용자가 직접 탭을 전환하는 것임을 표시 (애니메이션 활성화)
+    // ⭐ 사용자가 직접 탭을 전환하는 것임을 표시
     window.isUserTabSwitch = true;
     
     // 모든 탭 버튼의 활성 상태 제거
@@ -102,7 +118,6 @@ function switchTab(tabName) {
     // 모든 탭 콘텐츠 숨기기
     document.querySelectorAll('.tab-content').forEach(content => {
         content.classList.add('hidden');
-        content.classList.remove('background-update', 'no-animation');
     });
     
     // 선택된 탭 활성화
@@ -113,9 +128,10 @@ function switchTab(tabName) {
         selectedTab.classList.add('tab-active');
         selectedContent.classList.remove('hidden');
         
-        // ⭐ 간단하게 렌더링만 (데이터 로드 없음)
+        // ⭐ 탭 전환시에만 최신 데이터로 렌더링 (백그라운드 동기화는 UI 변경 없음)
         setTimeout(() => {
             if (window.components[tabName]) {
+                console.log(`탭 전환시 최신 데이터로 렌더링: ${tabName}`);
                 window.components[tabName].render();
             }
             window.isUserTabSwitch = false;
@@ -129,46 +145,51 @@ function switchTab(tabName) {
 }
 
 /**
- * 데이터 초기화 (⭐ 즉시 로딩 최적화)
+ * 데이터 초기화 (⭐ 서버 데이터 우선 로딩)
  */
 async function initializeData() {
     updateConnectionStatus('loading');
     
-    // ⭐ 로컬 데이터 먼저 로드하고 즉시 UI 시작
-    const localData = window.gapi.loadFromLocalStorage();
-    let hasLocalData = false;
-    
-    if (localData && localData.family && localData.family.length > 0) {
-        window.stateManager.updateMultipleStates({
-            family: localData.family,
-            readRecords: localData.readRecords,
-            badges: localData.badges,
-            meditations: localData.meditations,
-            prayers: localData.prayers,
-            messages: localData.messages,
-            allowance: localData.allowance
-        });
+    // ⭐ 서버 연결을 최우선으로 시도
+    try {
+        console.log('🚀 서버 데이터 우선 로딩 시작...');
+        await window.gapi.testConnection();
+        updateConnectionStatus('connected');
+        console.log('✅ 서버 연결 성공!');
         
-        if (localData.family.length > 0) {
-            currentUserForModal = localData.family[0].id;
-        }
+        // ⭐ 서버에서 최신 데이터 즉시 로드
+        console.log('📥 서버에서 최신 데이터 로드 중...');
+        await loadAllDataAndRender();
+        console.log('✅ 서버 데이터 로드 완료!');
         
-        // ⭐ 로컬 데이터의 타임스탬프 확인 및 설정
-        if (localData.timestamp) {
-            console.log('✅ 로컬 타임스탬프 발견:', localData.timestamp);
-            // 타임스탬프가 이미 localStorage에 있는지 확인
-            if (!localStorage.getItem('bible_data_timestamp')) {
-                localStorage.setItem('bible_data_timestamp', localData.timestamp);
-                console.log('✅ 로컬 타임스탬프 localStorage에 설정');
+    } catch (error) {
+        console.log('❌ 서버 연결 실패 - 로컬 데이터로 fallback');
+        updateConnectionStatus('disconnected');
+        
+        // ⭐ 서버 연결 실패시에만 로컬 데이터 사용
+        const localData = window.gapi.loadFromLocalStorage();
+        
+        if (localData && localData.family && localData.family.length > 0) {
+            window.stateManager.updateMultipleStates({
+                family: localData.family,
+                readRecords: localData.readRecords,
+                badges: localData.badges,
+                meditations: localData.meditations,
+                prayers: localData.prayers,
+                messages: localData.messages,
+                allowance: localData.allowance
+            });
+            
+            if (localData.family.length > 0) {
+                currentUserForModal = localData.family[0].id;
             }
+            
+            console.log('✅ 로컬 데이터로 UI 시작 (오프라인 모드)');
+        } else {
+            console.warn('❌ 로컬/서버 데이터 모두 없음 - 인터넷 연결 확인 필요');
+            alert('데이터를 불러올 수 없습니다. 인터넷 연결을 확인해주세요.');
         }
-        
-        hasLocalData = true;
-        console.log('✅ 로컬 데이터 로드 완료 - 즉시 UI 시작');
     }
-    
-    // ⭐ 서버 연결을 백그라운드에서 시도 (기다리지 않음)
-    connectToServerInBackground(hasLocalData);
 }
 
 /**
@@ -201,31 +222,7 @@ async function loadAllDataAndRender() {
     }
 }
 
-/**
- * ⭐ 백그라운드 서버 연결 (UI 블로킹 없이)
- */
-async function connectToServerInBackground(hasLocalData) {
-    try {
-        console.log('🔄 백그라운드에서 서버 연결 시도 중...');
-        await window.gapi.testConnection();
-        updateConnectionStatus('connected');
-        console.log('✅ 서버 연결 성공!');
-        
-        // ⭐ 항상 서버 데이터를 로드해서 최신 상태 유지
-        console.log('📥 서버에서 최신 데이터 로드 중...');
-        await loadAllDataAndRender();
-        console.log('✅ 서버 데이터로 업데이트 완료');
-        
-    } catch (error) {
-        updateConnectionStatus('disconnected');
-        console.log('🔌 오프라인 모드로 시작 (로컬 데이터 사용)');
-        
-        // ⭐ 로컬 데이터도 없으면 알림
-        if (!hasLocalData) {
-            console.warn('❌ 로컬/서버 데이터 모두 없음 - 인터넷 연결 확인 필요');
-        }
-    }
-}
+// ⭐ connectToServerInBackground 함수 제거됨 - 더 이상 필요하지 않음
 /**
  * 연결 상태 표시 업데이트 (⭐ 자동 동기화 UI 제거, 관리자 버튼만 유지)
  */
@@ -682,14 +679,16 @@ function createAdminModalHTML() {
             <div class="space-y-4">
                 <!-- 실시간 동기화 제어 -->
                 <div class="p-4 border rounded-lg">
-                    <h3 class="font-bold mb-2">📡 실시간 동기화</h3>
-                    <div class="flex items-center justify-between">
-                        <span class="text-sm">다중 기기 실시간 동기화 (2초 간격)</span>
+                    <h3 class="font-bold mb-2">📡 스마트 실시간 동기화</h3>
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-sm">다중 기기 스마트 동기화 (적응형 간격)</span>
                         <button id="admin-realtime-toggle" class="px-3 py-1 bg-purple-500 text-white rounded text-sm hover:bg-purple-600" onclick="window.toggleRealtimeSync()">
                             ${window.gapi?.realtimeSyncEnabled ? '비활성화' : '활성화'}
-                        </button>>
-                            ${window.gapi?.realtimeSyncEnabled ? '비활성화' : '활성화'}
                         </button>
+                    </div>
+                    <div class="text-xs text-gray-600">
+                        현재 간격: ${window.gapi?.currentSyncInterval ? Math.round(window.gapi.currentSyncInterval/1000) + '초' : '1초'} 
+                        (변화 없음: ${window.gapi?.consecutiveNoChanges || 0}회)
                     </div>
                 </div>
                 
@@ -714,7 +713,8 @@ function createAdminModalHTML() {
                     <h3 class="font-bold mb-2">📊 시스템 상태</h3>
                     <div class="text-sm space-y-1">
                         <div>연결 상태: <span class="font-semibold">${window.gapi?.isConnected ? '🟢 온라인' : '🔴 오프라인'}</span></div>
-                        <div>실시간 동기화: <span class="font-semibold">${window.gapi?.realtimeSyncEnabled ? '🟢 활성화 (2초)' : '🔴 비활성화'}</span></div>
+                        <div>스마트 동기화: <span class="font-semibold">${window.gapi?.realtimeSyncEnabled ? '🟢 활성화' : '🔴 비활성화'}</span></div>
+                        <div>현재 간격: <span class="font-semibold">${window.gapi?.currentSyncInterval ? Math.round(window.gapi.currentSyncInterval/1000) + '초' : '1초'}</span></div>
                         <div>현재 탭: <span class="font-semibold">${window.currentTab || 'unknown'}</span></div>
                     </div>
                 </div>
@@ -867,7 +867,7 @@ window.checkSyncStatus = function() {
         console.log('=== 동기화 상태 ===');
         console.log('연결 상태:', window.gapi.isConnected);
         console.log('실시간 동기화:', window.gapi.realtimeSyncEnabled);
-        console.log('실시간 동기화 간격:', window.gapi.realtimeSyncInterval ? '2초' : '비활성화');
+        console.log('스마트 동기화 간격:', window.gapi.currentSyncInterval ? Math.round(window.gapi.currentSyncInterval/1000) + '초' : '1초');
         console.log('현재 탭:', window.currentTab);
         console.log('마지막 서버 수정:', window.gapi.lastServerModified);
         console.log('클라이언트 마지막 동기화:', localStorage.getItem('bible_data_timestamp'));

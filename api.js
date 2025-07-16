@@ -24,10 +24,13 @@ class EnhancedGoogleSheetsAPI {
         this.syncInProgress = false;
         this.lastSyncTime = null;
         
-        // ⭐ 실시간 동기화 관련 속성만 유지
+        // ⭐ 스마트 폴링 관련 속성
         this.realtimeSyncInterval = null;
         this.realtimeSyncEnabled = true;
         this.lastServerModified = null;
+        this.currentSyncInterval = 1000; // 현재 동기화 간격 (ms)
+        this.consecutiveNoChanges = 0; // 연속 변화 없음 횟수
+        this.maxSyncInterval = 30000; // 최대 동기화 간격 (30초)
         
         // ⭐ 자동 동기화 제거, 실시간 동기화만 시작
         this.loadPendingChangesFromLocal();
@@ -37,7 +40,7 @@ class EnhancedGoogleSheetsAPI {
     // ⭐ === 실시간 다중 기기 동기화 시스템 ===
     
     /**
-     * 실시간 동기화 시작 (⭐ 디버깅 강화)
+     * 실시간 동기화 시작 (⭐ 스마트 폴링 시스템)
      */
     startRealtimeSync() {
         // 기존 간격이 있다면 먼저 정리
@@ -45,44 +48,113 @@ class EnhancedGoogleSheetsAPI {
             clearInterval(this.realtimeSyncInterval);
         }
         
-        this.realtimeSyncInterval = setInterval(() => {
-            if (this.isConnected && this.realtimeSyncEnabled && !this.syncInProgress) {
-                console.log('⏰ 실시간 동기화 체크 시작 (2초 간격)');
-                this.checkForServerUpdates();
-            } else {
-                console.log('⏸️ 실시간 동기화 스킵:', {
-                    connected: this.isConnected,
-                    enabled: this.realtimeSyncEnabled,
-                    syncing: this.syncInProgress
-                });
-            }
-        }, 2000); // ⭐ 2초로 더 단축하여 더 빠른 실시간 동기화
+        // ⭐ 스마트 폴링: 동적 간격 조정
+        const startSmartPolling = () => {
+            this.realtimeSyncInterval = setInterval(() => {
+                if (this.isConnected && this.realtimeSyncEnabled && !this.syncInProgress) {
+                    this.checkForServerUpdates();
+                }
+            }, this.currentSyncInterval);
+        };
         
-        console.log('📡 실시간 동기화 시작됨 (2초 간격)');
+        // 초기 시작
+        startSmartPolling();
         
-        // ⭐ 페이지 포커스 시에도 즉시 동기화 실행
+        console.log(`📡 스마트 실시간 동기화 시작 (${this.currentSyncInterval}ms 간격)`);
+        
+        // ⭐ 페이지 포커스 시에도 즉시 동기화 + 간격 리셋
         window.addEventListener('focus', () => {
-            console.log('🔍 페이지 포커스 감지 - 즉시 동기화 실행');
+            console.log('🔍 페이지 포커스 감지 - 즉시 동기화 + 간격 리셋');
+            this.resetSyncInterval();
             if (this.isConnected && this.realtimeSyncEnabled && !this.syncInProgress) {
                 this.checkForServerUpdates();
             }
         });
         
-        // ⭐ 페이지 가시성 변경 시에도 동기화 실행
+        // ⭐ 페이지 가시성 변경 시에도 동기화 + 간격 리셋
         document.addEventListener('visibilitychange', () => {
             if (!document.hidden) {
-                console.log('👁️ 페이지 가시성 변경 감지 - 즉시 동기화 실행');
+                console.log('👁️ 페이지 가시성 변경 감지 - 간격 리셋');
+                this.resetSyncInterval();
                 if (this.isConnected && this.realtimeSyncEnabled && !this.syncInProgress) {
-                    setTimeout(() => this.checkForServerUpdates(), 500); // 0.5초 지연
+                    setTimeout(() => this.checkForServerUpdates(), 300);
                 }
             }
         });
         
+        // ⭐ 탭 전환 감지 추가
+        document.addEventListener('DOMContentLoaded', () => {
+            const observer = new MutationObserver(() => {
+                if (this.isConnected && this.realtimeSyncEnabled && !this.syncInProgress) {
+                    console.log('📱 DOM 변경 감지 - 간격 리셋');
+                    this.resetSyncInterval();
+                    setTimeout(() => this.checkForServerUpdates(), 200);
+                }
+            });
+            
+            observer.observe(document.body, {
+                attributes: true,
+                attributeFilter: ['class']
+            });
+        });
+        
         // 즉시 한 번 실행
         if (this.isConnected) {
-            console.log('🚀 실시간 동기화 즉시 실행');
+            console.log('🚀 스마트 동기화 즉시 실행');
             this.checkForServerUpdates();
         }
+    }
+    
+    /**
+     * ⭐ 스마트 폴링: 동기화 간격 조정
+     */
+    adjustSyncInterval(hasUpdates) {
+        if (hasUpdates) {
+            // 변화 감지시: 간격 리셋
+            this.resetSyncInterval();
+            console.log('📈 변화 감지 - 동기화 간격 1초로 리셋');
+        } else {
+            // 변화 없음: 점진적 간격 증가
+            this.consecutiveNoChanges++;
+            
+            let newInterval = this.currentSyncInterval;
+            
+            if (this.consecutiveNoChanges >= 5) { // 5회 연속 변화 없음
+                newInterval = Math.min(this.currentSyncInterval * 1.5, this.maxSyncInterval);
+            }
+            
+            if (newInterval !== this.currentSyncInterval) {
+                this.currentSyncInterval = newInterval;
+                console.log(`📉 ${this.consecutiveNoChanges}회 변화 없음 - 동기화 간격 ${newInterval}ms로 증가`);
+                
+                // 새로운 간격으로 타이머 재시작
+                this.restartSyncWithNewInterval();
+            }
+        }
+    }
+    
+    /**
+     * ⭐ 동기화 간격 리셋 (빠른 간격으로)
+     */
+    resetSyncInterval() {
+        this.currentSyncInterval = 1000; // 1초로 리셋
+        this.consecutiveNoChanges = 0;
+        this.restartSyncWithNewInterval();
+    }
+    
+    /**
+     * ⭐ 새로운 간격으로 타이머 재시작
+     */
+    restartSyncWithNewInterval() {
+        if (this.realtimeSyncInterval) {
+            clearInterval(this.realtimeSyncInterval);
+        }
+        
+        this.realtimeSyncInterval = setInterval(() => {
+            if (this.isConnected && this.realtimeSyncEnabled && !this.syncInProgress) {
+                this.checkForServerUpdates();
+            }
+        }, this.currentSyncInterval);
     }
     
     /**
@@ -123,86 +195,49 @@ class EnhancedGoogleSheetsAPI {
     }
     
     /**
-     * 서버 업데이트 확인 (⭐ 디버깅 강화)
+     * 서버 업데이트 확인 (⭐ 스마트 폴링 지원)
      */
     async checkForServerUpdates() {
         try {
-            console.log('🔍 실시간 동기화 - 서버 업데이트 확인 중...');
-            
             const clientLastSync = localStorage.getItem('bible_data_timestamp');
-            const clientTime = clientLastSync ? new Date(clientLastSync).getTime() : 0;
-            console.log('클라이언트 마지막 동기화 시간:', clientLastSync);
-            console.log('클라이언트 타임스탬프 (ms):', clientTime);
             
             const result = await this._request('checkUpdates', {
                 lastSync: clientLastSync || new Date(0).toISOString()
             });
             
-            console.log('서버 응답:', result);
-            console.log('서버 업데이트 확인 결과:', {
-                hasUpdates: result.data.hasUpdates,
-                serverLastModified: result.data.lastModified,
-                clientLastSync: clientLastSync
-            });
+            const hasUpdates = result.data.hasUpdates;
             
-            if (result.data.hasUpdates) {
-                console.log('🔄 서버에서 새로운 변경사항 감지됨!');
-                console.log('서버 마지막 수정:', result.data.lastModified);
-                console.log('클라이언트 마지막 동기화:', clientLastSync);
-                
+            // ⭐ 스마트 폴링: 간격 조정
+            this.adjustSyncInterval(hasUpdates);
+            
+            if (hasUpdates) {
+                console.log('🔄 서버 변경사항 감지 - 실시간 반영');
                 await this.applyServerUpdates(result.data);
-            } else {
-                console.log('✅ 서버에 새로운 변경사항 없음');
             }
             
         } catch (error) {
-            console.error('❌ 서버 업데이트 확인 실패:', error);
-            
-            // ⭐ 연결 실패 시 재연결 시도
+            // ⭐ 에러도 조용히 처리
             if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
-                console.log('🔌 네트워크 오류 감지 - 5초 후 재연결 시도');
                 this.isConnected = false;
                 setTimeout(() => {
-                    console.log('🔄 재연결 시도 중...');
-                    this.testConnection().then(() => {
-                        console.log('✅ 재연결 성공');
-                    }).catch(() => {
-                        console.log('❌ 재연결 실패 - 계속 시도 중...');
-                    });
+                    this.testConnection().catch(() => {});
                 }, 5000);
             }
         }
     }
     
     /**
-     * 서버 업데이트 적용 (⭐ 디버깅 강화 + 현재 탭 즉시 반영)
+     * 서버 업데이트 적용 (⭐ 현재 탭만 선택적 실시간 반영)
      */
     async applyServerUpdates(updateData) {
         try {
-            console.log('📥 실시간 서버 업데이트 적용 중...');
-            console.log('업데이트 데이터:', updateData);
-            
-            // ⭐ 현재 활성 탭 저장
-            const currentTab = window.currentTab || 'reading';
-            console.log('현재 활성 탭:', currentTab);
-            
-            // ⭐ 백그라운드 업데이트 모드 활성화
-            window.isBackgroundUpdate = true;
-            
-            // ⭐ 현재 탭 컨테이너에 애니메이션 비활성화 클래스 추가
-            const currentTabContent = document.getElementById(`content-${currentTab}`);
-            if (currentTabContent) {
-                currentTabContent.classList.add('background-update');
-                console.log('현재 탭 애니메이션 비활성화:', currentTab);
-            }
-            
-            // ⭐ 모든 컴포넌트 데이터 업데이트 (조용히)
-            window.stateManager.silentUpdate = true;
-            console.log('상태 관리자 조용한 업데이트 모드 활성화');
-            
-            // 상태 관리자에 서버 데이터 업데이트
             const stateManager = window.stateManager;
-            console.log('서버 데이터로 상태 업데이트 중...');
+            const currentTab = window.currentTab || 'reading';
+            
+            // ⭐ 모든 옵저버 알림을 차단 (깜빡거림 방지)
+            stateManager.disableObservers();
+            
+            // ⭐ 데이터 업데이트 (옵저버 알림 없음)
             stateManager.updateState('family', updateData.data.family_members || []);
             stateManager.updateState('readRecords', updateData.data.reading_records || {});
             stateManager.updateState('badges', updateData.data.badges || {});
@@ -210,73 +245,57 @@ class EnhancedGoogleSheetsAPI {
             stateManager.updateState('prayers', updateData.data.prayers || []);
             stateManager.updateState('messages', updateData.data.messages || []);
             stateManager.updateState('allowance', updateData.data.allowance_ledger || []);
-            console.log('모든 상태 업데이트 완료');
             
-            // ⭐ 조용한 업데이트 모드 비활성화
-            window.stateManager.silentUpdate = false;
-            console.log('조용한 업데이트 모드 비활성화');
-            
-            // ⭐ 현재 탭만 즉시 반영 (다른 탭들은 전환 시 자동 업데이트)
-            if (window.components && window.components[currentTab]) {
-                console.log(`현재 탭 컴포넌트 업데이트: ${currentTab}`);
-                if (window.components[currentTab].updateDataOnly) {
-                    console.log('updateDataOnly 메서드 사용');
-                    window.components[currentTab].updateDataOnly();
-                } else {
-                    console.log(`${currentTab} 컴포넌트에 updateDataOnly 메서드 없음 - render() 사용`);
-                    window.components[currentTab].render();
-                }
-            } else {
-                console.warn('현재 탭 컴포넌트를 찾을 수 없음:', currentTab);
-            }
-            
-            // ⭐ 애니메이션 비활성화 클래스 제거 (0.1초 후)
-            setTimeout(() => {
-                if (currentTabContent) {
-                    currentTabContent.classList.remove('background-update');
-                    console.log('현재 탭 애니메이션 재활성화:', currentTab);
-                }
-                window.isBackgroundUpdate = false;
-            }, 100);
-            
-            // 로컬 스토리지 업데이트
-            console.log('로컬 스토리지 업데이트 중...');
-            this.saveToLocalStorage();
-            
-            // 타임스탬프 업데이트
-            console.log('클라이언트 타임스탬프 업데이트:', updateData.lastModified);
+            // ⭐ 로컬 스토리지 업데이트
+            this.saveToLocalStorageSilently();
             localStorage.setItem('bible_data_timestamp', updateData.lastModified);
             
-            console.log('✅ 실시간 서버 업데이트 완료! (현재 탭:', currentTab, ')');
+            // ⭐ 옵저버 다시 활성화
+            stateManager.enableObservers();
             
-            // UI에 변경사항 알림 (매우 조용하게)
-            this.showUpdateNotification();
+            // ⭐ 현재 활성 탭만 조용히 업데이트 (애니메이션 없이)
+            if (window.components && window.components[currentTab]) {
+                const tabContent = document.getElementById(`content-${currentTab}`);
+                if (tabContent && !tabContent.classList.contains('hidden')) {
+                    // 부드러운 업데이트를 위한 클래스 추가
+                    tabContent.classList.add('smooth-update');
+                    
+                    console.log(`📱 현재 탭 실시간 반영: ${currentTab}`);
+                    window.components[currentTab].render();
+                    
+                    // 부드러운 업데이트 클래스 제거
+                    setTimeout(() => {
+                        tabContent.classList.remove('smooth-update');
+                    }, 100);
+                }
+            }
             
         } catch (error) {
-            console.error('서버 업데이트 적용 실패:', error);
-            // 에러 발생 시에도 플래그 정리
-            window.stateManager.silentUpdate = false;
-            window.isBackgroundUpdate = false;
+            console.error('백그라운드 데이터 동기화 실패:', error);
+            // 에러 시에도 옵저버 다시 활성화
+            window.stateManager.enableObservers();
         }
     }
     
     /**
-     * 업데이트 알림 표시 (⭐ 매우 조용하고 부드럽게)
+     * ⭐ 조용한 로컬 스토리지 저장 (UI 업데이트 없이)
      */
-    showUpdateNotification() {
-        // ⭐ 콘솔에만 조용히 알림
-        console.log('🔄 다른 기기에서 변경된 내용이 백그라운드에서 동기화되었습니다.');
+    saveToLocalStorageSilently() {
+        const state = window.stateManager.state; // 직접 state 접근
         
-        // ⭐ 상태 표시기를 매우 짧게 파란색으로 변경 (1초)
-        const indicator = document.getElementById('status-indicator');
-        if (indicator) {
-            const originalClass = indicator.className;
-            indicator.className = 'w-3 h-3 rounded-full bg-blue-400';
-            setTimeout(() => {
-                indicator.className = originalClass;
-            }, 1000); // 1초로 단축
-        }
+        const currentTimestamp = localStorage.getItem('bible_data_timestamp') || new Date().toISOString();
+        
+        localStorage.setItem('bible_data_timestamp', currentTimestamp);
+        localStorage.setItem('bible_family', JSON.stringify(state.family));
+        localStorage.setItem('bible_readRecords', JSON.stringify(state.readRecords));
+        localStorage.setItem('bible_badges', JSON.stringify(state.badges));
+        localStorage.setItem('bible_meditations', JSON.stringify(state.meditations));
+        localStorage.setItem('bible_prayers', JSON.stringify(state.prayers));
+        localStorage.setItem('bible_messages', JSON.stringify(state.messages));
+        localStorage.setItem('bible_allowance', JSON.stringify(state.allowance));
     }
+    
+
     
     /**
      * 데이터 변경 시 서버에 알림 (기존 저장/삭제 후 호출)
@@ -605,7 +624,7 @@ class EnhancedGoogleSheetsAPI {
         
         // ⭐ 연결 성공 시 상태 설정 및 실시간 동기화 시작
         this.isConnected = true;
-        console.log('🌐 서버 연결 성공! 실시간 동기화 활성화');
+        console.log('🌐 서버 연결 성공! 실시간 동기화 활성화 (1초 간격)');
         
         // ⭐ 실시간 동기화가 아직 시작되지 않았다면 시작
         if (!this.realtimeSyncInterval) {
@@ -651,10 +670,13 @@ class EnhancedGoogleSheetsAPI {
     }
     
     /**
-     * 데이터 저장 (즉시 저장)
+     * 데이터 저장 (⭐ 사용자 액션시 동기화 간격 리셋)
      */
     async saveData(params) {
         try {
+            // ⭐ 사용자 액션시 스마트 폴링 간격 리셋
+            this.resetSyncInterval();
+            
             // ⭐ 즉시 서버에 저장
             const result = await this._request('save', params);
             console.log('즉시 저장 완료:', params.type, result);
@@ -689,10 +711,13 @@ class EnhancedGoogleSheetsAPI {
     }
     
     /**
-     * 데이터 삭제 (⭐ 즉시 실행 방식으로 변경)
+     * 데이터 삭제 (⭐ 사용자 액션시 동기화 간격 리셋)
      */
     async deleteData(params) {
         try {
+            // ⭐ 사용자 액션시 스마트 폴링 간격 리셋
+            this.resetSyncInterval();
+            
             // ⭐ 즉시 서버에 삭제 요청하고 결과를 반환
             const result = await this._request('delete', params);
             console.log('즉시 삭제 완료:', params.type, result);
@@ -784,16 +809,28 @@ class StateManager {
         };
         this.observers = new Map();
         this.silentUpdate = false; // ⭐ 조용한 업데이트 모드
+        this.observersDisabled = false; // ⭐ 옵저버 완전 비활성화 플래그
     }
     
     /**
-     * 상태 업데이트 및 관찰자들에게 알림 (⭐ 조용한 모드 지원)
+     * ⭐ 옵저버 시스템 완전 비활성화/활성화
+     */
+    disableObservers() {
+        this.observersDisabled = true;
+    }
+    
+    enableObservers() {
+        this.observersDisabled = false;
+    }
+    
+    /**
+     * 상태 업데이트 및 관찰자들에게 알림 (⭐ 옵저버 비활성화 지원)
      */
     updateState(key, value) {
         this.state[key] = value;
         
-        // ⭐ 조용한 업데이트 모드가 아닐 때만 관찰자들에게 알림
-        if (!this.silentUpdate) {
+        // ⭐ 옵저버가 비활성화되었거나 조용한 업데이트 모드일 때는 알림 안함
+        if (!this.observersDisabled && !this.silentUpdate) {
             this.notifyObservers(key, value);
         }
     }

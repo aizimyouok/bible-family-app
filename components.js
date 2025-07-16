@@ -63,7 +63,7 @@ class BaseComponent {
     }
     
     /**
-     * 렌더링 메서드 (하위 클래스에서 구현)
+     * 렌더링 메서드 (⭐ 옵저버 시스템에 의해 호출)
      */
     render() {
         // 탭이 활성화 상태일 때만 렌더링하도록 하여 불필요한 렌더링 방지
@@ -78,14 +78,11 @@ class BaseComponent {
     }
     
     /**
-     * ⭐ 데이터만 업데이트 (백그라운드 업데이트용 - 애니메이션 없이)
+     * ⭐ 데이터만 업데이트 (이제 옵저버 차단으로 불필요)
      */
     updateDataOnly() {
-        // 기본적으로는 render()와 동일하지만, 하위 클래스에서 더 세밀하게 구현 가능
-        if (this.container && !this.container.classList.contains('hidden')) {
-            console.log(`${this.constructor.name}: 데이터 전용 업데이트`);
-            this._doRender();
-        }
+        // ⭐ 이제 백그라운드 동기화시 옵저버가 차단되므로 render()와 동일
+        this.render();
     }
 }
 /**
