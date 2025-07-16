@@ -15,6 +15,11 @@
 </head>
 <body class="theme-jerusalem">
 
+    <audio id="bgm-player" loop autoplay muted playsinline>
+        <source src="https://github.com/aizimyouok/my-bgm/raw/refs/heads/main/%EB%B9%84%20%EC%A4%80%EB%B9%84%ED%95%98%EC%8B%9C%EB%8B%88%20Psalm%20147%20_%20%EC%98%88%EB%9E%8C%EC%9B%8C%EC%8B%AD%204.mp3" type="audio/mpeg">
+        브라우저가 오디오를 지원하지 않습니다.
+    </audio>
+
     <div id="loading-overlay" class="fixed inset-0 bg-white z-50 flex flex-col items-center justify-center">
         <div class="loader-cross mb-6"></div>
 
@@ -48,6 +53,10 @@
             <span style="animation-delay: 2.5s;">하</span>
             <span style="animation-delay: 2.6s;">준</span>
         </div>
+
+        <button id="enter-app-btn" class="enter-btn mt-8" style="opacity: 0;">
+            사랑해요💕(클릭)
+        </button>
     </div>
 
     <div id="app" class="relative p-2 sm:p-4 md:p-8 max-w-6xl mx-auto opacity-0 transition-opacity duration-500">

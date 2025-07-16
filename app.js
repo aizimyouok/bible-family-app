@@ -150,21 +150,37 @@ function switchTab(tabName) {
 async function initializeData() {
     const loadingOverlay = document.getElementById('loading-overlay');
     const appContainer = document.getElementById('app');
+    const enterBtn = document.getElementById('enter-app-btn');
+    const bgmPlayer = document.getElementById('bgm-player');
+
+    // "사랑해요💕(클릭)" 버튼 클릭 이벤트 설정
+    if (enterBtn && bgmPlayer && loadingOverlay && appContainer) {
+        enterBtn.addEventListener('click', () => {
+            // 1. 음악 재생
+            bgmPlayer.muted = false;
+            bgmPlayer.play();
+
+            // 2. 로딩 화면 숨기기
+            loadingOverlay.style.opacity = '0';
+            setTimeout(() => {
+                loadingOverlay.style.display = 'none';
+            }, 500); // 0.5초 후 완전히 제거
+
+            // 3. 메인 앱 화면 보이기
+            appContainer.style.opacity = '1';
+        });
+    }
 
     try {
-        // 서버에서 모든 데이터를 로드하고 렌더링
+        // 데이터 로딩은 백그라운드에서 계속 진행
         await loadAllDataAndRender();
         updateConnectionStatus('connected');
         console.log('✅ 서버 데이터 로드 및 렌더링 완료!');
-
-        // 실시간 동기화 시작
         window.gapi.startRealtimeSync();
 
     } catch (error) {
-        console.log('❌ 서버 연결 또는 데이터 로드 실패 - 로컬 데이터로 fallback', error);
+        console.log('❌ 서버 연결 또는 데이터 로드 실패', error);
         updateConnectionStatus('disconnected');
-        
-        // 로컬 데이터로 시도
         const localData = window.gapi.loadFromLocalStorage();
         if (localData && localData.family && localData.family.length > 0) {
             window.stateManager.updateMultipleStates({
@@ -176,28 +192,16 @@ async function initializeData() {
                 messages: localData.messages,
                 allowance: localData.allowance
             });
-            
             if (localData.family.length > 0) {
                 currentUserForModal = localData.family[0].id;
             }
-            console.log('✅ 로컬 데이터로 UI 시작 (오프라인 모드)');
+            console.log('✅ 로컬 데이터로 UI 시작');
         } else {
-            console.warn('❌ 로컬/서버 데이터 모두 없음 - 인터넷 연결 확인 필요');
-            alert('데이터를 불러올 수 없습니다. 인터넷 연결을 확인해주세요.');
-        }
-    } finally {
-        // [추가] 성공하든 실패하든, 로딩 화면을 서서히 사라지게 함
-        if (loadingOverlay) {
-            loadingOverlay.style.opacity = '0';
-            setTimeout(() => {
-                loadingOverlay.style.display = 'none';
-            }, 500); // 0.5초 후 완전히 제거
-        }
-        // [추가] 앱 컨테이너를 서서히 나타나게 함
-        if (appContainer) {
-            appContainer.style.opacity = '1';
+            console.warn('❌ 데이터 없음');
+            alert('데이터를 불러올 수 없습니다.');
         }
     }
+    // finally 블록은 더 이상 필요 없으므로 제거
 }
 
 /**

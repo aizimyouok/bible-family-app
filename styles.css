@@ -357,3 +357,28 @@ details > summary::-webkit-details-marker {
         transform: translateY(0);
     }
 }
+
+/* === 사랑해요💕(클릭) 버튼 === */
+.enter-btn {
+    font-family: 'Gaegu', cursive;
+    padding: 10px 24px;
+    font-size: 20px;
+    color: white;
+    background-color: #FDB813;
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    opacity: 0; /* 처음엔 투명 */
+    animation: fade-in-btn 1s 3s forwards; /* 3초 기다렸다가 1초 동안 나타남 */
+}
+
+.enter-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 10px rgba(0,0,0,0.15);
+}
+
+@keyframes fade-in-btn {
+    to { opacity: 1; }
+}
