@@ -9,9 +9,157 @@ let currentUserForModal = null;
 let currentBook = null;
 let currentProgressUserId = null;
 
+/**
+ * 🔄 로딩 페이지 스킵하고 앱 시작
+ */
+function skipIntroAndStartApp() {
+    const loadingOverlay = document.getElementById('loading-overlay');
+    const appContainer = document.getElementById('app');
+    
+    if (loadingOverlay && appContainer) {
+        // 로딩 화면 즉시 숨기기
+        loadingOverlay.style.display = 'none';
+        
+        // 앱 화면 즉시 표시
+        appContainer.style.opacity = '1';
+        
+        console.log('✅ 로딩 페이지 스킵 완료');
+    }
+}
+
+/**
+ * 🎲 3D 큐브 인트로 효과
+ */
+function initCubeIntro() {
+    console.log('🎲 3D 큐브 인트로 시작');
+    
+    const cube = document.getElementById('family-cube');
+    if (!cube) {
+        console.error('❌ 큐브 요소를 찾을 수 없습니다');
+        return;
+    }
+    
+    let isDragging = false;
+    let startX = 0;
+    let startY = 0;
+    let currentX = 0;
+    let currentY = 0;
+    let rotationX = -15;
+    let rotationY = 0;
+    
+    // 마우스/터치 드래그 시작
+    function startDrag(e) {
+        isDragging = true;
+        cube.style.animation = 'none'; // 자동 회전 중지
+        
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        
+        startX = clientX;
+        startY = clientY;
+        
+        e.preventDefault();
+    }
+    
+    // 마우스/터치 드래그 중
+    function drag(e) {
+        if (!isDragging) return;
+        
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        
+        currentX = clientX - startX;
+        currentY = clientY - startY;
+        
+        // 회전 각도 계산 (감도 조절)
+        rotationY += currentX * 0.5;
+        rotationX -= currentY * 0.5;
+        
+        // 회전 범위 제한
+        rotationX = Math.max(-60, Math.min(60, rotationX));
+        
+        // 큐브 회전 적용
+        cube.style.transform = `rotateX(${rotationX}deg) rotateY(${rotationY}deg)`;
+        
+        startX = clientX;
+        startY = clientY;
+        
+        e.preventDefault();
+    }
+    
+    // 마우스/터치 드래그 종료
+    function endDrag() {
+        isDragging = false;
+    }
+    
+    // 이벤트 리스너 등록
+    // 마우스 이벤트
+    cube.addEventListener('mousedown', startDrag);
+    document.addEventListener('mousemove', drag);
+    document.addEventListener('mouseup', endDrag);
+    
+    // 터치 이벤트 (모바일)
+    cube.addEventListener('touchstart', startDrag, { passive: false });
+    document.addEventListener('touchmove', drag, { passive: false });
+    document.addEventListener('touchend', endDrag);
+    
+    console.log('✅ 3D 큐브 인터랙션 설정 완료');
+}
+
+/**
+ * 타이핑 효과 함수 (현재 사용하지 않음 - 3D 큐브로 변경됨)
+ */
+/*
+function typeWriterEffect(element, text, speed = 100) {
+    element.textContent = '';
+    element.style.borderRight = '2px solid rgba(255,255,255,0.8)';
+    
+    let i = 0;
+    
+    function type() {
+        if (i < text.length) {
+            element.textContent += text.charAt(i);
+            i++;
+            setTimeout(type, speed);
+        } else {
+            // 타이핑 완료 후 커서 깜빡임 효과
+            setTimeout(() => {
+                element.style.borderRight = 'none';
+            }, 1000);
+        }
+    }
+    
+    type();
+}
+*/
+
 // === 애플리케이션 초기화 ===
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('Bible Time for Family - 애플리케이션 시작');
+    
+    // 🔄 새로고침 감지: BGM 상태가 있고 최근에 활동이 있었던 경우만 스킵
+    const savedBGMState = localStorage.getItem('bgmState');
+    const lastActivityTime = localStorage.getItem('lastActivityTime');
+    const currentTime = Date.now();
+    
+    // 마지막 활동이 30분 이내인 경우만 스킵 (새로고침으로 간주)
+    const isRecentActivity = lastActivityTime && (currentTime - parseInt(lastActivityTime)) < 30 * 60 * 1000;
+    const shouldSkipIntro = savedBGMState && JSON.parse(savedBGMState).hasStarted && isRecentActivity;
+    
+    console.log('🔍 로딩 페이지 스킵 조건 확인:', {
+        hasBGMState: !!savedBGMState,
+        isRecentActivity,
+        shouldSkip: shouldSkipIntro
+    });
+    
+    if (shouldSkipIntro) {
+        console.log('🔄 새로고침 감지: 로딩 페이지 스킵');
+        skipIntroAndStartApp();
+    } else {
+        console.log('🎲 첫 방문 또는 오래된 세션: 3D 큐브 인트로 표시');
+        // 🎲 3D 큐브 인트로 효과 초기화
+        initCubeIntro();
+    }
     
     // ⭐ 전역 탭 상태 초기화
     window.currentTab = 'reading';
@@ -48,30 +196,350 @@ function setupGlobalEventListeners() {
             window.openAdminModal();
         });
     }
-    // [추가] 음악 재생/일시정지 버튼 로직
+    // BGM 관련 전역 변수와 함수 정의
     const bgmPlayer = document.getElementById('bgm-player');
     const playPauseBtn = document.getElementById('play-pause-btn');
+    const nextSongBtn = document.getElementById('next-song-btn');
 
+    // 랜덤 재생을 위한 음악 목록
+    const bgmList = [
+        'https://github.com/aizimyouok/my-bgm/raw/refs/heads/main/%EC%82%B4%EC%95%84%EA%B3%84%EC%8B%A0%20%EC%A3%BC%20(Live)%E3%85%A3%EC%98%88%EC%88%98%EC%A0%84%EB%8F%84%EB%8B%A8%20%ED%99%94%EC%9A%94%EB%AA%A8%EC%9E%84.mp3',
+        'https://github.com/aizimyouok/my-bgm/raw/refs/heads/main/%EB%B9%84%20%EC%A4%80%EB%B9%84%ED%95%98%EC%8B%9C%EB%8B%88%20Psalm%20147%20_%20%EC%98%88%EB%9E%8C%EC%9B%8C%EC%8B%AD%204.mp3',
+        'https://github.com/aizimyouok/my-bgm/raw/refs/heads/main/In%20the%20Garden(I%20come%20to%20the%20garden%20alone)%20-%20Yeram%20Worship.mp3',
+        'https://github.com/aizimyouok/my-bgm/raw/refs/heads/main/Great%20is%20the%20Lord%20_%20Because%20He%20lives%20_%20Yeram%20Worship.mp3',
+        'https://github.com/aizimyouok/my-bgm/raw/refs/heads/main/%EC%A3%BC%EB%8B%98%EC%97%AC%20%EC%9D%B4%20%EC%86%90%EC%9D%84%20-%20%EB%A7%88%EC%BB%A4%EC%8A%A4%EC%9B%8C%EC%8B%AD%20_%20%EC%86%8C%EC%A7%84%EC%98%81%20%EC%9D%B8%EB%8F%84%20_%20Precious%20Lord,%20take%20my%20hand.mp3',
+        'https://github.com/aizimyouok/my-bgm/raw/refs/heads/main/05.%EB%82%B4%20%EC%A7%84%EC%A0%95%20%EC%82%AC%EB%AA%A8%ED%95%98%EB%8A%94(%EC%B0%AC%EC%86%A1%EA%B0%80)%20_%2006.%EC%A2%8B%EC%9C%BC%EC%8B%A0%20%ED%95%98%EB%82%98%EB%8B%98%20(Official%20Lyrics)%20_%20%EC%96%B4%EB%85%B8%EC%9D%B8%ED%8C%85%EC%98%88%EB%B0%B0%EC%BA%A0%ED%94%842013.mp3'
+    ];
+    let currentSongIndex = -1; // 현재 재생 중인 곡의 인덱스
+
+    // 다음 곡을 랜덤으로 재생하는 함수 (전역 함수로 정의)
+    window.playRandomSong = function() {
+        console.log('🎵 랜덤 BGM 재생 시도...');
+        console.log('🔍 현재 상태:', { currentSongIndex, totalSongs: bgmList.length });
+        
+        if (!bgmPlayer) {
+            console.error('❌ BGM 플레이어를 찾을 수 없습니다.');
+            return;
+        }
+        
+        let nextSongIndex;
+        let attempts = 0;
+        const maxAttempts = 10; // 무한루프 방지
+        
+        // 이전에 재생한 곡과 다른 곡이 선택될 때까지 반복
+        do {
+            nextSongIndex = Math.floor(Math.random() * bgmList.length);
+            attempts++;
+            console.log(`🎲 시도 ${attempts}: 선택된 인덱스 ${nextSongIndex}, 현재 인덱스 ${currentSongIndex}`);
+        } while (bgmList.length > 1 && nextSongIndex === currentSongIndex && attempts < maxAttempts);
+        
+        // 만약 같은 곡이 계속 선택된다면 강제로 다음 곡으로
+        if (nextSongIndex === currentSongIndex && bgmList.length > 1) {
+            nextSongIndex = (currentSongIndex + 1) % bgmList.length;
+            console.log(`🔄 강제 다음곡 선택: ${nextSongIndex}`);
+        }
+        
+        const previousIndex = currentSongIndex;
+        currentSongIndex = nextSongIndex;
+        bgmPlayer.src = bgmList[currentSongIndex];
+        bgmPlayer.muted = false; // 음소거 해제
+        
+        console.log(`🎵 곡 변경: ${previousIndex} → ${currentSongIndex} (${bgmList.length}곡 중)`);
+        
+        // BGM 상태를 localStorage에 저장
+        saveBGMState();
+        
+        // 재생 시도
+        bgmPlayer.play().then(() => {
+            console.log(`✅ BGM 재생 시작: 곡 ${currentSongIndex + 1}/${bgmList.length}`);
+        }).catch(error => {
+            console.error('❌ BGM 재생 실패:', error);
+        });
+    }
+
+    // BGM 상태 저장 함수
+    function saveBGMState() {
+        // 유효한 상태인지 확인
+        if (currentSongIndex < 0 || currentSongIndex >= bgmList.length) {
+            console.log('⚠️ 유효하지 않은 currentSongIndex, 저장 생략:', currentSongIndex);
+            return;
+        }
+        
+        const bgmState = {
+            currentSongIndex: currentSongIndex,
+            currentTime: bgmPlayer.currentTime || 0,
+            isPlaying: !bgmPlayer.paused,
+            hasStarted: true
+        };
+        localStorage.setItem('bgmState', JSON.stringify(bgmState));
+        
+        // 활동 시간도 함께 저장
+        localStorage.setItem('lastActivityTime', Date.now().toString());
+        
+        console.log('💾 BGM 상태 저장:', { 
+            songIndex: currentSongIndex + 1, 
+            totalSongs: bgmList.length,
+            currentTime: Math.floor(bgmState.currentTime),
+            isPlaying: bgmState.isPlaying 
+        });
+    }
+
+    // BGM 상태 복원 함수
+    function restoreBGMState() {
+        const savedState = localStorage.getItem('bgmState');
+        if (savedState) {
+            try {
+                const bgmState = JSON.parse(savedState);
+                console.log('🔄 BGM 상태 복원:', bgmState);
+                
+                if (bgmState.hasStarted && bgmState.currentSongIndex >= 0 && bgmState.currentSongIndex < bgmList.length) {
+                    currentSongIndex = bgmState.currentSongIndex;
+                    bgmPlayer.src = bgmList[currentSongIndex];
+                    bgmPlayer.muted = false;
+                    
+                    console.log(`🔄 복원된 곡: ${currentSongIndex + 1}/${bgmList.length}`);
+                    
+                    // 재생 위치 먼저 복원
+                    if (bgmState.currentTime > 0) {
+                        bgmPlayer.addEventListener('loadedmetadata', () => {
+                            bgmPlayer.currentTime = bgmState.currentTime;
+                        }, { once: true });
+                    }
+                    
+                    // 즉시 재생 시도
+                    bgmPlayer.play().then(() => {
+                        console.log('✅ BGM 복원 재생 성공 (자동재생 허용됨)');
+                    }).catch(error => {
+                        console.log('⚠️ 자동재생 차단됨, 사용자 클릭 대기 중...');
+                        
+                        // 자동재생 실패 시 BGM 컨트롤러에 시각적 표시
+                        showAutoplayBlocked();
+                        
+                        // 첫 번째 사용자 클릭 시 자동으로 재생 재개
+                        setupAutoplayResume();
+                    });
+                    
+                    return true; // 복원됨
+                } else {
+                    console.log('🔄 유효하지 않은 BGM 상태, 초기화');
+                    currentSongIndex = -1;
+                }
+            } catch (error) {
+                console.error('❌ BGM 상태 복원 실패:', error);
+                currentSongIndex = -1;
+            }
+        }
+        return false; // 복원되지 않음
+    }
+
+    // 자동재생 차단 표시 함수
+    function showAutoplayBlocked() {
+        const bgmController = document.getElementById('bgm-controller');
+        if (bgmController) {
+            bgmController.style.animation = 'pulse-notification 1s ease-in-out infinite';
+            bgmController.title = '클릭해서 음악 재생을 계속하세요';
+            
+            // 3초 후 애니메이션 제거
+            setTimeout(() => {
+                bgmController.style.animation = '';
+                bgmController.title = '';
+            }, 3000);
+        }
+    }
+
+    // 자동재생 재개 설정 함수
+    function setupAutoplayResume() {
+        let isResumed = false;
+        
+        const resumePlayback = () => {
+            if (!isResumed && bgmPlayer.src && bgmPlayer.paused) {
+                isResumed = true;
+                console.log('🎵 사용자 인터랙션으로 BGM 재개');
+                bgmPlayer.play().catch(error => {
+                    console.error('❌ BGM 재개 실패:', error);
+                });
+                
+                // 이벤트 리스너 제거
+                document.removeEventListener('click', resumePlayback);
+                document.removeEventListener('keydown', resumePlayback);
+                document.removeEventListener('touchstart', resumePlayback);
+            }
+        };
+        
+        // 어떤 사용자 인터랙션이든 감지해서 재생 재개
+        document.addEventListener('click', resumePlayback, { once: true });
+        document.addEventListener('keydown', resumePlayback, { once: true });
+        document.addEventListener('touchstart', resumePlayback, { once: true });
+    }
+
+    // BGM 재생/일시정지 버튼 이벤트 리스너
     if (bgmPlayer && playPauseBtn) {
+        // 프로그레스 바 요소들
+        const progressBar = document.getElementById('bgm-progress');
+        const currentTimeEl = document.getElementById('current-time');
+        const totalTimeEl = document.getElementById('total-time');
+
         const updateButtonIcon = () => {
             playPauseBtn.innerHTML = bgmPlayer.paused ? '▶️' : '⏸️';
         };
 
-        playPauseBtn.addEventListener('click', () => {
-            if (bgmPlayer.paused) {
-                bgmPlayer.play();
+        // 시간 포맷 함수
+        function formatTime(seconds) {
+            if (isNaN(seconds) || seconds === 0) return '0:00';
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        // 프로그레스 바 업데이트
+        function updateProgress() {
+            if (bgmPlayer.duration && !isNaN(bgmPlayer.duration)) {
+                const progress = (bgmPlayer.currentTime / bgmPlayer.duration) * 100;
+                progressBar.style.width = `${Math.max(0, Math.min(100, progress))}%`;
+                currentTimeEl.textContent = formatTime(bgmPlayer.currentTime);
+                totalTimeEl.textContent = formatTime(bgmPlayer.duration);
+                
+                // 재생 상태 저장 (자주 저장)
+                saveBGMState();
             } else {
+                // 메타데이터가 로드되지 않았을 때
+                progressBar.style.width = '0%';
+                currentTimeEl.textContent = '0:00';
+                totalTimeEl.textContent = '0:00';
+            }
+        }
+
+        playPauseBtn.addEventListener('click', () => {
+            console.log('🎵 BGM 버튼 클릭, 현재 상태:', bgmPlayer.paused ? '정지됨' : '재생중');
+            
+            if (bgmPlayer.paused) {
+                // 음악이 멈춰있고, 주소가 없으면 첫 곡을 재생
+                if (!bgmPlayer.src || bgmPlayer.src === '') {
+                    console.log('🎵 소스가 없어서 랜덤 곡 재생');
+                    window.playRandomSong();
+                } else {
+                    console.log('🎵 기존 곡 재생 재개');
+                    
+                    // 저장된 상태에서 재생 위치 복원
+                    const savedState = localStorage.getItem('bgmState');
+                    if (savedState) {
+                        try {
+                            const bgmState = JSON.parse(savedState);
+                            if (bgmState.currentTime > 0 && bgmPlayer.duration) {
+                                bgmPlayer.currentTime = bgmState.currentTime;
+                                console.log(`🔄 재생 위치 복원: ${Math.floor(bgmState.currentTime)}초`);
+                            }
+                        } catch (error) {
+                            console.error('❌ 재생 위치 복원 실패:', error);
+                        }
+                    }
+                    
+                    bgmPlayer.play().catch(error => {
+                        console.error('❌ 재생 실패:', error);
+                        // 재생 실패 시 새로운 랜덤 곡 시도
+                        window.playRandomSong();
+                    });
+                }
+            } else {
+                console.log('🎵 BGM 일시정지');
                 bgmPlayer.pause();
             }
+            saveBGMState();
+        });
+        
+        // 음악이 끝나면 다음 곡을 랜덤으로 재생
+        bgmPlayer.addEventListener('ended', () => {
+            console.log('🎵 곡이 끝남, 다음 랜덤 곡 재생');
+            window.playRandomSong();
         });
 
-        // 음악의 상태가 바뀔 때마다 버튼 아이콘도 자동으로 변경
-        bgmPlayer.addEventListener('play', updateButtonIcon);
-        bgmPlayer.addEventListener('pause', updateButtonIcon);
+        // 재생/일시정지 상태 변경 시 버튼 아이콘 업데이트
+        bgmPlayer.addEventListener('play', () => {
+            updateButtonIcon();
+            saveBGMState();
+        });
+        bgmPlayer.addEventListener('pause', () => {
+            updateButtonIcon();
+            saveBGMState();
+        });
+
+        // 프로그레스 바 업데이트
+        bgmPlayer.addEventListener('timeupdate', updateProgress);
+        bgmPlayer.addEventListener('loadedmetadata', updateProgress);
         
-        // 페이지가 처음 로드될 때 버튼 초기 아이콘 설정
+        // 초기 아이콘 설정
         updateButtonIcon();
     }
+    
+    // 다음곡 버튼 이벤트 리스너
+    if (bgmPlayer && nextSongBtn) {
+        nextSongBtn.addEventListener('click', () => {
+            console.log('⏭️ 다음곡 버튼 클릭');
+            window.playRandomSong();
+        });
+    }
+
+    // 🔄 새로고침 대응: BGM 상태 복원 시도
+    const wasRestored = restoreBGMState();
+    console.log('🔄 BGM 상태 복원 결과:', wasRestored ? '성공' : '실패 또는 첫 방문');
+
+    // 🧪 테스트용: 콘솔에서 localStorage 초기화 함수 제공
+    window.resetIntro = function() {
+        localStorage.removeItem('bgmState');
+        localStorage.removeItem('lastActivityTime');
+        console.log('✅ 인트로 상태 초기화 완료! 페이지를 새로고침하세요.');
+        setTimeout(() => location.reload(), 1000);
+    };
+
+    // 🧪 테스트용: BGM 상태 확인 함수
+    window.checkBGM = function() {
+        console.log('🔍 현재 BGM 상태:', {
+            currentSongIndex,
+            totalSongs: bgmList.length,
+            currentSong: bgmList[currentSongIndex] ? `곡 ${currentSongIndex + 1}/${bgmList.length}` : '없음',
+            isPlaying: !bgmPlayer.paused,
+            currentTime: Math.floor(bgmPlayer.currentTime || 0),
+            duration: Math.floor(bgmPlayer.duration || 0),
+            src: bgmPlayer.src ? '설정됨' : '없음'
+        });
+        return { currentSongIndex, totalSongs: bgmList.length };
+    };
+
+    // 🧪 테스트용: 다음곡 강제 재생
+    window.forceNext = function() {
+        console.log('🎵 강제 다음곡 재생');
+        window.playRandomSong();
+    };
+
+    // 🧪 테스트용: BGM 상태 완전 리셋
+    window.resetBGM = function() {
+        console.log('🔄 BGM 상태 완전 리셋');
+        bgmPlayer.pause();
+        bgmPlayer.src = '';
+        currentSongIndex = -1;
+        localStorage.removeItem('bgmState');
+        localStorage.removeItem('lastActivityTime');
+        console.log('✅ BGM 리셋 완료');
+    };
+
+    // 🧪 테스트용: 자동재생 테스트
+    window.testAutoplay = function() {
+        console.log('🧪 자동재생 테스트 시작');
+        const testAudio = new Audio(bgmList[0]);
+        testAudio.play().then(() => {
+            console.log('✅ 자동재생 허용됨');
+            testAudio.pause();
+        }).catch(error => {
+            console.log('❌ 자동재생 차단됨:', error.name);
+        });
+    };
+
+    console.log('💡 테스트용 함수들:');
+    console.log('  - resetIntro(): 인트로 초기화');
+    console.log('  - checkBGM(): BGM 상태 확인');
+    console.log('  - forceNext(): 강제 다음곡 재생');
+    console.log('  - resetBGM(): BGM 완전 리셋');
+    console.log('  - testAutoplay(): 자동재생 정책 테스트');
 
     // ⭐ 새로고침 감지 (F5, Ctrl+R, Cmd+R)
     document.addEventListener('keydown', (e) => {
@@ -172,31 +640,56 @@ function switchTab(tabName) {
  * 데이터 초기화 (⭐ 서버 데이터 우선 로딩)
  */
 async function initializeData() {
+    // 앱 진입 버튼 클릭 시 BGM 재생 시작
     const loadingOverlay = document.getElementById('loading-overlay');
     const appContainer = document.getElementById('app');
     const enterBtn = document.getElementById('enter-app-btn');
-    const bgmPlayer = document.getElementById('bgm-player');
 
-    // "사랑해요💕(클릭)" 버튼 클릭 이벤트 설정
-    if (enterBtn && bgmPlayer && loadingOverlay && appContainer) {
+    console.log('🔍 버튼 요소 확인:', {
+        enterBtn: !!enterBtn,
+        loadingOverlay: !!loadingOverlay,
+        appContainer: !!appContainer
+    });
+
+    if (enterBtn && loadingOverlay && appContainer) {
+        console.log('✅ 버튼 이벤트 리스너 등록');
         enterBtn.addEventListener('click', () => {
-            // 1. 음악 재생
-            bgmPlayer.muted = false;
-            bgmPlayer.play();
+            console.log('🚀 앱 진입, BGM 자동 재생 시작');
+            
+            // BGM 자동 재생 시작
+            if (window.playRandomSong) {
+                window.playRandomSong();
+                // 앱 시작 상태 저장
+                localStorage.setItem('bgmState', JSON.stringify({
+                    hasStarted: true,
+                    currentSongIndex: -1,
+                    currentTime: 0,
+                    isPlaying: true
+                }));
+                // 활동 시간 저장
+                localStorage.setItem('lastActivityTime', Date.now().toString());
+            } else {
+                console.error('❌ playRandomSong 함수를 찾을 수 없습니다.');
+            }
 
-            // 2. 로딩 화면 숨기기
+            // 로딩 화면 숨기기
             loadingOverlay.style.opacity = '0';
             setTimeout(() => {
                 loadingOverlay.style.display = 'none';
-            }, 500); // 0.5초 후 완전히 제거
+            }, 500);
 
-            // 3. 메인 앱 화면 보이기
+            // 앱 화면 표시
             appContainer.style.opacity = '1';
+        });
+    } else {
+        console.error('❌ 버튼 또는 컨테이너 요소를 찾을 수 없습니다:', {
+            enterBtn,
+            loadingOverlay,
+            appContainer
         });
     }
 
     try {
-        // 데이터 로딩은 백그라운드에서 계속 진행
         await loadAllDataAndRender();
         updateConnectionStatus('connected');
         console.log('✅ 서버 데이터 로드 및 렌더링 완료!');
