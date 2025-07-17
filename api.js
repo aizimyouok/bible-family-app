@@ -5,7 +5,7 @@
 
 // === API 설정 ===
 const API_CONFIG = {
-    scriptUrl: 'https://script.google.com/macros/s/AKfycbxkNqHWGCljrhhDAug6M--q1eHI8Yv1CtUo4Y1ZeBOs3nHHXh-cemzcTdUKCAglyrUgMQ/exec',
+    scriptUrl: 'https://script.google.com/macros/s/AKfycbzvGGbh8C2y4Iem0IqoF7AT_CboaJfAZRY_NJ6ALeDwkIB_6HurNuZE829fZ833jne_-w/exec',
     apiKey: 'bible_family_default',
     enableSecurity: false
 };
@@ -337,6 +337,12 @@ class EnhancedGoogleSheetsAPI {
 
         for (const key in params) {
             url.searchParams.set(key, params[key]);
+        }
+        
+        // ⭐ 디버깅용: 실제 전송되는 URL 로그
+        if (action === 'save' && params.type === 'message' && params.parentId) {
+            console.log('댓글 저장 URL:', url.toString());
+            console.log('전송 파라미터:', params);
         }
         
         try {

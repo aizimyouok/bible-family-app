@@ -99,6 +99,7 @@ class ReadingComponent extends BaseComponent {
         // 상태 구독
         this.subscribe('family', () => this.render());
         this.subscribe('readRecords', () => this.render());
+        this.subscribe('messages', () => this.render()); // ⭐ 공지글 표시를 위해 messages 구독 추가
     }
     
     render() {
@@ -113,11 +114,8 @@ class ReadingComponent extends BaseComponent {
         }
         
         this.container.innerHTML = `
-            <!-- 오늘의 지혜 말씀 -->
-            <section class="mb-8 text-center p-6 border-2 border-dashed slide-in" style="border-color: var(--border-color);">
-                <h2 class="text-xl font-bold font-myeongjo accent-text mb-2">오늘의 지혜 말씀</h2>
-                <p id="wisdom-verse" class="text-lg">${this.getRandomVerse()}</p>
-            </section>
+            <!-- 오늘의 지혜 말씀 & 공지사항 -->
+            ${this.renderWisdomAndNoticeSection()}
 
             <!-- 리더보드 -->
             <section id="leaderboard" class="mb-8 leaderboard-animate">
@@ -157,20 +155,126 @@ class ReadingComponent extends BaseComponent {
                 </details>
             </section>
         `;
+        
+        // ⭐ AI 기능은 환경에서 지원되지 않으므로 제거
+        
+        // ⭐ data-verse를 innerHTML로 설정하여 HTML 태그가 렌더링되도록 함
+        setTimeout(() => {
+            const wisdomVerse = document.getElementById('wisdom-verse');
+            if (wisdomVerse && wisdomVerse.dataset.verse) {
+                wisdomVerse.innerHTML = wisdomVerse.dataset.verse;
+            }
+        }, 0);
     }
     getRandomVerse() {
         const verses = [
-            "자녀들아 주 안에서 너희 부모에게 순종하라 이것이 옳으니라 (에베소서 6:1)",
-            "여호와는 나의 목자시니 내게 부족함이 없으리로다 (시편 23:1)",
-            "주 너의 하나님을 사랑하고 또한 네 이웃을 네 자신 같이 사랑하라 (마태복음 22:37-39)",
-            "항상 기뻐하라 쉬지 말고 기도하라 범사에 감사하라 (데살로니가전서 5:16-18)",
-            "수고하고 무거운 짐 진 자들아 다 내게로 오라 내가 너희를 쉬게 하리라 (마태복음 11:28)",
-            "두려워하지 말라 내가 너와 함께 함이라 놀라지 말라 나는 네 하나님이 됨이라 (이사야 41:10)",
-            "사람이 마음으로 자기의 길을 계획할지라도 그의 걸음을 인도하시는 이는 여호와시니라 (잠언 16:9)",
-            "그런즉 너희는 먼저 그의 나라와 그의 의를 구하라 그리하면 이 모든 것을 너희에게 더하시리라 (마태복음 6:33)",
-            "내게 능력 주시는 자 안에서 내가 모든 것을 할 수 있느니라 (빌립보서 4:13)"
+            // 가족 관련
+            "자녀들아 주 안에서 너희 부모에게 순종하라<br>이것이 옳으니라 (에베소서 6:1)",
+            "또 아버지들아 너희 자녀를 노엽게 하지 말고<br>오직 주의 교훈과 훈계로 양육하라 (에베소서 6:4)",
+            "지혜로운 아들은 아버지를 기쁘게 하거니와<br>미련한 아들은 어머니의 근심이니라 (잠언 10:1)",
+            
+            // 믿음과 위로
+            "여호와는 나의 목자시니<br>내게 부족함이 없으리로다 (시편 23:1)",
+            "수고하고 무거운 짐 진 자들아 다 내게로 오라<br>내가 너희를 쉬게 하리라 (마태복음 11:28)",
+            "두려워하지 말라 내가 너와 함께 함이라<br>놀라지 말라 나는 네 하나님이 됨이라 (이사야 41:10)",
+            "내게 능력 주시는 자 안에서<br>내가 모든 것을 할 수 있느니라 (빌립보서 4:13)",
+            "여호와를 의뢰하는 자는 시온 산이 요동하지 아니하고<br>영원히 있음 같으니라 (시편 125:1)",
+            
+            // 사랑
+            "주 너의 하나님을 사랑하고<br>또한 네 이웃을 네 자신 같이 사랑하라 (마태복음 22:37-39)",
+            "사랑하는 자들아 하나님이 이같이 우리를 사랑하셨은즉<br>우리도 서로 사랑하는 것이 마땅하도다 (요한1서 4:11)",
+            "무엇보다도 열심으로 서로 사랑할지니<br>사랑은 허다한 죄를 덮느니라 (베드로전서 4:8)",
+            
+            // 기쁨과 감사
+            "항상 기뻐하라 쉬지 말고 기도하라<br>범사에 감사하라 (데살로니가전서 5:16-18)",
+            "여호와 안에서 항상 기뻐하라<br>내가 다시 말하노니 기뻐하라 (빌립보서 4:4)",
+            "범사에 우리 주 예수 그리스도의 이름으로<br>항상 아버지 하나님께 감사하며 (에베소서 5:20)",
+            
+            // 지혜와 인도
+            "사람이 마음으로 자기의 길을 계획할지라도<br>그의 걸음을 인도하시는 이는 여호와시니라 (잠언 16:9)",
+            "그런즉 너희는 먼저 그의 나라와 그의 의를 구하라<br>그리하면 이 모든 것을 너희에게 더하시리라 (마태복음 6:33)",
+            "여호와를 경외하는 것이 지혜의 근본이요<br>거룩하신 자를 아는 것이 명철이니라 (잠언 9:10)",
+            "너는 마음을 다하여 여호와를 신뢰하고<br>네 명철을 의지하지 말라 (잠언 3:5)",
+            
+            // 평안
+            "평안을 너희에게 끼치노니<br>곧 나의 평안을 너희에게 주노라 (요한복음 14:27)",
+            "하나님의 평강이 모든 지각에 뛰어나서<br>그리스도 예수 안에서 너희 마음과 생각을 지키시리라 (빌립보서 4:7)",
+            
+            // 소망
+            "우리가 환난 중에도 즐거워하나니<br>환난은 인내를, 인내는 연단을, 연단은 소망을 이루는 줄 앎이로다 (로마서 5:3-4)",
+            "소망이 부끄럽게 하지 아니함은<br>우리에게 주신 성령으로 말미암아 하나님의 사랑이 우리 마음에 부은 바 됨이니 (로마서 5:5)"
         ];
         return verses[Math.floor(Math.random() * verses.length)];
+    }
+    
+    /**
+     * ⭐ 현재 공지글 가져오기
+     */
+    getCurrentNotice() {
+        const messages = window.stateManager.getState('messages') || [];
+        return messages.find(m => m.is_notice === true);
+    }
+    
+    /**
+     * ⭐ 오늘의 지혜 말씀 & 공지사항 섹션 렌더링
+     */
+    renderWisdomAndNoticeSection() {
+        const currentNotice = this.getCurrentNotice();
+        const family = window.stateManager.getState('family');
+        
+        if (currentNotice) {
+            // 공지가 있을 때: 6:4 비율로 나누기
+            const noticeAuthor = family.find(u => u.id === currentNotice.user_id);
+            const noticeDate = new Date(currentNotice.timestamp).toLocaleDateString('ko-KR');
+            
+            return `
+                <section class="mb-8 grid grid-cols-1 lg:grid-cols-10 gap-4 slide-in">
+                    <!-- 오늘의 말씀 (60%) -->
+                    <div class="lg:col-span-6 p-4 bg-blue-50 border-2 border-blue-200 rounded-lg">
+                        <div class="flex items-center justify-center mb-2">
+                            <h2 class="text-lg font-bold text-blue-800 flex items-center">
+                                📖 오늘의 말씀
+                            </h2>
+                        </div>
+                        <div class="text-center">
+                            <p id="wisdom-verse" class="text-blue-800 leading-relaxed" style="font-size: 20px" data-verse="${this.getRandomVerse()}"></p>
+                        </div>
+                    </div>
+                    
+                    <!-- 공지사항 (40%) -->
+                    <div class="lg:col-span-4 p-4 bg-yellow-50 border-2 border-yellow-200 rounded-lg">
+                        <div class="flex items-center justify-between mb-2">
+                            <h3 class="text-lg font-bold text-yellow-800 flex items-center">
+                                📢 공지사항
+                            </h3>
+                            <span class="text-xs text-yellow-600">${noticeDate}</span>
+                        </div>
+                        <div class="text-sm text-yellow-700 mb-2">
+                            <span class="font-semibold">${noticeAuthor ? noticeAuthor.name : '관리자'}</span>
+                        </div>
+                        <div class="text-sm text-yellow-800 leading-relaxed max-h-24 overflow-y-auto">
+                            ${currentNotice.content}
+                        </div>
+                    </div>
+                </section>
+            `;
+        } else {
+            // 공지가 없을 때: 전체 공간 사용
+            return `
+                <section class="mb-8 slide-in">
+                    <div class="p-6 bg-blue-50 border-2 border-blue-200 rounded-lg">
+                        <div class="flex items-center justify-center mb-2">
+                            <h2 class="text-lg font-bold text-blue-800 flex items-center">
+                                📖 오늘의 말씀
+                            </h2>
+                        </div>
+                        <div class="text-center">
+                            <p id="wisdom-verse" class="text-blue-800 leading-relaxed" style="font-size: 20px" data-verse="${this.getRandomVerse()}"></p>
+                        </div>
+                    </div>
+                </section>
+            `;
+        }
     }
     
     renderLeaderboard() {
@@ -570,9 +674,17 @@ class MessageBoardComponent extends BaseComponent {
         const messages = window.stateManager.getState('messages') || [];
         const currentUserId = document.getElementById('message-user')?.value;
 
-        // 공지와 일반 메시지 분리
-        const notices = messages.filter(m => m.is_notice === true);
-        const regularMessages = messages.filter(m => m.is_notice !== true);
+        // 공지와 일반 메시지 분리 (⭐ 댓글 제외 - parent_id가 실제 값을 가진 것은 댓글)
+        const isMainMessage = (m) => !m.parent_id || m.parent_id === '' || m.parent_id === null || m.parent_id === undefined;
+        
+        // ⭐ 디버깅용 로그
+        const comments = messages.filter(m => !isMainMessage(m));
+        console.log('전체 메시지 수:', messages.length);
+        console.log('댓글 메시지 수:', comments.length);
+        console.log('댓글 메시지들:', comments.map(c => ({ id: c.id, parent_id: c.parent_id, content: c.content.substring(0, 30) })));
+        
+        const notices = messages.filter(m => m.is_notice === true && isMainMessage(m));
+        const regularMessages = messages.filter(m => m.is_notice !== true && isMainMessage(m));
         const sortedMessages = regularMessages.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
         
         // --- [추가] 페이지네이션 로직 ---
@@ -611,6 +723,13 @@ class MessageBoardComponent extends BaseComponent {
             }
             paginationContainer.innerHTML = paginationHTML;
         }
+        
+        // ⭐ 페이지 로드 후 댓글이 있는 메시지들의 버튼 텍스트 업데이트
+        setTimeout(() => {
+            paginatedMessages.forEach(message => {
+                window.updateCommentToggleButton(message.id);
+            });
+        }, 100);
     }
 
     createMessageElement(message, family, currentUserId, isNotice) {
@@ -624,6 +743,10 @@ class MessageBoardComponent extends BaseComponent {
         const likeCount = message.like_count || 0;
         const isCurrentUser = message.user_id === currentUserId;
         
+        // ⭐ 댓글 개수 계산
+        const comments = this.getCommentsForMessage(message.id);
+        const commentCount = comments.length;
+        
         messageEl.innerHTML = `
             <div class="flex items-start gap-3">
                 <img src="${user ? user.photo : 'https://placehold.co/40x40'}" class="w-10 h-10 rounded-full object-cover flex-shrink-0" referrerpolicy="no-referrer">
@@ -633,9 +756,14 @@ class MessageBoardComponent extends BaseComponent {
                         <strong class="font-bold">${user ? user.name : '알 수 없음'}:</strong>
                         <span class="whitespace-pre-wrap">${message.content}</span>
                     </div>
-                    <div class="flex justify-between items-center text-xs">
+                    <div class="flex justify-between items-center text-xs mb-2">
                         <span class="text-gray-500">${new Date(message.timestamp).toLocaleString('ko-KR')}</span>
                         <div class="flex items-center gap-3">
+                            <!-- ⭐ 댓글 토글 버튼 -->
+                            <button onclick="window.toggleComments('${message.id}')" class="text-gray-500 hover:text-blue-500 flex items-center gap-1">
+                                💬 ${commentCount > 0 ? `댓글 ${commentCount}개 접기` : '댓글 쓰기'}
+                            </button>
+                            
                             <button onclick="window.toggleMessageNotice('${message.id}')" class="text-gray-500 hover:text-blue-500 flex items-center gap-1">
                                 📌 ${isNotice ? '해제' : '등록'}
                             </button>
@@ -650,10 +778,82 @@ class MessageBoardComponent extends BaseComponent {
                             ` : ''}
                         </div>
                     </div>
+                    
+                    <!-- ⭐ 댓글 섹션 - 댓글이 있으면 기본적으로 열려있음 -->
+                    <div id="comments-${message.id}" class="${commentCount > 0 ? '' : 'hidden'}">
+                        <div class="border-t border-gray-200 pt-2 mt-2">
+                            <!-- 댓글 목록 -->
+                            <div id="comment-list-${message.id}" class="space-y-2 mb-3">
+                                ${this.renderComments(comments, family, currentUserId)}
+                            </div>
+                            
+                            <!-- 댓글 작성 입력창 -->
+                            <div class="flex gap-2">
+                                <input type="text" 
+                                       id="comment-input-${message.id}" 
+                                       class="flex-1 p-2 text-sm border rounded-md" 
+                                       placeholder="댓글을 작성하세요..." 
+                                       style="border-color: var(--border-color);"
+                                       onkeypress="if(event.key==='Enter') window.addComment('${message.id}')">
+                                <button onclick="window.addComment('${message.id}')" 
+                                        class="px-3 py-2 bg-blue-500 text-white text-sm rounded-md hover:bg-blue-600">
+                                    💬 댓글
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         `;
         return messageEl;
+    }
+    
+    /**
+     * ⭐ 특정 메시지의 댓글들을 가져오는 헬퍼 함수
+     */
+    getCommentsForMessage(messageId) {
+        const messages = window.stateManager.getState('messages') || [];
+        return messages.filter(m => m.parent_id === messageId)
+                      .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+    }
+    
+    /**
+     * ⭐ 댓글 목록을 렌더링하는 함수
+     */
+    renderComments(comments, family, currentUserId) {
+        if (comments.length === 0) {
+            return '<div class="text-gray-500 text-xs text-center py-2">아직 댓글이 없습니다</div>';
+        }
+        
+        return comments.map(comment => {
+            const user = family.find(u => u.id === comment.user_id);
+            const isCurrentUser = comment.user_id === currentUserId;
+            const likeCount = comment.like_count || 0;
+            
+            return `
+                <div class="flex items-start gap-2 p-2 bg-gray-50 rounded-md">
+                    <img src="${user ? user.photo : 'https://placehold.co/32x32'}" class="w-8 h-8 rounded-full object-cover flex-shrink-0" referrerpolicy="no-referrer">
+                    <div class="flex-grow min-w-0">
+                        <div class="text-xs mb-1">
+                            <strong class="font-semibold">${user ? user.name : '알 수 없음'}:</strong>
+                            <span class="whitespace-pre-wrap">${comment.content}</span>
+                        </div>
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="text-gray-400">${new Date(comment.timestamp).toLocaleString('ko-KR')}</span>
+                            <div class="flex items-center gap-2">
+                                <button onclick="window.likeComment('${comment.id}')" class="text-gray-400 hover:text-red-500 flex items-center gap-1">
+                                    ❤️ ${likeCount}
+                                </button>
+                                ${isCurrentUser ? `
+                                    <button onclick="window.editComment('${comment.id}')" class="text-blue-500 hover:underline">수정</button>
+                                    <button onclick="window.deleteComment('${comment.id}')" class="text-red-500 hover:underline">삭제</button>
+                                ` : ''}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
     }
 
     
@@ -1565,6 +1765,276 @@ window.toggleMessageNotice = async function(id) {
     } catch (e) {
         alert('작업 중 오류가 발생했습니다: ' + e.message);
     }
+};
+
+// ⭐ === 댓글 관련 전역 함수들 ===
+
+/**
+ * 댓글 섹션 토글 (접기/펼치기)
+ */
+window.toggleComments = function(messageId) {
+    const commentsSection = document.getElementById(`comments-${messageId}`);
+    if (commentsSection) {
+        commentsSection.classList.toggle('hidden');
+        
+        // 댓글 섹션이 열릴 때 댓글 목록 새로고침
+        if (!commentsSection.classList.contains('hidden')) {
+            window.refreshComments(messageId);
+        }
+        
+        // ⭐ 토글 버튼 텍스트 업데이트
+        window.updateCommentToggleButton(messageId);
+    }
+};
+
+/**
+ * ⭐ 댓글 토글 버튼 텍스트 업데이트
+ */
+window.updateCommentToggleButton = function(messageId) {
+    const messages = window.stateManager.getState('messages') || [];
+    const commentCount = messages.filter(m => m.parent_id === messageId).length;
+    const commentsSection = document.getElementById(`comments-${messageId}`);
+    const isHidden = commentsSection && commentsSection.classList.contains('hidden');
+    
+    // 댓글 토글 버튼 찾기
+    const toggleButton = document.querySelector(`button[onclick="window.toggleComments('${messageId}')"]`);
+    if (toggleButton) {
+        if (commentCount > 0) {
+            toggleButton.innerHTML = `💬 댓글 ${commentCount}개 ${isHidden ? '펼치기' : '접기'}`;
+        } else {
+            toggleButton.innerHTML = `💬 댓글 쓰기`;
+        }
+    }
+};
+
+/**
+ * 댓글 목록 새로고침
+ */
+window.refreshComments = function(messageId) {
+    const commentList = document.getElementById(`comment-list-${messageId}`);
+    if (!commentList) return;
+    
+    const family = window.stateManager.getState('family');
+    const messages = window.stateManager.getState('messages') || [];
+    const currentUserId = document.getElementById('message-user')?.value;
+    
+    const comments = messages.filter(m => m.parent_id === messageId)
+                           .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+    
+    if (window.components.messages) {
+        commentList.innerHTML = window.components.messages.renderComments(comments, family, currentUserId);
+    }
+};
+
+/**
+ * 댓글 추가
+ */
+window.addComment = async function(messageId) {
+    const commentInput = document.getElementById(`comment-input-${messageId}`);
+    const userSelect = document.getElementById('message-user');
+    
+    if (!commentInput || !userSelect) return;
+    
+    const content = commentInput.value.trim();
+    if (!content) {
+        alert('댓글 내용을 입력해주세요.');
+        return;
+    }
+    
+    try {
+        const family = window.stateManager.getState('family');
+        const user = family.find(u => u.id === userSelect.value);
+        
+        commentInput.value = '';
+        commentInput.disabled = true;
+        
+        // ⭐ 댓글 저장 중에는 실시간 동기화 잠시 중지
+        console.log('댓글 저장 중 - 실시간 동기화 3초간 중지');
+        const originalSyncEnabled = window.gapi.realtimeSyncEnabled;
+        window.gapi.disableRealtimeSync();
+        
+        const result = await window.gapi.saveData({
+            type: 'message',
+            userId: userSelect.value,
+            userName: user ? user.name : '알 수 없음',
+            content: content,
+            parentId: messageId,  // ⭐ 부모 메시지 ID 추가
+            parent_id: messageId  // ⭐ 백업용 파라미터명
+        });
+        
+        console.log('댓글 저장 결과:', result);
+        console.log('댓글 parent_id 확인:', result.data.parent_id);
+        
+        const messages = window.stateManager.getState('messages');
+        // ⭐ 서버 응답과 관계없이 parent_id는 반드시 설정
+        const newComment = {
+            id: result.data.id,
+            user_id: result.data.user_id || userSelect.value,
+            user_name: result.data.user_name || (user ? user.name : '알 수 없음'),
+            timestamp: result.data.timestamp,
+            content: result.data.content || content,
+            like_count: result.data.like_count || 0,
+            is_notice: false,
+            parent_id: messageId  // ⭐ 무조건 messageId로 설정 (서버 응답 무시)
+        };
+        
+        console.log('로컬에 추가할 댓글 데이터:', newComment);
+        messages.push(newComment);
+        window.stateManager.updateState('messages', messages);
+        
+        // 댓글 목록 새로고침
+        window.refreshComments(messageId);
+        
+        // 댓글 개수 업데이트
+        window.updateCommentCount(messageId);
+        
+        // ⭐ 댓글 섹션 자동으로 열기
+        const commentsSection = document.getElementById(`comments-${messageId}`);
+        if (commentsSection) {
+            commentsSection.classList.remove('hidden');
+        }
+        
+        // ⭐ 댓글 토글 버튼 텍스트 업데이트
+        window.updateCommentToggleButton(messageId);
+        
+        commentInput.disabled = false;
+        
+        // ⭐ 3초 후 실시간 동기화 재활성화
+        setTimeout(() => {
+            console.log('댓글 저장 완료 - 실시간 동기화 재활성화');
+            if (originalSyncEnabled) {
+                window.gapi.enableRealtimeSync();
+            }
+        }, 3000);
+        
+    } catch (e) {
+        console.error('댓글 저장 실패:', e);
+        alert('댓글 저장에 실패했습니다. 다시 시도해주세요.');
+        commentInput.disabled = false;
+        commentInput.value = content; // 내용 복원
+        
+        // ⭐ 오류 시에도 실시간 동기화 재활성화
+        console.log('댓글 저장 실패 - 실시간 동기화 재활성화');
+        window.gapi.enableRealtimeSync();
+    }
+};
+
+/**
+ * 댓글 수정
+ */
+window.editComment = async function(commentId) {
+    const messages = window.stateManager.getState('messages');
+    const comment = messages.find(m => m.id === commentId);
+    
+    if (!comment) {
+        alert('댓글을 찾을 수 없습니다.');
+        return;
+    }
+    
+    const newContent = prompt('댓글 수정:', comment.content);
+    if (newContent === null || newContent.trim() === '' || newContent.trim() === comment.content) return;
+    
+    try {
+        await window.gapi.editData({ type: 'message', id: commentId, content: newContent.trim() });
+        comment.content = newContent.trim();
+        window.stateManager.updateState('messages', messages);
+        
+        // 해당 메시지의 댓글 목록 새로고침
+        if (comment.parent_id) {
+            window.refreshComments(comment.parent_id);
+        }
+        
+    } catch (e) {
+        alert('댓글 수정 실패: ' + e.message);
+    }
+};
+
+/**
+ * 댓글 삭제
+ */
+window.deleteComment = async function(commentId) {
+    if (!confirm('정말로 댓글을 삭제하시겠습니까?')) return;
+    
+    const messages = window.stateManager.getState('messages');
+    const comment = messages.find(m => m.id === commentId);
+    const parentId = comment?.parent_id;
+    
+    try {
+        await window.gapi.deleteData({ type: 'message', id: commentId });
+        window.stateManager.updateState('messages', messages.filter(m => m.id !== commentId));
+        
+        // 해당 메시지의 댓글 목록 새로고침
+        if (parentId) {
+            window.refreshComments(parentId);
+            window.updateCommentCount(parentId);
+            
+            // ⭐ 댓글이 0개가 되면 댓글 섹션 자동으로 닫기
+            const messages = window.stateManager.getState('messages') || [];
+            const remainingComments = messages.filter(m => m.parent_id === parentId).length;
+            if (remainingComments === 0) {
+                const commentsSection = document.getElementById(`comments-${parentId}`);
+                if (commentsSection) {
+                    commentsSection.classList.add('hidden');
+                }
+            }
+        }
+        
+    } catch (e) {
+        alert('댓글 삭제 실패: ' + e.message);
+    }
+};
+
+/**
+ * 댓글 좋아요
+ */
+window.likeComment = async function(commentId) {
+    try {
+        // 로컬 상태를 먼저 업데이트
+        const messages = window.stateManager.getState('messages');
+        const comment = messages.find(m => m.id === commentId);
+        const parentId = comment?.parent_id;
+        
+        if (comment) {
+            comment.like_count = (comment.like_count || 0) + 1;
+            window.stateManager.updateState('messages', messages);
+            
+            // 댓글 목록 새로고침
+            if (parentId) {
+                window.refreshComments(parentId);
+            }
+        }
+        
+        // 서버에 전송 (백그라운드)
+        await window.gapi.likeItem({ type: 'message', id: commentId });
+        
+    } catch (error) {
+        // 오류 시 롤백
+        const messages = window.stateManager.getState('messages');
+        const comment = messages.find(m => m.id === commentId);
+        const parentId = comment?.parent_id;
+        
+        if (comment) {
+            comment.like_count = Math.max(0, (comment.like_count || 1) - 1);
+            window.stateManager.updateState('messages', messages);
+            
+            // 댓글 목록 새로고침
+            if (parentId) {
+                window.refreshComments(parentId);
+            }
+        }
+        alert('좋아요 실패: ' + error.message);
+    }
+};
+
+/**
+ * 댓글 개수 업데이트
+ */
+window.updateCommentCount = function(messageId) {
+    const messages = window.stateManager.getState('messages') || [];
+    const commentCount = messages.filter(m => m.parent_id === messageId).length;
+    
+    // ⭐ 댓글 토글 버튼 텍스트 업데이트 (기존 코드 제거하고 새 함수 사용)
+    window.updateCommentToggleButton(messageId);
 };
 
 // 기타 유틸리티 함수들
