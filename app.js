@@ -449,8 +449,33 @@ function setupGlobalEventListeners() {
         
         // 음악이 끝나면 다음 곡을 랜덤으로 재생
         bgmPlayer.addEventListener('ended', () => {
-            console.log('🎵 곡이 끝남, 다음 랜덤 곡 재생');
-            window.playRandomSong();
+            console.log('🎵 곡이 끝남! 다음 랜덤 곡 재생 시작');
+            console.log('🔍 ended 이벤트 발생 시점:', {
+                currentTime: bgmPlayer.currentTime,
+                duration: bgmPlayer.duration,
+                currentSong: currentSongIndex + 1
+            });
+            
+            setTimeout(() => {
+                window.playRandomSong();
+            }, 500); // 0.5초 후 다음곡 재생 (안정성을 위해)
+        });
+
+        // 재생 시간 업데이트 시 곡 종료 임박 알림
+        bgmPlayer.addEventListener('timeupdate', () => {
+            if (bgmPlayer.duration && bgmPlayer.currentTime) {
+                const remaining = bgmPlayer.duration - bgmPlayer.currentTime;
+                
+                // 곡 종료 5초 전 알림
+                if (remaining <= 5 && remaining > 4.5) {
+                    console.log('⏰ 곡 종료 5초 전!');
+                }
+                
+                // 곡 종료 1초 전 알림
+                if (remaining <= 1 && remaining > 0.5) {
+                    console.log('⏰ 곡 종료 1초 전!');
+                }
+            }
         });
 
         // 재생/일시정지 상태 변경 시 버튼 아이콘 업데이트
@@ -534,12 +559,36 @@ function setupGlobalEventListeners() {
         });
     };
 
+    // 🧪 테스트용: 곡 강제 종료 (ended 이벤트 테스트)
+    window.endCurrentSong = function() {
+        if (bgmPlayer.src && !bgmPlayer.paused) {
+            console.log('🧪 현재 곡 강제 종료 테스트');
+            // 곡을 거의 끝으로 이동
+            if (bgmPlayer.duration) {
+                bgmPlayer.currentTime = bgmPlayer.duration - 0.1;
+                console.log('⏰ 곡을 종료 0.1초 전으로 이동');
+            } else {
+                console.log('❌ 곡 길이 정보 없음');
+            }
+        } else {
+            console.log('❌ 재생 중인 곡이 없습니다');
+        }
+    };
+
+    // 🧪 테스트용: ended 이벤트 강제 발생
+    window.triggerEnded = function() {
+        console.log('🧪 ended 이벤트 강제 발생');
+        bgmPlayer.dispatchEvent(new Event('ended'));
+    };
+
     console.log('💡 테스트용 함수들:');
     console.log('  - resetIntro(): 인트로 초기화');
     console.log('  - checkBGM(): BGM 상태 확인');
     console.log('  - forceNext(): 강제 다음곡 재생');
     console.log('  - resetBGM(): BGM 완전 리셋');
     console.log('  - testAutoplay(): 자동재생 정책 테스트');
+    console.log('  - endCurrentSong(): 현재 곡 강제 종료 (자동 다음곡 테스트)');
+    console.log('  - triggerEnded(): ended 이벤트 강제 발생');
 
     // ⭐ 새로고침 감지 (F5, Ctrl+R, Cmd+R)
     document.addEventListener('keydown', (e) => {
