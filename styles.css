@@ -703,16 +703,27 @@ details > summary::-webkit-details-marker {
 /* 반응형 디자인 */
 @media (max-width: 768px) {
     .bgm-controller {
-        top: 12px;
-        left: 12px;
-        min-width: 160px;
-        padding: 10px;
+        top: 10px;
+        left: 10px;
+        min-width: 90px; /* 160px → 90px로 축소 */
+        padding: 6px 8px; /* 패딩도 줄임 */
+        border-radius: 12px; /* 모서리도 작게 */
     }
     
     .control-btn {
-        width: 36px;
-        height: 36px;
-        font-size: 14px;
+        width: 30px; /* 36px → 30px */
+        height: 30px; /* 36px → 30px */
+        font-size: 12px; /* 14px → 12px */
+    }
+    
+    .bgm-progress-bar {
+        height: 3px; /* 4px → 3px */
+    }
+    
+    .bgm-time {
+        font-size: 9px; /* 10px → 9px */
+        margin-top: 2px;
+    }
     }
     
     /* 큐브 반응형 */
@@ -750,8 +761,32 @@ details > summary::-webkit-details-marker {
 
 @media (max-width: 480px) {
     .bgm-controller {
-        min-width: 100px;
-        padding: 8px;
+        top: 8px;
+        left: 8px;
+        min-width: 75px; /* 100px → 75px로 더 축소 */
+        padding: 4px 6px; /* 더 작은 패딩 */
+        border-radius: 10px;
+    }
+    
+    .control-btn {
+        width: 26px; /* 더 작게 */
+        height: 26px; /* 더 작게 */
+        font-size: 11px;
+        margin: 0 1px; /* 버튼 간격 최소화 */
+    }
+    
+    .bgm-progress-bar {
+        height: 2px; /* 더 얇게 */
+    }
+    
+    .bgm-time {
+        font-size: 8px; /* 더 작은 폰트 */
+        margin-top: 1px;
+    }
+    
+    .bgm-controls {
+        gap: 4px; /* 버튼 간격 줄임 */
+        margin-bottom: 4px;
     }
     
     .cube-scene {
@@ -787,5 +822,36 @@ details > summary::-webkit-details-marker {
     .cube-enter-btn {
         padding: 10px 20px;
         font-size: 1rem;
+    }
+}
+
+/* 매우 작은 모바일 화면 (360px 이하) */
+@media (max-width: 360px) {
+    .bgm-controller {
+        top: 6px;
+        left: 6px;
+        min-width: 65px; /* 최소 크기 */
+        padding: 3px 4px;
+        border-radius: 8px;
+    }
+    
+    .control-btn {
+        width: 22px; /* 최소 크기 */
+        height: 22px;
+        font-size: 10px;
+    }
+    
+    .bgm-progress-bar {
+        height: 2px;
+    }
+    
+    .bgm-time {
+        font-size: 7px;
+        margin-top: 1px;
+    }
+    
+    .bgm-controls {
+        gap: 2px; /* 최소 간격 */
+        margin-bottom: 3px;
     }
 }

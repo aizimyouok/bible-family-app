@@ -10,8 +10,9 @@ let currentBook = null;
 let currentProgressUserId = null;
 
 /**
- * 🔄 로딩 페이지 스킵하고 앱 시작
+ * 🔄 로딩 페이지 스킵하고 앱 시작 (현재 사용하지 않음)
  */
+/*
 function skipIntroAndStartApp() {
     const loadingOverlay = document.getElementById('loading-overlay');
     const appContainer = document.getElementById('app');
@@ -26,6 +27,7 @@ function skipIntroAndStartApp() {
         console.log('✅ 로딩 페이지 스킵 완료');
     }
 }
+*/
 
 /**
  * 🎲 3D 큐브 인트로 효과
@@ -137,29 +139,9 @@ function typeWriterEffect(element, text, speed = 100) {
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('Bible Time for Family - 애플리케이션 시작');
     
-    // 🔄 새로고침 감지: BGM 상태가 있고 최근에 활동이 있었던 경우만 스킵
-    const savedBGMState = localStorage.getItem('bgmState');
-    const lastActivityTime = localStorage.getItem('lastActivityTime');
-    const currentTime = Date.now();
-    
-    // 마지막 활동이 30분 이내인 경우만 스킵 (새로고침으로 간주)
-    const isRecentActivity = lastActivityTime && (currentTime - parseInt(lastActivityTime)) < 30 * 60 * 1000;
-    const shouldSkipIntro = savedBGMState && JSON.parse(savedBGMState).hasStarted && isRecentActivity;
-    
-    console.log('🔍 로딩 페이지 스킵 조건 확인:', {
-        hasBGMState: !!savedBGMState,
-        isRecentActivity,
-        shouldSkip: shouldSkipIntro
-    });
-    
-    if (shouldSkipIntro) {
-        console.log('🔄 새로고침 감지: 로딩 페이지 스킵');
-        skipIntroAndStartApp();
-    } else {
-        console.log('🎲 첫 방문 또는 오래된 세션: 3D 큐브 인트로 표시');
-        // 🎲 3D 큐브 인트로 효과 초기화
-        initCubeIntro();
-    }
+    // 🎲 항상 3D 큐브 인트로 표시 (새로고침 감지 제거)
+    console.log('🎲 3D 큐브 인트로 표시');
+    initCubeIntro();
     
     // ⭐ 전역 탭 상태 초기화
     window.currentTab = 'reading';
@@ -512,7 +494,7 @@ function setupGlobalEventListeners() {
     window.resetIntro = function() {
         localStorage.removeItem('bgmState');
         localStorage.removeItem('lastActivityTime');
-        console.log('✅ 인트로 상태 초기화 완료! 페이지를 새로고침하세요.');
+        console.log('✅ BGM 상태 초기화 완료! (참고: 이제 새로고침시 항상 3D 큐브 인트로가 나타납니다)');
         setTimeout(() => location.reload(), 1000);
     };
 
@@ -582,7 +564,7 @@ function setupGlobalEventListeners() {
     };
 
     console.log('💡 테스트용 함수들:');
-    console.log('  - resetIntro(): 인트로 초기화');
+    console.log('  - resetIntro(): BGM 상태 초기화 (새로고침시 항상 3D 큐브 표시)');
     console.log('  - checkBGM(): BGM 상태 확인');
     console.log('  - forceNext(): 강제 다음곡 재생');
     console.log('  - resetBGM(): BGM 완전 리셋');
