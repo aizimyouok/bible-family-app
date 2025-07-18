@@ -5,7 +5,7 @@
 
 // === API 설정 ===
 const API_CONFIG = {
-    scriptUrl: 'https://script.google.com/macros/s/AKfycbzvGGbh8C2y4Iem0IqoF7AT_CboaJfAZRY_NJ6ALeDwkIB_6HurNuZE829fZ833jne_-w/exec',
+    scriptUrl: 'https://script.google.com/macros/s/AKfycbwBww_0qfNJdtVTDNtnobVLoHT-oPi4NGIyI3TIy6a9y_tiauFG3jiFRB9qdpxhgXPixQ/exec',
     apiKey: 'bible_family_default',
     enableSecurity: false
 };
@@ -23,6 +23,9 @@ class EnhancedGoogleSheetsAPI {
         this.pendingChanges = [];
         this.syncInProgress = false;
         this.lastSyncTime = null;
+        
+        // 🚀 스마트 캐싱 관련 속성
+        this.localStorageKey = 'bible_family_cache_v2'; // 새로운 캐시 키
         
         // ⭐ 스마트 폴링 관련 속성
         this.realtimeSyncInterval = null;
@@ -59,6 +62,8 @@ class EnhancedGoogleSheetsAPI {
         const startSmartPolling = () => {
             this.realtimeSyncInterval = setInterval(() => {
                 if (this.isConnected && this.realtimeSyncEnabled && !this.syncInProgress) {
+                    // 🎯 백그라운드 동기화 플래그 설정 (깜빡거림 방지)
+                    window.isBackgroundSync = true;
                     this.checkForServerUpdates();
                 }
             }, this.currentSyncInterval);
@@ -234,12 +239,43 @@ class EnhancedGoogleSheetsAPI {
     }
     
     /**
-     * 서버 업데이트 적용 (⭐ 현재 탭만 선택적 실시간 반영)
+     * 서버 업데이트 적용 (🎯 백그라운드 동기화시 깜빡거림 방지)
      */
     async applyServerUpdates(updateData) {
         try {
             const stateManager = window.stateManager;
             const currentTab = window.currentTab || 'reading';
+            
+            // 🎯 백그라운드 동기화 중일 때는 데이터만 조용히 업데이트
+            if (window.isBackgroundSync) {
+                console.log('🔄 백그라운드 데이터 업데이트 (UI 렌더링 없음)');
+                
+                // ⭐ 모든 옵저버 알림을 차단 (깜빡거림 방지)
+                stateManager.disableObservers();
+                
+                // ⭐ 데이터 업데이트 (옵저버 알림 없음)
+                stateManager.updateState('family', updateData.data.family_members || []);
+                stateManager.updateState('readRecords', updateData.data.reading_records || {});
+                stateManager.updateState('badges', updateData.data.badges || {});
+                stateManager.updateState('meditations', updateData.data.meditations || []);
+                stateManager.updateState('prayers', updateData.data.prayers || []);
+                stateManager.updateState('messages', updateData.data.messages || []);
+                stateManager.updateState('allowance', updateData.data.allowance_ledger || []);
+                stateManager.updateState('events', updateData.data.family_events || []);
+                stateManager.updateState('events', updateData.data.family_events || []);
+                
+                // ⭐ 옵저버 다시 활성화 (하지만 즉시 알림은 발송하지 않음)
+                stateManager.enableObservers();
+                
+                // 🎯 로컬 스토리지만 업데이트
+                this.saveToLocalStorage(updateData.data);
+                localStorage.setItem('bible_data_timestamp', updateData.data.lastUpdate || new Date().toISOString());
+                
+                return;
+            }
+            
+            // 🎯 사용자가 직접 조작할 때만 실시간 UI 업데이트
+            console.log('🔄 실시간 UI 업데이트 - 현재 탭:', currentTab);
             
             // ⭐ 모든 옵저버 알림을 차단 (깜빡거림 방지)
             stateManager.disableObservers();
@@ -300,6 +336,7 @@ class EnhancedGoogleSheetsAPI {
         localStorage.setItem('bible_prayers', JSON.stringify(state.prayers));
         localStorage.setItem('bible_messages', JSON.stringify(state.messages));
         localStorage.setItem('bible_allowance', JSON.stringify(state.allowance));
+        localStorage.setItem('bible_events', JSON.stringify(state.events));
     }
     
 
@@ -611,13 +648,22 @@ class EnhancedGoogleSheetsAPI {
         localStorage.setItem('bible_prayers', JSON.stringify(state.prayers));
         localStorage.setItem('bible_messages', JSON.stringify(state.messages));
         localStorage.setItem('bible_allowance', JSON.stringify(state.allowance));
+        localStorage.setItem('bible_events', JSON.stringify(state.events));
     }
     
     /**
-     * 로컬 스토리지에서 데이터 로드
+     * 로컬 스토리지에서 데이터 로드 (🚀 메타데이터 지원)
      */
     loadFromLocalStorage() {
         try {
+            // 새로운 메타데이터 방식 먼저 시도
+            const enhancedData = this.loadFromLocalStorageWithMetadata();
+            if (enhancedData) {
+                return enhancedData;
+            }
+            
+            // 기존 방식 백업
+            console.log('📱 기존 캐시 방식으로 로드');
             const timestamp = localStorage.getItem('bible_data_timestamp');
             const family = JSON.parse(localStorage.getItem('bible_family') || '[]');
             const readRecords = JSON.parse(localStorage.getItem('bible_readRecords') || '{}');
@@ -626,14 +672,15 @@ class EnhancedGoogleSheetsAPI {
             const prayers = JSON.parse(localStorage.getItem('bible_prayers') || '[]');
             const messages = JSON.parse(localStorage.getItem('bible_messages') || '[]');
             const allowance = JSON.parse(localStorage.getItem('bible_allowance') || '[]');
+            const events = JSON.parse(localStorage.getItem('bible_events') || '[]');
             
             return {
-                timestamp: timestamp || null,  // ⭐ ISO 문자열 그대로 사용
+                timestamp: timestamp || null,
                 family, readRecords, badges, meditations, prayers, 
-                messages, allowance
+                messages, allowance, events
             };
         } catch (error) {
-            console.error('로컬 데이터 로드 실패:', error);
+            console.error('❌ 로컬 데이터 로드 실패:', error);
             return null;
         }
     }
@@ -660,27 +707,119 @@ class EnhancedGoogleSheetsAPI {
         return true;
     }    
     /**
-     * 모든 데이터 로드 (⭐ 타임스탬프도 함께 가져와서 동기화)
+     * 모든 데이터 로드 (🚀 스마트 캐싱 최적화)
      */
     async loadAllData() {
-        // 서버에서 모든 데이터 로드 요청
-        const result = await this._request('loadAll');
+        console.log('📦 데이터 로딩 시작...');
+        const startTime = performance.now();
         
-        // ⭐ 서버 데이터를 상태 관리자에 저장
-        const stateManager = window.stateManager;
-        stateManager.updateState('family', result.data.family_members || []);
-        stateManager.updateState('readRecords', result.data.reading_records || {});
-        stateManager.updateState('badges', result.data.badges || {});
-        stateManager.updateState('meditations', result.data.meditations || []);
-        stateManager.updateState('prayers', result.data.prayers || []);
-        stateManager.updateState('messages', result.data.messages || []);
-        stateManager.updateState('allowance', result.data.allowance_ledger || []);
+        try {
+            // 서버에서 모든 데이터 로드 요청
+            const result = await this._request('loadAll');
+            const loadTime = performance.now() - startTime;
+            
+            console.log(`🚀 서버 데이터 로드 완료 (${Math.round(loadTime)}ms)`);
+            
+            // ⭐ 서버 데이터를 상태 관리자에 저장
+            const stateManager = window.stateManager;
+            stateManager.updateState('family', result.data.family_members || []);
+            stateManager.updateState('readRecords', result.data.reading_records || {});
+            stateManager.updateState('badges', result.data.badges || {});
+            stateManager.updateState('meditations', result.data.meditations || []);
+            stateManager.updateState('prayers', result.data.prayers || []);
+            stateManager.updateState('messages', result.data.messages || []);
+            stateManager.updateState('allowance', result.data.allowance_ledger || []);
+            stateManager.updateState('events', result.data.family_events || []);
 
-        // 로컬 스토리지에 저장
-        this.saveToLocalStorage();
+            // 🚀 향상된 로컬 스토리지 저장 (성능 메타데이터 포함)
+            this.saveToLocalStorageWithMetadata(result.data, loadTime);
 
-        // 서버에서 받은 데이터 그대로 반환
-        return result.data;
+            // 서버에서 받은 데이터 그대로 반환
+            return result.data;
+            
+        } catch (error) {
+            console.error('❌ 서버 데이터 로드 실패:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * 🚀 메타데이터와 함께 로컬 스토리지 저장
+     */
+    saveToLocalStorageWithMetadata(data, loadTime) {
+        try {
+            const cacheData = {
+                data: data,
+                metadata: {
+                    timestamp: Date.now(),
+                    loadTime: loadTime,
+                    version: '1.0',
+                    dataSize: JSON.stringify(data).length
+                }
+            };
+            
+            localStorage.setItem(this.localStorageKey, JSON.stringify(cacheData));
+            console.log(`💾 로컬 캐시 저장 완료 (크기: ${Math.round(cacheData.metadata.dataSize / 1024)}KB)`);
+            
+        } catch (error) {
+            console.warn('⚠️ 로컬 캐시 저장 실패:', error);
+        }
+    }
+
+    /**
+     * 🚀 성능 모니터링
+     */
+    getPerformanceMetrics() {
+        const cached = this.loadFromLocalStorageWithMetadata();
+        const metrics = {
+            hasCachedData: !!cached,
+            cacheAge: null,
+            cacheSize: null,
+            lastLoadTime: null,
+            connectionStatus: this.isConnected ? 'connected' : 'disconnected'
+        };
+        
+        if (cached) {
+            try {
+                const cacheData = JSON.parse(localStorage.getItem(this.localStorageKey));
+                if (cacheData && cacheData.metadata) {
+                    metrics.cacheAge = Date.now() - cacheData.metadata.timestamp;
+                    metrics.cacheSize = cacheData.metadata.dataSize;
+                    metrics.lastLoadTime = cacheData.metadata.loadTime;
+                }
+            } catch (error) {
+                console.warn('⚠️ 메트릭 수집 실패:', error);
+            }
+        }
+        
+        return metrics;
+    }
+
+    /**
+     * 🚀 향상된 로컬 스토리지 로드
+     */
+    loadFromLocalStorageWithMetadata() {
+        try {
+            const cached = localStorage.getItem(this.localStorageKey);
+            if (!cached) return null;
+            
+            const cacheData = JSON.parse(cached);
+            const age = Date.now() - cacheData.metadata.timestamp;
+            const ageMinutes = Math.round(age / (1000 * 60));
+            
+            console.log(`📱 로컬 캐시 발견 (${ageMinutes}분 전, ${Math.round(cacheData.metadata.dataSize / 1024)}KB)`);
+            
+            // 24시간 이상 된 캐시는 경고
+            if (age > 24 * 60 * 60 * 1000) {
+                console.warn('⚠️ 오래된 캐시 데이터 (24시간 이상)');
+            }
+            
+            return cacheData.data;
+            
+        } catch (error) {
+            console.warn('⚠️ 로컬 캐시 로드 실패:', error);
+            return null;
+        }
     }
     
     /**
@@ -819,7 +958,8 @@ class StateManager {
             meditations: [],
             prayers: [],
             messages: [],
-            allowance: []
+            allowance: [],
+            events: []
         };
         this.observers = new Map();
         this.silentUpdate = false; // ⭐ 조용한 업데이트 모드
@@ -900,12 +1040,22 @@ class StateManager {
     }
     
     /**
-     * 여러 상태를 일괄 업데이트
+     * 여러 상태를 일괄 업데이트 (🎯 깜빡거림 방지 옵션 추가)
      */
-    updateMultipleStates(updates) {
+    updateMultipleStates(updates, options = {}) {
+        const wasSilent = this.silentUpdate;
+        
+        // 🎯 silent 옵션이 true면 조용한 업데이트 모드로 전환
+        if (options.silent) {
+            this.silentUpdate = true;
+        }
+        
         Object.entries(updates).forEach(([key, value]) => {
             this.updateState(key, value);
         });
+        
+        // 🎯 원래 silent 상태로 복원
+        this.silentUpdate = wasSilent;
     }
 }
 

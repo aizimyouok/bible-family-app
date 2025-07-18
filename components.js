@@ -128,28 +128,34 @@ class ReadingComponent extends BaseComponent {
             </section>
             
             <!-- 성경 책 목록 -->
-            <section class="mb-8 space-y-4">
+            <section class="mb-8 space-y-6">
                 <details class="group">
                     <summary class="text-2xl font-bold text-center cursor-pointer p-2 rounded-lg hover:bg-gray-100 transition">
-                        <span class="group-open:hidden">📖 구약 성경 펼치기 ▼</span>
-                        <span class="hidden group-open:inline">📖 구약 성경 접기 ▲</span>
+                        <span class="group-open:hidden">📚 구약 책장 열기 ▼</span>
+                        <span class="hidden group-open:inline">📚 구약 책장 닫기 ▲</span>
                     </summary>
-                    <div class="mt-4">
-                        <h3 class="text-xl font-semibold mb-3 text-center accent-text">구약 (39권)</h3>
-                        <div id="old-testament" class="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2">
+                    <div class="mt-4 bookshelf-container testament-old">
+                        <h3 class="bookshelf-title">📖 구약 성경 (39권)</h3>
+                        <div class="book-grid">
                             ${this.renderBibleBooks('old')}
+                        </div>
+                        <div class="bookshelf-stats">
+                            ${this.renderTestamentStats('old')}
                         </div>
                     </div>
                 </details>
                 <details class="group">
                     <summary class="text-2xl font-bold text-center cursor-pointer p-2 rounded-lg hover:bg-gray-100 transition">
-                        <span class="group-open:hidden">📖 신약 성경 펼치기 ▼</span>
-                        <span class="hidden group-open:inline">📖 신약 성경 접기 ▲</span>
+                        <span class="group-open:hidden">📚 신약 책장 열기 ▼</span>
+                        <span class="hidden group-open:inline">📚 신약 책장 닫기 ▲</span>
                     </summary>
-                    <div class="mt-4">
-                        <h3 class="text-xl font-semibold mb-3 text-center accent-text">신약 (27권)</h3>
-                        <div id="new-testament" class="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2">
+                    <div class="mt-4 bookshelf-container testament-new">
+                        <h3 class="bookshelf-title">📖 신약 성경 (27권)</h3>
+                        <div class="book-grid">
                             ${this.renderBibleBooks('new')}
+                        </div>
+                        <div class="bookshelf-stats">
+                            ${this.renderTestamentStats('new')}
                         </div>
                     </div>
                 </details>
@@ -388,13 +394,101 @@ class ReadingComponent extends BaseComponent {
         }).join('');
     }
     
+    renderTestamentStats(testament) {
+        const books = BIBLE_BOOKS[testament];
+        const family = window.stateManager.getState('family');
+        const readRecords = window.stateManager.getState('readRecords');
+        
+        // 현재 선택된 사용자 (첫 번째 사용자를 기본값으로 사용)
+        const currentUser = family && family.length > 0 ? family[0] : null;
+        
+        if (!currentUser || !readRecords[currentUser.id]) {
+            return `총 ${books.length}권 중 0권 완독 (0%)`;
+        }
+        
+        let fullyReadBooks = 0;
+        let partiallyReadBooks = 0;
+        let totalChaptersRead = 0;
+        let totalChapters = 0;
+        
+        books.forEach(book => {
+            totalChapters += book.chapters;
+            
+            const bookData = readRecords[currentUser.id][book.name];
+            if (bookData) {
+                let chaptersRead = 0;
+                
+                if (bookData.chapters && Array.isArray(bookData.chapters)) {
+                    chaptersRead = bookData.chapters.length;
+                } else if (Array.isArray(bookData)) {
+                    chaptersRead = bookData.length;
+                }
+                
+                totalChaptersRead += chaptersRead;
+                
+                if (chaptersRead === book.chapters) {
+                    fullyReadBooks++;
+                } else if (chaptersRead > 0) {
+                    partiallyReadBooks++;
+                }
+            }
+        });
+        
+        const completionRate = Math.round((fullyReadBooks / books.length) * 100);
+        const chapterProgress = Math.round((totalChaptersRead / totalChapters) * 100);
+        
+        return `
+            ${currentUser.name}님 진도: 
+            📚 완독 ${fullyReadBooks}/${books.length}권 (${completionRate}%) | 
+            📖 전체 ${totalChaptersRead}/${totalChapters}장 (${chapterProgress}%)
+        `;
+    }
+    
     renderBibleBooks(testament) {
         const books = BIBLE_BOOKS[testament];
-        return books.map(book => `
-            <button class="p-2 text-sm rounded-md shadow-sm transition-all duration-200 accent-bg hover:shadow-lg hover:-translate-y-1" onclick="window.openChapterModal('${JSON.stringify(book).replace(/"/g, '&quot;')}')">
-                ${book.name}
-            </button>
-        `).join('');
+        const family = window.stateManager.getState('family');
+        const readRecords = window.stateManager.getState('readRecords');
+        
+        // 현재 선택된 사용자 (첫 번째 사용자를 기본값으로 사용)
+        const currentUser = family && family.length > 0 ? family[0] : null;
+        
+        return books.map(book => {
+            let readStatus = 'unread';
+            let progressWidth = 0;
+            
+            if (currentUser && readRecords[currentUser.id] && readRecords[currentUser.id][book.name]) {
+                const bookData = readRecords[currentUser.id][book.name];
+                let chaptersRead = 0;
+                
+                if (bookData.chapters && Array.isArray(bookData.chapters)) {
+                    chaptersRead = bookData.chapters.length;
+                } else if (Array.isArray(bookData)) {
+                    chaptersRead = bookData.length;
+                }
+                
+                const progress = chaptersRead / book.chapters;
+                progressWidth = Math.round(progress * 100);
+                
+                if (chaptersRead === 0) {
+                    readStatus = 'unread';
+                } else if (chaptersRead === book.chapters) {
+                    readStatus = 'fully-read';
+                } else {
+                    readStatus = 'partially-read';
+                }
+            }
+            
+            return `
+                <button 
+                    class="bible-book ${readStatus}" 
+                    style="--progress-width: ${progressWidth}%"
+                    onclick="window.openChapterModal('${JSON.stringify(book).replace(/"/g, '&quot;')}')"
+                    title="${book.name} (${progressWidth}% 완료)"
+                >
+                    ${book.name}
+                </button>
+            `;
+        }).join('');
     }
     
     /**
@@ -681,7 +775,7 @@ class MessageBoardComponent extends BaseComponent {
         const comments = messages.filter(m => !isMainMessage(m));
         console.log('전체 메시지 수:', messages.length);
         console.log('댓글 메시지 수:', comments.length);
-        console.log('댓글 메시지들:', comments.map(c => ({ id: c.id, parent_id: c.parent_id, content: c.content.substring(0, 30) })));
+        console.log('댓글 메시지들:', comments.map(c => ({ id: c.id, parent_id: c.parent_id, content: c.content ? c.content.substring(0, 30) : '내용없음' })));
         
         const notices = messages.filter(m => m.is_notice === true && isMainMessage(m));
         const regularMessages = messages.filter(m => m.is_notice !== true && isMainMessage(m));
@@ -736,9 +830,17 @@ class MessageBoardComponent extends BaseComponent {
         const user = family.find(u => u.id === message.user_id);
         const messageEl = document.createElement('div');
         
-        messageEl.className = isNotice 
-            ? 'p-3 bg-yellow-100 rounded-lg shadow-md border-l-4 border-yellow-400' 
-            : 'p-3 bg-white/80 rounded-lg shadow-sm';
+        // ⭐ 축하 메시지인지 확인
+        const isCelebration = message.is_celebration === true;
+        
+        // 메시지 스타일 결정
+        if (isCelebration) {
+            messageEl.className = 'p-3 celebration-message rounded-lg shadow-md border-l-4';
+        } else if (isNotice) {
+            messageEl.className = 'p-3 bg-yellow-100 rounded-lg shadow-md border-l-4 border-yellow-400';
+        } else {
+            messageEl.className = 'p-3 bg-white/80 rounded-lg shadow-sm';
+        }
         
         const likeCount = message.like_count || 0;
         const isCurrentUser = message.user_id === currentUserId;
@@ -747,6 +849,31 @@ class MessageBoardComponent extends BaseComponent {
         const comments = this.getCommentsForMessage(message.id);
         const commentCount = comments.length;
         
+        // ⭐ 축하 메시지 전용 렌더링
+        if (isCelebration) {
+            messageEl.innerHTML = `
+                <div class="flex items-start gap-3">
+                    <div class="celebration-icon text-2xl">🎉</div>
+                    <div class="flex-grow min-w-0">
+                        <div class="text-sm mb-2">
+                            <strong class="font-bold celebration-text">🤖 축하봇:</strong>
+                            <span class="whitespace-pre-wrap celebration-text">${message.content}</span>
+                        </div>
+                        <div class="flex justify-between items-center text-xs mb-2">
+                            <span class="text-gray-600">${new Date(message.timestamp).toLocaleString('ko-KR')}</span>
+                            <div class="flex items-center gap-3">
+                                <button onclick="window.likeMessage('${message.id}', this)" class="text-red-500 hover:text-red-600 flex items-center gap-1">
+                                    ❤️ ${likeCount}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            return messageEl;
+        }
+        
+        // ⭐ 일반 메시지 렌더링 (기존 코드)
         messageEl.innerHTML = `
             <div class="flex items-start gap-3">
                 <img src="${user ? user.photo : 'https://placehold.co/40x40'}" class="w-10 h-10 rounded-full object-cover flex-shrink-0" referrerpolicy="no-referrer">
@@ -2110,3 +2237,735 @@ window.changePrayerPage = function(page) {
         window.components.meditation.renderPrayers();
     }
 };
+
+/**
+ * 📅 캘린더 탭 컴포넌트
+ */
+class CalendarComponent extends BaseComponent {
+    constructor() {
+        super('content-calendar');
+        
+        this.currentDate = new Date();
+        
+        // 상태 구독
+        this.subscribe('family', () => this.render());
+        this.subscribe('events', () => this.render()); // 새 이벤트 데이터 구독
+    }
+    
+    render() {
+        const family = window.stateManager.getState('family');
+        if (!family || family.length === 0) {
+            this.container.innerHTML = '<div class="text-center p-8">가족 정보를 로드하는 중...</div>';
+            return;
+        }
+        
+        this.container.innerHTML = `
+            <section class="mb-6 accent-bg rounded-lg p-4">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold">📅 가족 일정</h3>
+                    <button id="add-event-btn" class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600">
+                        ➕ 일정 추가
+                    </button>
+                </div>
+                
+                <!-- 달력 + 리스트 분할 레이아웃 -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- 왼쪽: 월 달력 -->
+                    <div class="bg-white/70 rounded-lg p-4">
+                        <div class="flex justify-between items-center mb-4">
+                            <button id="prev-month" class="p-2 hover:bg-gray-200 rounded">
+                                ← 이전달
+                            </button>
+                            <h4 id="calendar-title" class="text-lg font-semibold">
+                                ${this.currentDate.getFullYear()}년 ${this.currentDate.getMonth() + 1}월
+                            </h4>
+                            <button id="next-month" class="p-2 hover:bg-gray-200 rounded">
+                                다음달 →
+                            </button>
+                        </div>
+                        
+                        <!-- 달력 그리드 -->
+                        <div class="calendar-grid">
+                            ${this.renderCalendarGrid()}
+                        </div>
+                    </div>
+                    
+                    <!-- 오른쪽: 상세 일정 리스트 -->
+                    <div class="bg-white/70 rounded-lg p-4">
+                        <!-- 오늘 일정 -->
+                        <div class="mb-6">
+                            <h4 class="text-lg font-semibold mb-3 flex items-center">
+                                🔸 오늘 (${this.formatDate(new Date())})
+                            </h4>
+                            <div id="today-events" class="space-y-2 min-h-[60px]">
+                                ${this.renderTodayEvents()}
+                            </div>
+                        </div>
+                        
+                        <!-- 이번 주 일정 -->
+                        <div class="mb-6">
+                            <h4 class="text-lg font-semibold mb-3 flex items-center">
+                                🔸 이번 주
+                            </h4>
+                            <div id="week-events" class="space-y-2 min-h-[80px]">
+                                ${this.renderWeekEvents()}
+                            </div>
+                        </div>
+                        
+                        <!-- 다음 주 일정 -->
+                        <div>
+                            <h4 class="text-lg font-semibold mb-3 flex items-center">
+                                🔸 다음 주
+                            </h4>
+                            <div id="next-week-events" class="space-y-2 min-h-[80px]">
+                                ${this.renderNextWeekEvents()}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        `;
+        
+        this.attachEventListeners();
+    }
+    
+    /**
+     * 달력 그리드 렌더링
+     */
+    renderCalendarGrid() {
+        const year = this.currentDate.getFullYear();
+        const month = this.currentDate.getMonth();
+        
+        // 이번 달 첫째 날과 마지막 날
+        const firstDay = new Date(year, month, 1);
+        const lastDay = new Date(year, month + 1, 0);
+        
+        // 첫째 날의 요일 (0=일요일)
+        const startDayOfWeek = firstDay.getDay();
+        
+        // 달력에 표시할 모든 날짜들
+        const calendarDays = [];
+        
+        // 이전 달의 날짜들 (빈 공간 채우기)
+        const prevMonth = new Date(year, month - 1, 0);
+        for (let i = startDayOfWeek - 1; i >= 0; i--) {
+            calendarDays.push({
+                date: prevMonth.getDate() - i,
+                isCurrentMonth: false,
+                fullDate: new Date(year, month - 1, prevMonth.getDate() - i)
+            });
+        }
+        
+        // 이번 달의 날짜들
+        for (let date = 1; date <= lastDay.getDate(); date++) {
+            calendarDays.push({
+                date: date,
+                isCurrentMonth: true,
+                fullDate: new Date(year, month, date)
+            });
+        }
+        
+        // 다음 달의 날짜들 (42일로 맞추기 - 6주)
+        const totalCells = 42;
+        const nextMonthDays = totalCells - calendarDays.length;
+        for (let date = 1; date <= nextMonthDays; date++) {
+            calendarDays.push({
+                date: date,
+                isCurrentMonth: false,
+                fullDate: new Date(year, month + 1, date)
+            });
+        }
+        
+        // 오늘 날짜
+        const today = new Date();
+        const todayStr = this.formatDateForComparison(today);
+        
+        // 이벤트가 있는 날짜들 미리 계산
+        const eventsMap = this.getEventsForMonth(year, month);
+        
+        let html = `
+            <div class="grid grid-cols-7 gap-1 mb-2">
+                <div class="text-center py-2 font-semibold text-red-600">일</div>
+                <div class="text-center py-2 font-semibold">월</div>
+                <div class="text-center py-2 font-semibold">화</div>
+                <div class="text-center py-2 font-semibold">수</div>
+                <div class="text-center py-2 font-semibold">목</div>
+                <div class="text-center py-2 font-semibold">금</div>
+                <div class="text-center py-2 font-semibold text-blue-600">토</div>
+            </div>
+            <div class="grid grid-cols-7 gap-1">
+        `;
+        
+        calendarDays.forEach(day => {
+            const dayStr = this.formatDateForComparison(day.fullDate);
+            const isToday = dayStr === todayStr;
+            const hasEvents = eventsMap[dayStr] && eventsMap[dayStr].length > 0;
+            
+            const dayClasses = [
+                'relative h-10 flex items-center justify-center text-sm cursor-pointer rounded transition-colors',
+                day.isCurrentMonth ? 'hover:bg-blue-100' : 'text-gray-400 hover:bg-gray-100',
+                isToday ? 'bg-blue-500 text-white font-bold' : ''
+            ].filter(Boolean).join(' ');
+            
+            html += `
+                <div class="${dayClasses}" 
+                     data-date="${dayStr}" 
+                     onclick="window.showDayEvents('${dayStr}', '${day.fullDate.getFullYear()}-${(day.fullDate.getMonth()+1).toString().padStart(2,'0')}-${day.fullDate.getDate().toString().padStart(2,'0')}')">
+                    <span>${day.date}</span>
+                    ${hasEvents ? '<div class="absolute bottom-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-red-500 rounded-full"></div>' : ''}
+                </div>
+            `;
+        });
+        
+        html += '</div>';
+        return html;
+    }
+    
+    /**
+     * 특정 월의 모든 이벤트 가져오기
+     */
+    getEventsForMonth(year, month) {
+        const events = this.getAllEvents();
+        const eventsMap = {};
+        
+        events.forEach(event => {
+            if (event.is_recurring) {
+                // 반복 이벤트는 매년 같은 월-일에 표시
+                const eventDate = new Date(event.start_date);
+                if (eventDate.getMonth() === month) {
+                    const thisYearDate = new Date(year, month, eventDate.getDate());
+                    const dateStr = this.formatDateForComparison(thisYearDate);
+                    if (!eventsMap[dateStr]) eventsMap[dateStr] = [];
+                    eventsMap[dateStr].push(event);
+                }
+            } else {
+                // 일반 이벤트는 날짜 범위 확인
+                const startDate = new Date(event.start_date);
+                const endDate = new Date(event.end_date || event.start_date);
+                
+                // 날짜 범위의 모든 날에 이벤트 추가
+                for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+                    if (d.getFullYear() === year && d.getMonth() === month) {
+                        const dateStr = this.formatDateForComparison(d);
+                        if (!eventsMap[dateStr]) eventsMap[dateStr] = [];
+                        eventsMap[dateStr].push(event);
+                    }
+                }
+            }
+        });
+        
+        return eventsMap;
+    }
+    
+    /**
+     * 모든 이벤트 가져오기 (생일 + 기념일 + 일정)
+     */
+    getAllEvents() {
+        const family = window.stateManager.getState('family') || [];
+        const events = window.stateManager.getState('events') || [];
+        const allEvents = [];
+        
+        // 1. 생일 이벤트 추가
+        family.forEach(member => {
+            if (member.birthday) {
+                const birthday = new Date(member.birthday);
+                allEvents.push({
+                    id: `birthday_${member.id}`,
+                    title: `🎂 ${member.name} 생일`,
+                    date: this.formatDateForComparison(birthday),
+                    time: '',
+                    type: 'birthday',
+                    user_id: member.id,
+                    description: `${member.name}님의 생일입니다.`,
+                    color: '#FF6B6B',
+                    is_recurring: true,
+                    isAutoGenerated: true
+                });
+            }
+        });
+        
+        // 2. 기념일 이벤트 추가
+        family.forEach(member => {
+            if (member.anniversary) {
+                const anniversaries = member.anniversary.split(/[|;]/).map(a => a.trim()).filter(a => a);
+                
+                anniversaries.forEach(anniversaryStr => {
+                    let anniversaryDate, anniversaryName = '기념일';
+                    
+                    if (anniversaryStr.includes(':')) {
+                        const [dateStr, description] = anniversaryStr.split(':');
+                        anniversaryDate = new Date(dateStr.trim());
+                        anniversaryName = description.trim();
+                    } else {
+                        anniversaryDate = new Date(anniversaryStr.trim());
+                    }
+                    
+                    allEvents.push({
+                        id: `anniversary_${member.id}_${anniversaryName}`,
+                        title: `💐 ${member.name} ${anniversaryName}`,
+                        date: this.formatDateForComparison(anniversaryDate),
+                        time: '',
+                        type: 'anniversary',
+                        user_id: member.id,
+                        description: `${member.name}님의 ${anniversaryName}입니다.`,
+                        color: '#FF69B4',
+                        is_recurring: true,
+                        isAutoGenerated: true
+                    });
+                });
+            }
+        });
+        
+        // 3. 일반 일정 이벤트 추가
+        events.forEach(event => {
+            allEvents.push({
+                ...event,
+                date: event.start_date, // date 필드 통일
+                isAutoGenerated: false
+            });
+        });
+        
+        return allEvents;
+    }
+    
+    /**
+     * 오늘 일정 렌더링
+     */
+    renderTodayEvents() {
+        const today = new Date();
+        const todayEvents = this.getAllEvents().filter(event => {
+            if (event.is_recurring) {
+                // 반복 이벤트는 월-일만 비교
+                const eventDate = new Date(event.start_date);
+                return eventDate.getMonth() === today.getMonth() && 
+                       eventDate.getDate() === today.getDate();
+            } else {
+                // 일반 이벤트는 오늘 날짜가 시작일과 종료일 사이에 있는지 확인 (날짜만 비교)
+                const startDate = new Date(event.start_date);
+                const endDate = new Date(event.end_date || event.start_date);
+                
+                // 날짜만 비교 (시간 제외)
+                const todayOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+                const startDateOnly = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+                const endDateOnly = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
+                
+                return todayOnly >= startDateOnly && todayOnly <= endDateOnly;
+            }
+        });
+        
+        if (todayEvents.length === 0) {
+            return '<div class="text-gray-500 text-center py-4">오늘 일정이 없습니다.</div>';
+        }
+        
+        return todayEvents.map(event => this.renderEventCard(event)).join('');
+    }
+    
+    /**
+     * 이번 주 일정 렌더링
+     */
+    renderWeekEvents() {
+        const today = new Date();
+        const startOfWeek = new Date(today);
+        startOfWeek.setDate(today.getDate() - today.getDay()); // 일요일
+        const endOfWeek = new Date(startOfWeek);
+        endOfWeek.setDate(startOfWeek.getDate() + 6); // 토요일
+        
+        const weekEvents = this.getAllEvents().filter(event => {
+            const eventDate = new Date(event.date);
+            
+            if (event.is_recurring) {
+                // 반복 이벤트는 이번 주 내에 해당 월-일이 있는지 확인
+                const thisWeekDates = [];
+                for (let d = new Date(startOfWeek); d <= endOfWeek; d.setDate(d.getDate() + 1)) {
+                    if (d.getMonth() === eventDate.getMonth() && d.getDate() === eventDate.getDate()) {
+                        return true;
+                    }
+                }
+                return false;
+            } else {
+                // 일반 이벤트는 날짜 범위 확인 (날짜만 비교)
+                const startDate = new Date(event.start_date);
+                const endDate = new Date(event.end_date || event.start_date);
+                
+                // 날짜만 비교 (시간 제외)
+                const startOfWeekOnly = new Date(startOfWeek.getFullYear(), startOfWeek.getMonth(), startOfWeek.getDate());
+                const endOfWeekOnly = new Date(endOfWeek.getFullYear(), endOfWeek.getMonth(), endOfWeek.getDate());
+                const startDateOnly = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+                const endDateOnly = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
+                
+                // 이벤트가 이번 주와 겹치는지 확인
+                return startDateOnly <= endOfWeekOnly && endDateOnly >= startOfWeekOnly;
+            }
+        }).filter(event => {
+            // 오늘 이벤트는 제외
+            const todayOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+            
+            if (event.is_recurring) {
+                const eventDate = new Date(event.start_date);
+                return !(eventDate.getMonth() === today.getMonth() && eventDate.getDate() === today.getDate());
+            } else {
+                const startDate = new Date(event.start_date);
+                const endDate = new Date(event.end_date || event.start_date);
+                const startDateOnly = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+                const endDateOnly = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
+                
+                // 오늘 날짜와 겹치지 않는 이벤트만
+                return !(todayOnly >= startDateOnly && todayOnly <= endDateOnly);
+            }
+        });
+        
+        if (weekEvents.length === 0) {
+            return '<div class="text-gray-500 text-center py-4">이번 주 다른 일정이 없습니다.</div>';
+        }
+        
+        return weekEvents.map(event => this.renderEventCard(event, true)).join('');
+    }
+    
+    /**
+     * 이번 달 일정 렌더링
+     */
+    /**
+     * 다음 주 일정 렌더링
+     */
+    renderNextWeekEvents() {
+        const today = new Date();
+        const nextWeekStart = new Date(today);
+        nextWeekStart.setDate(today.getDate() + (7 - today.getDay())); // 다음 주 일요일
+        const nextWeekEnd = new Date(nextWeekStart);
+        nextWeekEnd.setDate(nextWeekStart.getDate() + 6); // 다음 주 토요일
+        
+        const nextWeekEvents = this.getAllEvents().filter(event => {
+            if (event.is_recurring) {
+                // 반복 이벤트는 다음 주에 해당 월-일이 있는지 확인
+                const eventDate = new Date(event.start_date);
+                for (let d = new Date(nextWeekStart); d <= nextWeekEnd; d.setDate(d.getDate() + 1)) {
+                    if (d.getMonth() === eventDate.getMonth() && d.getDate() === eventDate.getDate()) {
+                        return true;
+                    }
+                }
+                return false;
+            } else {
+                // 일반 이벤트는 날짜 범위 확인 (날짜만 비교)
+                const startDate = new Date(event.start_date);
+                const endDate = new Date(event.end_date || event.start_date);
+                
+                // 날짜만 비교 (시간 제외)
+                const nextWeekStartOnly = new Date(nextWeekStart.getFullYear(), nextWeekStart.getMonth(), nextWeekStart.getDate());
+                const nextWeekEndOnly = new Date(nextWeekEnd.getFullYear(), nextWeekEnd.getMonth(), nextWeekEnd.getDate());
+                const startDateOnly = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+                const endDateOnly = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
+                
+                // 이벤트가 다음 주와 겹치는지 확인
+                return startDateOnly <= nextWeekEndOnly && endDateOnly >= nextWeekStartOnly;
+            }
+        });
+        
+        if (nextWeekEvents.length === 0) {
+            return '<div class="text-gray-500 text-center py-4">다음 주 일정이 없습니다.</div>';
+        }
+        
+        return nextWeekEvents.map(event => this.renderEventCard(event, true)).join('');
+    }
+    
+    /**
+     * 이벤트 카드 렌더링
+     */
+    renderEventCard(event, showDate = false) {
+        const family = window.stateManager.getState('family') || [];
+        const user = family.find(u => u.id === event.user_id);
+        
+        // 범위 이벤트 처리
+        const startDate = new Date(event.start_date);
+        const endDate = new Date(event.end_date || event.start_date);
+        const isMultiDay = event.start_date !== event.end_date;
+        
+        // 반복 이벤트인 경우 올해 날짜로 표시
+        let displayStartDate = startDate;
+        let displayEndDate = endDate;
+        if (event.is_recurring) {
+            displayStartDate = new Date(new Date().getFullYear(), startDate.getMonth(), startDate.getDate());
+            displayEndDate = new Date(new Date().getFullYear(), endDate.getMonth(), endDate.getDate());
+        }
+        
+        // 날짜 표시
+        const dateStr = showDate ? (isMultiDay ? `${this.formatDate(displayStartDate)} ~ ${this.formatDate(displayEndDate)}` : this.formatDate(displayStartDate)) : '';
+        
+        // 시간 표시 (문자열로 안전하게 처리)
+        let timeStr = '';
+        const startTime = event.start_time ? String(event.start_time).includes('T') ? event.start_time.split('T')[1].slice(0,5) : event.start_time : '';
+        const endTime = event.end_time ? String(event.end_time).includes('T') ? event.end_time.split('T')[1].slice(0,5) : event.end_time : '';
+        
+        console.log('이벤트 시간 디버깅:', {
+            event_id: event.id,
+            title: event.title,
+            원본_start_time: event.start_time,
+            원본_end_time: event.end_time,
+            파싱된_startTime: startTime,
+            파싱된_endTime: endTime
+        });
+        
+        if (startTime && endTime && startTime !== endTime) {
+            timeStr = ` ${startTime} ~ ${endTime}`;
+        } else if (startTime) {
+            timeStr = ` ${startTime}`;
+        }
+        
+        return `
+            <div class="bg-white/80 rounded-lg p-3 border-l-4 shadow-sm event-card" style="border-left-color: ${event.color || '#6B7280'}">
+                <div class="flex justify-between items-start">
+                    <div class="flex-grow">
+                        <div class="font-semibold text-sm mb-1">
+                            ${event.title}
+                            ${showDate ? `<span class="text-gray-500 ml-2">(${dateStr}${timeStr})</span>` : timeStr ? `<span class="text-gray-500 ml-2">${timeStr}</span>` : ''}
+                        </div>
+                        ${event.description ? `<div class="text-xs text-gray-600 mb-2">${event.description}</div>` : ''}
+                        <div class="text-xs text-gray-500">
+                            ${user ? user.name : ''}
+                            ${event.is_recurring ? ' • 매년 반복' : ''}
+                        </div>
+                    </div>
+                    ${!event.isAutoGenerated ? `
+                        <div class="flex gap-1 ml-2">
+                            <button onclick="window.editEvent('${event.id}')" class="text-blue-600 hover:underline text-xs">수정</button>
+                            <button onclick="window.deleteEvent('${event.id}')" class="text-red-600 hover:underline text-xs">삭제</button>
+                        </div>
+                    ` : ''}
+                </div>
+            </div>
+        `;
+    }
+    
+    /**
+     * 이벤트 리스너 설정
+     */
+    attachEventListeners() {
+        const addEventBtn = document.getElementById('add-event-btn');
+        if (addEventBtn) {
+            addEventBtn.addEventListener('click', () => this.showAddEventModal());
+        }
+        
+        // 달력 네비게이션 버튼들
+        const prevMonthBtn = document.getElementById('prev-month');
+        const nextMonthBtn = document.getElementById('next-month');
+        
+        if (prevMonthBtn) {
+            prevMonthBtn.addEventListener('click', () => {
+                this.currentDate.setMonth(this.currentDate.getMonth() - 1);
+                this.render();
+            });
+        }
+        
+        if (nextMonthBtn) {
+            nextMonthBtn.addEventListener('click', () => {
+                this.currentDate.setMonth(this.currentDate.getMonth() + 1);
+                this.render();
+            });
+        }
+    }
+    
+    /**
+     * 일정 추가 모달 표시
+     */
+    showAddEventModal(defaultDate = null) {
+        const family = window.stateManager.getState('family') || [];
+        
+        // 기본 날짜 설정 (매개변수로 받은 날짜 또는 오늘 날짜)
+        const baseDate = defaultDate ? new Date(defaultDate) : new Date();
+        const defaultDateValue = this.formatDateForInput(baseDate);
+        
+        const modalHTML = `
+            <div id="event-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <div class="bg-white rounded-lg p-6 w-full max-w-md">
+                    <h3 class="text-lg font-bold mb-4">새 일정 추가</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-1">제목</label>
+                            <input type="text" id="event-title" class="w-full p-2 border rounded-md" placeholder="일정 제목을 입력하세요">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">날짜</label>
+                            <div class="flex items-center space-x-2">
+                                <input type="date" id="event-start-date" class="flex-1 p-2 border rounded-md" value="${defaultDateValue}">
+                                <span class="text-gray-500">~</span>
+                                <input type="date" id="event-end-date" class="flex-1 p-2 border rounded-md" value="${defaultDateValue}">
+                            </div>
+                            <div class="flex items-center mt-2">
+                                <input type="checkbox" id="single-day" class="mr-2" checked>
+                                <label for="single-day" class="text-sm text-gray-600">하루 일정</label>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">시간 (선택사항)</label>
+                            <div class="flex items-center space-x-2">
+                                <input type="time" id="event-start-time" class="flex-1 p-2 border rounded-md">
+                                <span class="text-gray-500">~</span>
+                                <input type="time" id="event-end-time" class="flex-1 p-2 border rounded-md">
+                            </div>
+                            <div class="flex items-center mt-2">
+                                <input type="checkbox" id="no-time" class="mr-2" checked>
+                                <label for="no-time" class="text-sm text-gray-600">시간 없음</label>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">관련 가족</label>
+                            <select id="event-user" class="w-full p-2 border rounded-md">
+                                <option value="">전체 가족</option>
+                                ${family.map(member => `<option value="${member.id}">${member.name}</option>`).join('')}
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">설명 (선택사항)</label>
+                            <textarea id="event-description" class="w-full p-2 border rounded-md" rows="2" placeholder="일정에 대한 설명을 입력하세요"></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">색상</label>
+                            <select id="event-color" class="w-full p-2 border rounded-md">
+                                <option value="#3B82F6">파란색 (일반)</option>
+                                <option value="#10B981">초록색 (가족모임)</option>
+                                <option value="#F59E0B">주황색 (중요)</option>
+                                <option value="#EF4444">빨간색 (긴급)</option>
+                                <option value="#8B5CF6">보라색 (개인)</option>
+                            </select>
+                        </div>
+                        <div class="flex items-center">
+                            <input type="checkbox" id="event-recurring" class="mr-2">
+                            <label for="event-recurring" class="text-sm">매년 반복</label>
+                        </div>
+                    </div>
+                    <div class="flex justify-end gap-2 mt-6">
+                        <button onclick="window.closeEventModal()" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-md">취소</button>
+                        <button onclick="window.saveEvent()" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">저장</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+        
+        // 이벤트 리스너 추가
+        this.setupEventModalListeners();
+    }
+    
+    /**
+     * 이벤트 모달 리스너 설정
+     */
+    setupEventModalListeners() {
+        const singleDayCheckbox = document.getElementById('single-day');
+        const noTimeCheckbox = document.getElementById('no-time');
+        const startDate = document.getElementById('event-start-date');
+        const endDate = document.getElementById('event-end-date');
+        const startTime = document.getElementById('event-start-time');
+        const endTime = document.getElementById('event-end-time');
+        
+        // 하루 일정 체크박스 처리
+        if (singleDayCheckbox) {
+            singleDayCheckbox.addEventListener('change', () => {
+                if (singleDayCheckbox.checked) {
+                    endDate.value = startDate.value;
+                    endDate.disabled = true;
+                    endDate.style.backgroundColor = '#f3f4f6';
+                } else {
+                    endDate.disabled = false;
+                    endDate.style.backgroundColor = '';
+                }
+            });
+        }
+        
+        // 시작 날짜 변경 시 종료 날짜도 동기화 (하루 일정인 경우)
+        if (startDate) {
+            startDate.addEventListener('change', () => {
+                if (singleDayCheckbox.checked) {
+                    endDate.value = startDate.value;
+                }
+            });
+        }
+        
+        // 시간 없음 체크박스 처리
+        if (noTimeCheckbox) {
+            noTimeCheckbox.addEventListener('change', () => {
+                if (noTimeCheckbox.checked) {
+                    startTime.value = '';
+                    endTime.value = '';
+                    startTime.disabled = true;
+                    endTime.disabled = true;
+                    startTime.style.backgroundColor = '#f3f4f6';
+                    endTime.style.backgroundColor = '#f3f4f6';
+                } else {
+                    startTime.disabled = false;
+                    endTime.disabled = false;
+                    startTime.style.backgroundColor = '';
+                    endTime.style.backgroundColor = '';
+                }
+            });
+        }
+        
+        // 시작 시간 변경 시 종료 시간 자동 설정
+        if (startTime) {
+            startTime.addEventListener('change', () => {
+                if (startTime.value && !endTime.value) {
+                    // 시작 시간에서 1시간 후로 설정
+                    const [hours, minutes] = startTime.value.split(':');
+                    const endHour = parseInt(hours) + 1;
+                    const endTimeValue = `${endHour.toString().padStart(2, '0')}:${minutes}`;
+                    endTime.value = endTimeValue;
+                }
+            });
+        }
+        
+        // 초기 상태 설정
+        endDate.disabled = true;
+        endDate.style.backgroundColor = '#f3f4f6';
+        startTime.disabled = true;
+        endTime.disabled = true;
+        startTime.style.backgroundColor = '#f3f4f6';
+        endTime.style.backgroundColor = '#f3f4f6';
+    }
+    
+    /**
+     * 날짜 포맷팅 (한국어)
+     */
+    formatDate(date) {
+        const year = date.getFullYear();
+        const month = date.getMonth() + 1;
+        const day = date.getDate();
+        const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
+        const dayName = dayNames[date.getDay()];
+        
+        return `${year}년 ${month}월 ${day}일 (${dayName})`;
+    }
+    
+    /**
+     * 날짜 포맷팅 (비교용 YYYY-MM-DD) - 로컬 시간대 기준
+     */
+    formatDateForComparison(date) {
+        if (!date || !(date instanceof Date) || isNaN(date.getTime())) {
+            console.warn('유효하지 않은 날짜:', date);
+            return '1970-01-01'; // 기본값
+        }
+        
+        // UTC 시간대 문제 해결: 로컬 시간대 기준으로 YYYY-MM-DD 형식 생성
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+    
+    /**
+     * 날짜 포맷팅 (input용 YYYY-MM-DD)
+     */
+    formatDateForInput(date) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+    
+    /**
+     * 데이터만 업데이트
+     */
+    updateDataOnly() {
+        if (this.container && !this.container.classList.contains('hidden')) {
+            this.render();
+        }
+    }
+}

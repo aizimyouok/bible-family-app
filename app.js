@@ -601,6 +601,7 @@ function initializeComponents() {
     window.components.messages = new MessageBoardComponent();
     window.components.allowance = new AllowanceComponent();
     window.components.stats = new StatsComponent();
+    window.components.calendar = new CalendarComponent();
     
     // 탭 전환 이벤트 리스너 설정
     document.querySelectorAll('.main-tab').forEach(tab => {
@@ -738,7 +739,8 @@ async function initializeData() {
                 meditations: localData.meditations,
                 prayers: localData.prayers,
                 messages: localData.messages,
-                allowance: localData.allowance
+                allowance: localData.allowance,
+                events: localData.events || []
             });
             if (localData.family.length > 0) {
                 currentUserForModal = localData.family[0].id;
@@ -767,7 +769,8 @@ async function loadAllDataAndRender() {
             meditations: allData.meditations || [],
             prayers: allData.prayers || [],
             messages: allData.messages || [],
-            allowance: allData.allowance_ledger || []
+            allowance: allData.allowance_ledger || [],
+            events: allData.family_events || []
         });
         
         const family = window.stateManager.getState('family');
@@ -1542,3 +1545,936 @@ window.handleIndividualWithdraw = async function(userId) {
 };
 
 console.log('앱 모듈이 로드되었습니다.');
+/**
+ * 🎉 특별한 날 축하 메시지 시스템
+ */
+
+// 축하 메시지 템플릿
+const CELEBRATION_TEMPLATES = {
+    // 기념일 축하
+    anniversary: [
+        "💐 {name}님의 소중한 {anniversary}을 축하합니다! 하나님의 은혜로 가득했던 그날을 기억하며! 🙏",
+        "🎊 특별한 {anniversary}을 축하드려요, {name}님! 그 날의 감동이 오늘도 함께하시길! ✨",
+        "🌹 {name}님의 {anniversary}을 진심으로 축하합니다! 하나님의 축복이 계속 이어지시길! 💝"
+    ],
+    
+    // 주년 기념일 축하 (몇 주년 표시)
+    anniversaryWithYear: [
+        "🎊 {name}님의 {anniversary} {years}주년을 축하합니다! 그동안의 모든 순간이 하나님의 은혜였네요! 🙏",
+        "💖 와! {anniversary} {years}주년이네요! {name}님께 축하드립니다! 하나님의 사랑이 계속 함께하시길! ✨",
+        "🌹 {name}님의 의미 깊은 {anniversary} {years}주년을 진심으로 축하드려요! 앞으로도 하나님의 축복이! 💝"
+    ],
+    
+    // 생일 축하
+    birthday: [
+        "🎂 {name}님의 생일을 축하합니다! 하나님의 은혜가 새로운 한 해에도 함께하시길 기도합니다! 🙏",
+        "🎈 생일 축하드려요, {name}님! 주님 안에서 기쁨 가득한 하루 되세요! ✨",
+        "🎁 {name}님, 생일을 진심으로 축하합니다! 하나님의 사랑으로 충만한 한 해가 되시길! 💝"
+    ],
+    
+    // 성경책 완독 축하
+    bookCompletion: [
+        "📖 축하합니다! {name}님이 {book}을 완독하셨어요! 하나님의 말씀으로 더욱 성장하시길! 🌟",
+        "🎉 와! {name}님이 {book} 완독을 달성했습니다! 말씀 안에서 지혜를 얻으셨길 기도해요! 📚",
+        "✨ {book} 완독을 축하드려요, {name}님! 하나님의 음성을 더 선명히 들으셨길! 🙏"
+    ],
+    
+    // 구약/신약 완독
+    testamentCompletion: [
+        "🏆 대단해요! {name}님이 {testament} 전체를 완독하셨습니다! 하나님께 영광! 👑",
+        "🌈 {testament} 완독을 축하드려요! {name}님의 신앙이 더욱 깊어지셨을 거예요! 🕊️",
+        "⭐ 와우! {name}님의 {testament} 완독! 하나님의 말씀이 마음에 새겨지셨길! 💎"
+    ],
+    
+    // 전체 성경 완독
+    bibleCompletion: [
+        "🔥 믿을 수 없어요! {name}님이 성경 전체를 완독하셨습니다! 하나님께 큰 영광이에요! 👑✨",
+        "🎊 성경 66권 완독을 축하드려요! {name}님, 정말 대단하세요! 하나님의 큰 축복이 있으시길! 🙌",
+        "💫 와! 성경 전체 완독! {name}님께 하나님의 특별한 은혜가 있었나봐요! 🕊️📖"
+    ],
+    
+    // 연속 읽기 기록
+    readingStreak: [
+        "🔥 {name}님의 {days}일 연속 읽기 기록! 꾸준함이 아름다워요! 계속 화이팅! 💪",
+        "⚡ 와! {days}일 연속 성경읽기! {name}님의 열정에 박수를! 👏✨",
+        "🌟 {days}일 연속 말씀 묵상! {name}님처럼 꾸준한 분이 또 있을까요? 대단해요! 🙏"
+    ],
+    
+    // 기독교 절기
+    christmas: [
+        "🎄 메리 크리스마스! 우리 가족에게 예수님의 사랑이 충만하시길! ⭐",
+        "✨ 성탄절을 축하해요! 아기 예수님의 은혜가 우리 가정에! 🌟👶",
+        "🎁 크리스마스 축복을 빕니다! 임마누엘 하나님이 함께하세요! 🕊️"
+    ],
+    
+    easter: [
+        "🌅 부활절을 축하합니다! 예수님의 부활의 능력이 우리 가족과 함께! 🙏",
+        "✨ 할렐루야! 부활의 기쁨이 우리 가정에 충만하시길! 🌸",
+        "🕊️ 부활절 축복을 빕니다! 새 생명의 소망이 넘치길! 🌈"
+    ],
+    
+    newYear: [
+        "🎊 새해 복 많이 받으세요! 하나님의 은혜로 가득한 한 해가 되시길! ✨",
+        "🌟 새로운 해를 축복합니다! 주님과 동행하는 복된 365일! 🙏",
+        "💫 신년 축복을 빕니다! 하나님의 계획하심이 이루어지는 해! 📖"
+    ]
+};
+
+// 특별한 날 감지 함수
+window.detectSpecialDays = function() {
+    const today = new Date();
+    const family = window.stateManager.getState('family') || [];
+    const readRecords = window.stateManager.getState('readRecords') || {};
+    const celebrations = [];
+    
+    // 1. 생일 체크
+    family.forEach(member => {
+        if (member.birthday) {
+            const birthday = new Date(member.birthday);
+            if (birthday.getMonth() === today.getMonth() && 
+                birthday.getDate() === today.getDate()) {
+                celebrations.push({
+                    type: 'birthday',
+                    member: member,
+                    message: getRandomTemplate('birthday', { name: member.name })
+                });
+            }
+        }
+        
+        // 기념일 체크 (여러 기념일 지원 + 주년 계산)
+        if (member.anniversary) {
+            // 여러 기념일을 구분자로 분리 (| 또는 ; 지원)
+            const anniversaries = member.anniversary.split(/[|;]/).map(a => a.trim()).filter(a => a);
+            
+            anniversaries.forEach(anniversaryStr => {
+                let anniversaryDate;
+                let anniversaryName = '기념일';
+                
+                // 상세 형식 체크 (YYYY-MM-DD:설명)
+                if (anniversaryStr.includes(':')) {
+                    const [dateStr, description] = anniversaryStr.split(':');
+                    anniversaryDate = new Date(dateStr.trim());
+                    anniversaryName = description.trim() || '기념일';
+                } else {
+                    // 단순 형식 (YYYY-MM-DD)
+                    anniversaryDate = new Date(anniversaryStr.trim());
+                }
+                
+                if (anniversaryDate.getMonth() === today.getMonth() && 
+                    anniversaryDate.getDate() === today.getDate()) {
+                    
+                    // 주년 계산 (년도가 유효한 경우에만)
+                    const yearsElapsed = today.getFullYear() - anniversaryDate.getFullYear();
+                    let templateType = 'anniversary';
+                    let templateVars = { name: member.name, anniversary: anniversaryName };
+                    
+                    // 1년 이상 지났고 유효한 년도인 경우 주년 표시
+                    if (yearsElapsed > 0 && anniversaryDate.getFullYear() > 1900) {
+                        templateType = 'anniversaryWithYear';
+                        templateVars = {
+                            name: member.name,
+                            anniversary: anniversaryName,
+                            years: yearsElapsed
+                        };
+                    }
+                    
+                    celebrations.push({
+                        type: 'anniversary',
+                        member: member,
+                        anniversaryName: anniversaryName,
+                        yearsElapsed: yearsElapsed,
+                        message: getRandomTemplate(templateType, templateVars)
+                    });
+                }
+            });
+        }
+    });
+    
+    // 2. 기독교 절기 체크
+    const month = today.getMonth() + 1;
+    const date = today.getDate();
+    
+    if (month === 12 && date === 25) {
+        celebrations.push({
+            type: 'christmas',
+            message: getRandomTemplate('christmas')
+        });
+    }
+    
+    if (month === 1 && date === 1) {
+        celebrations.push({
+            type: 'newYear',
+            message: getRandomTemplate('newYear')
+        });
+    }
+    
+    // 3. 성경 읽기 성취 체크 (최근 완독한 책이 있는지)
+    const recentAchievements = checkRecentAchievements();
+    celebrations.push(...recentAchievements);
+    
+    return celebrations;
+};
+
+// 랜덤 템플릿 선택 함수
+function getRandomTemplate(type, variables = {}) {
+    const templates = CELEBRATION_TEMPLATES[type] || [];
+    if (templates.length === 0) return '';
+    
+    let message = templates[Math.floor(Math.random() * templates.length)];
+    
+    // 변수 치환
+    Object.keys(variables).forEach(key => {
+        message = message.replace(new RegExp(`{${key}}`, 'g'), variables[key]);
+    });
+    
+    return message;
+}
+
+// 최근 성취 체크 함수
+function checkRecentAchievements() {
+    const achievements = [];
+    const family = window.stateManager.getState('family') || [];
+    const readRecords = window.stateManager.getState('readRecords') || {};
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    
+    family.forEach(member => {
+        const memberRecords = readRecords[member.id] || {};
+        
+        // 최근 완독한 책 체크
+        Object.keys(memberRecords).forEach(bookName => {
+            const bookData = memberRecords[bookName];
+            if (bookData && bookData.readDates) {
+                const book = [...BIBLE_BOOKS.old, ...BIBLE_BOOKS.new].find(b => b.name === bookName);
+                if (!book) return;
+                
+                let chaptersRead = 0;
+                if (bookData.chapters && Array.isArray(bookData.chapters)) {
+                    chaptersRead = bookData.chapters.length;
+                }
+                
+                // 100% 완독한 책인지 체크
+                if (chaptersRead === book.chapters) {
+                    // 마지막 장을 언제 읽었는지 확인
+                    const lastChapterDate = bookData.readDates[book.chapters];
+                    if (lastChapterDate) {
+                        const completionDate = new Date(lastChapterDate);
+                        if (isSameDay(completionDate, today) || isSameDay(completionDate, yesterday)) {
+                            achievements.push({
+                                type: 'bookCompletion',
+                                member: member,
+                                book: bookName,
+                                message: getRandomTemplate('bookCompletion', { 
+                                    name: member.name, 
+                                    book: bookName 
+                                })
+                            });
+                        }
+                    }
+                }
+            }
+        });
+        
+        // 구약/신약 완독 체크
+        const otCompletion = checkTestamentCompletion(member, 'old');
+        const ntCompletion = checkTestamentCompletion(member, 'new');
+        
+        if (otCompletion) {
+            achievements.push({
+                type: 'testamentCompletion',
+                member: member,
+                testament: '구약',
+                message: getRandomTemplate('testamentCompletion', { 
+                    name: member.name, 
+                    testament: '구약 39권' 
+                })
+            });
+        }
+        
+        if (ntCompletion) {
+            achievements.push({
+                type: 'testamentCompletion',
+                member: member,
+                testament: '신약',
+                message: getRandomTemplate('testamentCompletion', { 
+                    name: member.name, 
+                    testament: '신약 27권' 
+                })
+            });
+        }
+        
+        // 전체 성경 완독 체크
+        if (otCompletion && ntCompletion) {
+            achievements.push({
+                type: 'bibleCompletion',
+                member: member,
+                message: getRandomTemplate('bibleCompletion', { name: member.name })
+            });
+        }
+    });
+    
+    return achievements;
+}
+
+// 구약/신약 완독 체크 함수
+function checkTestamentCompletion(member, testament) {
+    const readRecords = window.stateManager.getState('readRecords') || {};
+    const memberRecords = readRecords[member.id] || {};
+    const books = BIBLE_BOOKS[testament];
+    
+    return books.every(book => {
+        const bookData = memberRecords[book.name];
+        if (!bookData) return false;
+        
+        let chaptersRead = 0;
+        if (bookData.chapters && Array.isArray(bookData.chapters)) {
+            chaptersRead = bookData.chapters.length;
+        }
+        
+        return chaptersRead === book.chapters;
+    });
+}
+
+// 날짜 비교 헬퍼 함수
+function isSameDay(date1, date2) {
+    return date1.getFullYear() === date2.getFullYear() &&
+           date1.getMonth() === date2.getMonth() &&
+           date1.getDate() === date2.getDate();
+}
+
+// 축하 메시지를 실제로 표시하는 함수
+window.showCelebrationMessage = function(celebration) {
+    // 메시지를 "사랑의 대화"에 자동으로 추가
+    const messages = window.stateManager.getState('messages') || [];
+    
+    const celebrationMessage = {
+        id: `celebration_${Date.now()}`,
+        user_id: 'system',
+        user_name: '🤖 축하봇',
+        timestamp: new Date().toISOString(),
+        content: celebration.message,
+        like_count: 0,
+        is_celebration: true // 특별한 플래그
+    };
+    
+    messages.unshift(celebrationMessage); // 맨 위에 추가
+    window.stateManager.updateState('messages', messages);
+    
+    // 서버에도 저장 (선택사항)
+    if (window.gapi && window.gapi.isConnected) {
+        window.gapi.saveData({
+            type: 'message',
+            userId: 'system',
+            userName: '🤖 축하봇',
+            content: celebration.message
+        }).catch(console.error);
+    }
+};
+
+// 매일 자동으로 특별한 날 체크하고 축하 메시지 생성
+window.checkAndShowCelebrations = function() {
+    const celebrations = window.detectSpecialDays();
+    
+    celebrations.forEach(celebration => {
+        // 중복 방지: 오늘 이미 같은 종류의 축하 메시지가 있는지 체크
+        const messages = window.stateManager.getState('messages') || [];
+        const today = new Date().toDateString();
+        
+        const alreadyExists = messages.some(msg => 
+            msg.is_celebration && 
+            new Date(msg.timestamp).toDateString() === today &&
+            msg.content.includes(celebration.member?.name || celebration.type)
+        );
+        
+        if (!alreadyExists) {
+            window.showCelebrationMessage(celebration);
+            console.log('🎉 축하 메시지 생성:', celebration.message);
+        }
+    });
+};
+
+// 앱 로드시 자동으로 체크 (한 번만)
+document.addEventListener('DOMContentLoaded', () => {
+    // 5초 후에 축하 메시지 체크 (앱이 완전히 로드된 후)
+    setTimeout(() => {
+        window.checkAndShowCelebrations();
+    }, 5000);
+});
+
+// 테스트용 함수들
+window.testCelebration = function() {
+    const testMessage = {
+        type: 'test',
+        message: '🧪 테스트 축하 메시지입니다! 시스템이 정상 작동하고 있어요! 🎉'
+    };
+    window.showCelebrationMessage(testMessage);
+};
+
+window.testBirthdayCelebration = function(memberName) {
+    const celebration = {
+        type: 'birthday',
+        message: getRandomTemplate('birthday', { name: memberName || '테스트' })
+    };
+    window.showCelebrationMessage(celebration);
+};
+
+window.testAnniversaryCelebration = function(memberName, anniversaryName, years) {
+    let templateType = 'anniversary';
+    let templateVars = { 
+        name: memberName || '테스트',
+        anniversary: anniversaryName || '결혼기념일'
+    };
+    
+    // 주년이 지정된 경우
+    if (years && years > 0) {
+        templateType = 'anniversaryWithYear';
+        templateVars.years = years;
+    }
+    
+    const celebration = {
+        type: 'anniversary',
+        message: getRandomTemplate(templateType, templateVars)
+    };
+    window.showCelebrationMessage(celebration);
+};
+
+window.testBookCompletion = function(memberName, bookName) {
+    const celebration = {
+        type: 'bookCompletion',
+        message: getRandomTemplate('bookCompletion', { 
+            name: memberName || '테스트', 
+            book: bookName || '창세기'
+        })
+    };
+    window.showCelebrationMessage(celebration);
+};
+
+console.log('🎉 축하 메시지 시스템이 로드되었습니다!');
+console.log('💡 테스트 함수:');
+console.log('  - testCelebration(): 테스트 메시지');
+console.log('  - testBirthdayCelebration("이름"): 생일 축하');
+console.log('  - testAnniversaryCelebration("이름", "기념일명"): 기념일 축하');
+console.log('  - testAnniversaryCelebration("이름", "기념일명", 주년수): 주년 기념일 축하');
+console.log('  - testBookCompletion("이름", "책이름"): 완독 축하');
+console.log('  - checkAndShowCelebrations(): 수동으로 축하 메시지 체크');
+
+
+// === 📅 캘린더 관련 전역 함수들 ===
+
+/**
+ * 이벤트 모달 닫기
+ */
+window.closeEventModal = function() {
+    const modal = document.getElementById('event-modal');
+    if (modal) {
+        modal.remove();
+    }
+};
+
+/**
+ * 새 이벤트 저장
+ */
+window.saveEvent = async function() {
+    const title = document.getElementById('event-title')?.value.trim();
+    const startDate = document.getElementById('event-start-date')?.value;
+    const endDate = document.getElementById('event-end-date')?.value;
+    const startTime = document.getElementById('event-start-time')?.value;
+    const endTime = document.getElementById('event-end-time')?.value;
+    const userId = document.getElementById('event-user')?.value;
+    const description = document.getElementById('event-description')?.value.trim();
+    const color = document.getElementById('event-color')?.value;
+    const isRecurring = document.getElementById('event-recurring')?.checked;
+    const singleDay = document.getElementById('single-day')?.checked;
+    const noTime = document.getElementById('no-time')?.checked;
+    
+    if (!title || !startDate) {
+        alert('제목과 시작 날짜는 필수입니다.');
+        return;
+    }
+    
+    // 종료 날짜가 시작 날짜보다 이전인지 확인
+    if (endDate && endDate < startDate) {
+        alert('종료 날짜는 시작 날짜보다 이후여야 합니다.');
+        return;
+    }
+    
+    // 시간 유효성 검사
+    if (!noTime && startTime && endTime && startTime >= endTime) {
+        alert('종료 시간은 시작 시간보다 이후여야 합니다.');
+        return;
+    }
+    
+    try {
+        const family = window.stateManager.getState('family');
+        const user = family.find(u => u.id === userId);
+        
+        const result = await window.gapi.saveData({
+            type: 'event',
+            title: title,
+            start_date: startDate,
+            end_date: singleDay ? startDate : (endDate || startDate),
+            start_time: noTime ? '' : (startTime || ''),
+            end_time: noTime ? '' : (endTime || ''),
+            eventType: 'event',
+            userId: userId || '',
+            userName: user ? user.name : '',
+            description: description,
+            color: color,
+            isRecurring: isRecurring
+        });
+        
+        // 로컬 상태 업데이트
+        const events = window.stateManager.getState('events');
+        events.push({
+            id: result.data.id,
+            title: title,
+            start_date: startDate,
+            end_date: singleDay ? startDate : (endDate || startDate),
+            start_time: noTime ? '' : (startTime || ''),
+            end_time: noTime ? '' : (endTime || ''),
+            type: 'event',
+            user_id: userId || '',
+            description: description,
+            color: color,
+            is_recurring: isRecurring
+        });
+        window.stateManager.updateState('events', events);
+        
+        window.closeEventModal();
+        
+    } catch (error) {
+        console.error('이벤트 저장 실패:', error);
+        alert('이벤트 저장에 실패했습니다. 다시 시도해주세요.');
+    }
+};
+
+/**
+ * 특정 날짜의 일정 상세보기 팝업
+ */
+window.showDayEvents = function(dateStr, fullDateStr = null) {
+    const calendar = window.components.calendar;
+    const events = calendar.getAllEvents();
+    
+    // fullDateStr이 제공되면 사용, 아니면 dateStr 사용
+    const targetDateStr = fullDateStr || dateStr;
+    const targetDate = new Date(targetDateStr);
+    
+    // 해당 날짜의 이벤트들 필터링
+    const dayEvents = events.filter(event => {
+        if (event.is_recurring) {
+            // 반복 이벤트는 월-일만 비교
+            const eventDate = new Date(event.start_date);
+            return eventDate.getMonth() === targetDate.getMonth() && 
+                   eventDate.getDate() === targetDate.getDate();
+        } else {
+            // 일반 이벤트는 날짜 범위 확인
+            const startDate = new Date(event.start_date);
+            const endDate = new Date(event.end_date || event.start_date);
+            
+            // 날짜만 비교 (시간 제외)
+            const targetDateOnly = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate());
+            const startDateOnly = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+            const endDateOnly = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
+            
+            return targetDateOnly >= startDateOnly && targetDateOnly <= endDateOnly;
+        }
+    });
+    
+    const formattedDate = targetDate.toLocaleDateString('ko-KR', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        weekday: 'long'
+    });
+    
+    let eventsHtml = '';
+    if (dayEvents.length === 0) {
+        eventsHtml = '<div class="text-gray-500 text-center py-4">이 날에는 일정이 없습니다.</div>';
+    } else {
+        eventsHtml = dayEvents.map(event => {
+            const startDate = new Date(event.start_date);
+            const endDate = new Date(event.end_date || event.start_date);
+            const isMultiDay = event.start_date !== event.end_date;
+            
+            return `
+                <div class="border rounded-lg p-3 mb-2" style="border-left: 4px solid ${event.color}">
+                    <div class="flex justify-between items-start">
+                        <div class="flex-1">
+                            <h4 class="font-semibold text-gray-800">${event.title}</h4>
+                            ${event.start_time ? `<p class="text-sm text-gray-600">
+                                🕐 ${event.start_time}${event.end_time && event.end_time !== event.start_time ? ` ~ ${event.end_time}` : ''}
+                            </p>` : ''}
+                            ${isMultiDay ? `<p class="text-sm text-gray-600">
+                                📅 ${calendar.formatDate(startDate)} ~ ${calendar.formatDate(endDate)}
+                            </p>` : ''}
+                            ${event.description ? `<p class="text-sm text-gray-500 mt-1">${event.description}</p>` : ''}
+                            ${event.is_recurring ? '<span class="inline-block bg-purple-100 text-purple-600 text-xs px-2 py-1 rounded-full mt-1">매년 반복</span>' : ''}
+                        </div>
+                        ${!event.isAutoGenerated ? `
+                            <div class="flex gap-1 ml-2">
+                                <button onclick="window.editEvent('${event.id}')" class="text-blue-600 hover:underline text-xs">수정</button>
+                                <button onclick="window.deleteEvent('${event.id}')" class="text-red-600 hover:underline text-xs">삭제</button>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+    
+    const modalHtml = `
+        <div id="day-events-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-white rounded-lg p-6 w-full max-w-lg max-h-96 overflow-y-auto">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-bold">${formattedDate}</h3>
+                    <button onclick="window.closeDayEventsModal()" class="text-gray-500 hover:text-gray-700">
+                        ✕
+                    </button>
+                </div>
+                <div>
+                    ${eventsHtml}
+                </div>
+                <div class="flex justify-between mt-4">
+                    <button onclick="window.addEventForDate('${targetDateStr}')" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">
+                        ➕ 새 일정 추가
+                    </button>
+                    <button onclick="window.closeDayEventsModal()" class="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600">닫기</button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+};
+
+/**
+ * 날짜 상세보기 모달 닫기
+ */
+window.closeDayEventsModal = function() {
+    const modal = document.getElementById('day-events-modal');
+    if (modal) {
+        modal.remove();
+    }
+};
+
+/**
+ * 특정 날짜에 새 일정 추가
+ */
+window.addEventForDate = function(dateStr) {
+    // 기존 모달 닫기
+    window.closeDayEventsModal();
+    
+    // 새 일정 모달 열기
+    window.components.calendar.showAddEventModal(dateStr);
+};
+
+/**
+ * 이벤트 수정
+ */
+window.editEvent = function(eventId) {
+    const events = window.stateManager.getState('events');
+    const event = events.find(e => e.id === eventId);
+    
+    if (!event) {
+        alert('이벤트를 찾을 수 없습니다.');
+        return;
+    }
+    
+    const family = window.stateManager.getState('family') || [];
+    
+    // 현재 이벤트의 날짜/시간 정보 파싱 (다양한 필드명 시도, 공백 포함)
+    let startDate = event.start_date || event.date || '';
+    let endDate = event.end_date || event['end_date '] || event.start_date || event.date || '';
+    let startTime = event.start_time || event['start_time '] || event.time || '';
+    let endTime = event.end_time || event['end_time '] || '';
+    
+    console.log('원본 값들:', { startDate, endDate, startTime, endTime });
+    console.log('전체 이벤트 객체:', event);
+    
+    // 날짜 형식 변환 (ISO → YYYY-MM-DD, UTC 시간대 문제 해결)
+    if (startDate && startDate.includes('T')) {
+        // ISO 형식에서 날짜 부분만 추출 (UTC 변환 없이)
+        startDate = startDate.split('T')[0];
+    }
+    if (endDate && endDate.includes('T')) {
+        // ISO 형식에서 날짜 부분만 추출 (UTC 변환 없이)
+        endDate = endDate.split('T')[0];
+    }
+    
+    // 시간 형식 변환 (ISO → HH:MM 또는 Date 객체 → HH:MM)
+    if (startTime && typeof startTime === 'string' && startTime.includes('T')) {
+        // ISO 형식에서 시간 부분 추출: "2025-07-19T19:06:00.000Z" → "19:06"
+        startTime = startTime.split('T')[1].slice(0, 5);
+    } else if (startTime instanceof Date) {
+        const hours = startTime.getHours().toString().padStart(2, '0');
+        const minutes = startTime.getMinutes().toString().padStart(2, '0');
+        startTime = `${hours}:${minutes}`;
+    }
+    
+    if (endTime && typeof endTime === 'string' && endTime.includes('T')) {
+        // ISO 형식에서 시간 부분 추출: "2025-07-19T21:06:00.000Z" → "21:06"
+        endTime = endTime.split('T')[1].slice(0, 5);
+    } else if (endTime instanceof Date) {
+        const hours = endTime.getHours().toString().padStart(2, '0');
+        const minutes = endTime.getMinutes().toString().padStart(2, '0');
+        endTime = `${hours}:${minutes}`;
+    }
+    
+    console.log('변환된 값들:', { startDate, endDate, startTime, endTime });
+    
+    // 하루 일정인지 체크
+    const isSingleDay = startDate === endDate;
+    // 시간이 없는지 체크
+    const noTime = !startTime && !endTime;
+    
+    const modalHTML = `
+        <div id="event-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-white rounded-lg p-6 w-full max-w-md">
+                <h3 class="text-lg font-bold mb-4">일정 수정</h3>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-1">제목</label>
+                        <input type="text" id="event-title" class="w-full p-2 border rounded-md" value="${event.title}">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">날짜</label>
+                        <div class="flex items-center space-x-2">
+                            <input type="date" id="event-start-date" class="flex-1 p-2 border rounded-md" value="${startDate}">
+                            <span class="text-gray-500">~</span>
+                            <input type="date" id="event-end-date" class="flex-1 p-2 border rounded-md" value="${endDate}" ${isSingleDay ? 'disabled style="background-color: #f3f4f6;"' : ''}>
+                        </div>
+                        <div class="flex items-center mt-2">
+                            <input type="checkbox" id="single-day" class="mr-2" ${isSingleDay ? 'checked' : ''}>
+                            <label for="single-day" class="text-sm text-gray-600">하루 일정</label>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">시간 (선택사항)</label>
+                        <div class="flex items-center space-x-2">
+                            <input type="time" id="event-start-time" class="flex-1 p-2 border rounded-md" value="${startTime}" ${noTime ? 'disabled style="background-color: #f3f4f6;"' : ''}>
+                            <span class="text-gray-500">~</span>
+                            <input type="time" id="event-end-time" class="flex-1 p-2 border rounded-md" value="${endTime}" ${noTime ? 'disabled style="background-color: #f3f4f6;"' : ''}>
+                        </div>
+                        <div class="flex items-center mt-2">
+                            <input type="checkbox" id="no-time" class="mr-2" ${noTime ? 'checked' : ''}>
+                            <label for="no-time" class="text-sm text-gray-600">시간 없음</label>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">관련 가족</label>
+                        <select id="event-user" class="w-full p-2 border rounded-md">
+                            <option value="">전체 가족</option>
+                            ${family.map(member => `<option value="${member.id}" ${member.id === event.user_id ? 'selected' : ''}>${member.name}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">설명 (선택사항)</label>
+                        <textarea id="event-description" class="w-full p-2 border rounded-md" rows="2">${event.description || ''}</textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">색상</label>
+                        <select id="event-color" class="w-full p-2 border rounded-md">
+                            <option value="#3B82F6" ${event.color === '#3B82F6' ? 'selected' : ''}>파란색 (일반)</option>
+                            <option value="#10B981" ${event.color === '#10B981' ? 'selected' : ''}>초록색 (가족모임)</option>
+                            <option value="#F59E0B" ${event.color === '#F59E0B' ? 'selected' : ''}>주황색 (중요)</option>
+                            <option value="#EF4444" ${event.color === '#EF4444' ? 'selected' : ''}>빨간색 (긴급)</option>
+                            <option value="#8B5CF6" ${event.color === '#8B5CF6' ? 'selected' : ''}>보라색 (개인)</option>
+                        </select>
+                    </div>
+                    <div class="flex items-center">
+                        <input type="checkbox" id="event-recurring" class="mr-2" ${event.is_recurring ? 'checked' : ''}>
+                        <label for="event-recurring" class="text-sm">매년 반복</label>
+                    </div>
+                </div>
+                <div class="flex justify-end gap-2 mt-6">
+                    <button onclick="window.closeEventModal()" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-md">취소</button>
+                    <button onclick="window.updateEvent('${eventId}')" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">저장</button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    
+    // 이벤트 리스너 추가 (새 일정 추가와 동일한 로직)
+    setupEditEventModalListeners();
+};
+
+/**
+ * 수정 모달 이벤트 리스너 설정
+ */
+function setupEditEventModalListeners() {
+    const singleDayCheckbox = document.getElementById('single-day');
+    const noTimeCheckbox = document.getElementById('no-time');
+    const startDate = document.getElementById('event-start-date');
+    const endDate = document.getElementById('event-end-date');
+    const startTime = document.getElementById('event-start-time');
+    const endTime = document.getElementById('event-end-time');
+    
+    // 하루 일정 체크박스 처리
+    if (singleDayCheckbox) {
+        singleDayCheckbox.addEventListener('change', () => {
+            if (singleDayCheckbox.checked) {
+                endDate.value = startDate.value;
+                endDate.disabled = true;
+                endDate.style.backgroundColor = '#f3f4f6';
+            } else {
+                endDate.disabled = false;
+                endDate.style.backgroundColor = '';
+            }
+        });
+    }
+    
+    // 시작 날짜 변경 시 종료 날짜도 동기화 (하루 일정인 경우)
+    if (startDate) {
+        startDate.addEventListener('change', () => {
+            if (singleDayCheckbox.checked) {
+                endDate.value = startDate.value;
+            }
+        });
+    }
+    
+    // 시간 없음 체크박스 처리
+    if (noTimeCheckbox) {
+        noTimeCheckbox.addEventListener('change', () => {
+            if (noTimeCheckbox.checked) {
+                startTime.value = '';
+                endTime.value = '';
+                startTime.disabled = true;
+                endTime.disabled = true;
+                startTime.style.backgroundColor = '#f3f4f6';
+                endTime.style.backgroundColor = '#f3f4f6';
+            } else {
+                startTime.disabled = false;
+                endTime.disabled = false;
+                startTime.style.backgroundColor = '';
+                endTime.style.backgroundColor = '';
+            }
+        });
+    }
+    
+    // 시작 시간 변경 시 종료 시간 자동 설정
+    if (startTime) {
+        startTime.addEventListener('change', () => {
+            if (startTime.value && !endTime.value) {
+                // 시작 시간에서 1시간 후로 설정
+                const [hours, minutes] = startTime.value.split(':');
+                const endHour = parseInt(hours) + 1;
+                const endTimeValue = `${endHour.toString().padStart(2, '0')}:${minutes}`;
+                
+                // 24시간을 넘지 않도록 체크
+                if (endHour < 24) {
+                    endTime.value = endTimeValue;
+                }
+            }
+        });
+    }
+}
+
+/**
+ * 이벤트 업데이트
+ */
+window.updateEvent = async function(eventId) {
+    const title = document.getElementById('event-title')?.value.trim();
+    const startDate = document.getElementById('event-start-date')?.value;
+    const endDate = document.getElementById('event-end-date')?.value;
+    const startTime = document.getElementById('event-start-time')?.value;
+    const endTime = document.getElementById('event-end-time')?.value;
+    const userId = document.getElementById('event-user')?.value;
+    const description = document.getElementById('event-description')?.value.trim();
+    const color = document.getElementById('event-color')?.value;
+    const isRecurring = document.getElementById('event-recurring')?.checked;
+    const singleDay = document.getElementById('single-day')?.checked;
+    const noTime = document.getElementById('no-time')?.checked;
+    
+    if (!title || !startDate) {
+        alert('제목과 시작 날짜는 필수입니다.');
+        return;
+    }
+    
+    // 종료 날짜가 시작 날짜보다 이전인지 확인
+    if (endDate && endDate < startDate) {
+        alert('종료 날짜는 시작 날짜보다 이후여야 합니다.');
+        return;
+    }
+    
+    // 시간 유효성 검사
+    if (!noTime && startTime && endTime && startTime >= endTime) {
+        alert('종료 시간은 시작 시간보다 이후여야 합니다.');
+        return;
+    }
+    
+    try {
+        const family = window.stateManager.getState('family');
+        const user = family.find(u => u.id === userId);
+        
+        await window.gapi.editData({
+            type: 'event',
+            id: eventId,
+            title: title,
+            start_date: startDate,
+            end_date: singleDay ? startDate : (endDate || startDate),
+            start_time: noTime ? '' : (startTime || ''),
+            end_time: noTime ? '' : (endTime || ''),
+            userId: userId || '',
+            userName: user ? user.name : '',
+            description: description,
+            color: color,
+            isRecurring: isRecurring
+        });
+        
+        // 로컬 상태 업데이트
+        const events = window.stateManager.getState('events');
+        const eventIndex = events.findIndex(e => e.id === eventId);
+        if (eventIndex > -1) {
+            events[eventIndex] = {
+                ...events[eventIndex],
+                title: title,
+                start_date: startDate,
+                end_date: singleDay ? startDate : (endDate || startDate),
+                start_time: noTime ? '' : (startTime || ''),
+                end_time: noTime ? '' : (endTime || ''),
+                date: startDate, // 호환성을 위해 유지
+                user_id: userId || '',
+                description: description,
+                color: color,
+                is_recurring: isRecurring
+            };
+            window.stateManager.updateState('events', events);
+        }
+        
+        window.closeEventModal();
+        
+    } catch (error) {
+        console.error('이벤트 수정 실패:', error);
+        alert('이벤트 수정에 실패했습니다. 다시 시도해주세요.');
+    }
+};
+
+/**
+ * 이벤트 삭제
+ */
+window.deleteEvent = async function(eventId) {
+    if (!confirm('이 일정을 삭제하시겠습니까?')) {
+        return;
+    }
+    
+    try {
+        await window.gapi.deleteData({
+            type: 'event',
+            id: eventId
+        });
+        
+        // 로컬 상태 업데이트
+        const events = window.stateManager.getState('events');
+        const filteredEvents = events.filter(e => e.id !== eventId);
+        window.stateManager.updateState('events', filteredEvents);
+        
+    } catch (error) {
+        console.error('이벤트 삭제 실패:', error);
+        alert('이벤트 삭제에 실패했습니다. 다시 시도해주세요.');
+    }
+};
+
+console.log('📅 캘린더 전역 함수들이 로드되었습니다!');
