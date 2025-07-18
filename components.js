@@ -860,6 +860,7 @@ class MessageBoardComponent extends BaseComponent {
     attachEventListeners() {
         const addMessageBtn = document.getElementById('add-message');
         const messageInput = document.getElementById('message-input');
+        const userSelect = document.getElementById('message-user');
         
         if (addMessageBtn) {
             addMessageBtn.addEventListener('click', () => this.addMessage());
@@ -872,6 +873,11 @@ class MessageBoardComponent extends BaseComponent {
                     this.addMessage();
                 }
             });
+        }
+        
+        // ⭐ 사용자 선택 변경 시 메시지 목록을 다시 렌더링하여 수정/삭제 버튼 업데이트
+        if (userSelect) {
+            userSelect.addEventListener('change', () => this.renderMessages());
         }
     }
     
