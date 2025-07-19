@@ -761,6 +761,23 @@ async function loadAllDataAndRender() {
     try {
         const allData = await window.gapi.loadAllData();
         
+        // ⭐ 서버에서 받은 이벤트 데이터 디버깅
+        console.log('🔍 서버에서 받은 전체 데이터:', allData);
+        if (allData.family_events) {
+            console.log('🔍 서버에서 받은 이벤트 데이터:', allData.family_events);
+            allData.family_events.forEach((event, index) => {
+                console.log(`🔍 이벤트 ${index + 1}:`, {
+                    id: event.id,
+                    title: event.title,
+                    start_date: event.start_date,
+                    end_date: event.end_date,
+                    start_time: event.start_time,
+                    end_time: event.end_time,
+                    전체객체: event
+                });
+            });
+        }
+        
         // 상태 관리자에 데이터 업데이트
         window.stateManager.updateMultipleStates({
             family: allData.family_members || [],
@@ -772,6 +789,10 @@ async function loadAllDataAndRender() {
             allowance: allData.allowance_ledger || [],
             events: allData.family_events || []
         });
+        
+        // ⭐ 상태 업데이트 후 이벤트 데이터 확인
+        const updatedEvents = window.stateManager.getState('events');
+        console.log('🔍 상태 업데이트 후 이벤트 데이터:', updatedEvents);
         
         const family = window.stateManager.getState('family');
         if (family?.length > 0) {
@@ -2005,6 +2026,22 @@ window.saveEvent = async function() {
         return;
     }
     
+    // 디버깅용 로그 추가
+    console.log('🔍 일정 저장 디버깅:', {
+        title,
+        startDate,
+        endDate,
+        startTime,
+        endTime,
+        singleDay,
+        noTime,
+        userId,
+        description,
+        color,
+        isRecurring,
+        계산된_종료일: singleDay ? startDate : (endDate || startDate)
+    });
+    
     try {
         const family = window.stateManager.getState('family');
         const user = family.find(u => u.id === userId);
@@ -2026,11 +2063,12 @@ window.saveEvent = async function() {
         
         // 로컬 상태 업데이트
         const events = window.stateManager.getState('events');
+        const finalEndDate = singleDay ? startDate : (endDate || startDate);
         events.push({
             id: result.data.id,
             title: title,
             start_date: startDate,
-            end_date: singleDay ? startDate : (endDate || startDate),
+            end_date: finalEndDate,
             start_time: noTime ? '' : (startTime || ''),
             end_time: noTime ? '' : (endTime || ''),
             type: 'event',
@@ -2093,9 +2131,29 @@ window.showDayEvents = function(dateStr, fullDateStr = null) {
         eventsHtml = '<div class="text-gray-500 text-center py-4">이 날에는 일정이 없습니다.</div>';
     } else {
         eventsHtml = dayEvents.map(event => {
-            const startDate = new Date(event.start_date);
-            const endDate = new Date(event.end_date || event.start_date);
-            const isMultiDay = event.start_date !== event.end_date;
+            const startDate = new Date(event.start_date || event['start_date ']);
+            let endDate = null;
+            let isMultiDay = false;
+            
+            // 종료일이 있고 시작일과 다른 경우만 멀티데이로 처리 (공백 포함 필드명 체크)
+            const actualEndDate = event.end_date || event['end_date '];
+            const actualStartDate = event.start_date || event['start_date '];
+            
+            if (actualEndDate && actualEndDate !== actualStartDate) {
+                endDate = new Date(actualEndDate);
+                isMultiDay = true;
+            }
+            
+            console.log('🔍 showDayEvents 이벤트 처리:', {
+                title: event.title,
+                start_date: event.start_date,
+                start_date_공백: event['start_date '],
+                end_date: event.end_date,
+                end_date_공백: event['end_date '],
+                actualStartDate,
+                actualEndDate,
+                isMultiDay
+            });
             
             return `
                 <div class="border rounded-lg p-3 mb-2" style="border-left: 4px solid ${event.color}">
@@ -2105,7 +2163,7 @@ window.showDayEvents = function(dateStr, fullDateStr = null) {
                             ${event.start_time ? `<p class="text-sm text-gray-600">
                                 🕐 ${event.start_time}${event.end_time && event.end_time !== event.start_time ? ` ~ ${event.end_time}` : ''}
                             </p>` : ''}
-                            ${isMultiDay ? `<p class="text-sm text-gray-600">
+                            ${isMultiDay && endDate && !isNaN(endDate.getTime()) ? `<p class="text-sm text-gray-600">
                                 📅 ${calendar.formatDate(startDate)} ~ ${calendar.formatDate(endDate)}
                             </p>` : ''}
                             ${event.description ? `<p class="text-sm text-gray-500 mt-1">${event.description}</p>` : ''}
@@ -2184,23 +2242,61 @@ window.editEvent = function(eventId) {
     const family = window.stateManager.getState('family') || [];
     
     // 현재 이벤트의 날짜/시간 정보 파싱 (다양한 필드명 시도, 공백 포함)
-    let startDate = event.start_date || event.date || '';
-    let endDate = event.end_date || event['end_date '] || event.start_date || event.date || '';
+    let startDate = event.start_date || event['start_date '] || event.date || '';
+    let endDate = event.end_date || event['end_date '] || event.start_date || event['start_date '] || event.date || '';
     let startTime = event.start_time || event['start_time '] || event.time || '';
     let endTime = event.end_time || event['end_time '] || '';
     
-    console.log('원본 값들:', { startDate, endDate, startTime, endTime });
-    console.log('전체 이벤트 객체:', event);
+    console.log('🔍 editEvent 원본 날짜 파싱:', { 
+        전체이벤트: event,
+        원본_startDate: startDate, 
+        원본_endDate: endDate, 
+        원본_startTime: startTime, 
+        원본_endTime: endTime 
+    });
     
-    // 날짜 형식 변환 (ISO → YYYY-MM-DD, UTC 시간대 문제 해결)
-    if (startDate && startDate.includes('T')) {
-        // ISO 형식에서 날짜 부분만 추출 (UTC 변환 없이)
-        startDate = startDate.split('T')[0];
-    }
-    if (endDate && endDate.includes('T')) {
-        // ISO 형식에서 날짜 부분만 추출 (UTC 변환 없이)
-        endDate = endDate.split('T')[0];
-    }
+    // 날짜 형식 변환 (더 강화된 안전한 파싱)
+    const parseDateSafely = (dateValue, fieldName) => {
+        if (!dateValue) return '';
+        
+        console.log(`🔍 ${fieldName} 파싱 시도:`, dateValue, typeof dateValue);
+        
+        // 이미 YYYY-MM-DD 형식인 경우
+        if (typeof dateValue === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateValue)) {
+            console.log(`✅ ${fieldName} 이미 올바른 형식:`, dateValue);
+            return dateValue;
+        }
+        
+        // ISO 형식인 경우 (YYYY-MM-DDTHH:mm:ss.sssZ)
+        if (typeof dateValue === 'string' && dateValue.includes('T')) {
+            const result = dateValue.split('T')[0];
+            console.log(`✅ ${fieldName} ISO 형식 변환:`, dateValue, '→', result);
+            return result;
+        }
+        
+        // Date 객체인 경우 또는 숫자 타임스탬프인 경우
+        try {
+            const date = new Date(dateValue);
+            if (!isNaN(date.getTime())) {
+                // 로컬 시간대 기준으로 YYYY-MM-DD 형식으로 변환
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                const result = `${year}-${month}-${day}`;
+                console.log(`✅ ${fieldName} Date 객체 변환:`, dateValue, '→', result);
+                return result;
+            }
+        } catch (error) {
+            console.warn(`⚠️ ${fieldName} Date 변환 실패:`, dateValue, error);
+        }
+        
+        // 기타 문자열인 경우 그대로 반환
+        console.log(`⚠️ ${fieldName} 알 수 없는 형식, 그대로 반환:`, dateValue);
+        return String(dateValue);
+    };
+    
+    startDate = parseDateSafely(startDate, 'startDate');
+    endDate = parseDateSafely(endDate, 'endDate');
     
     // 시간 형식 변환 (ISO → HH:MM 또는 Date 객체 → HH:MM)
     if (startTime && typeof startTime === 'string' && startTime.includes('T')) {
@@ -2221,7 +2317,13 @@ window.editEvent = function(eventId) {
         endTime = `${hours}:${minutes}`;
     }
     
-    console.log('변환된 값들:', { startDate, endDate, startTime, endTime });
+    console.log('🔍 변환된 최종 값들:', { 
+        startDate, 
+        endDate, 
+        startTime, 
+        endTime,
+        변환과정_완료: true
+    });
     
     // 하루 일정인지 체크
     const isSingleDay = startDate === endDate;
@@ -2298,6 +2400,71 @@ window.editEvent = function(eventId) {
     document.body.insertAdjacentHTML('beforeend', modalHTML);
     
     // 이벤트 리스너 추가 (새 일정 추가와 동일한 로직)
+    const singleDayCheckbox = document.getElementById('single-day');
+    const noTimeCheckbox = document.getElementById('no-time');
+    const startDateInput = document.getElementById('event-start-date');
+    const endDateInput = document.getElementById('event-end-date');
+    const startTimeInput = document.getElementById('event-start-time');
+    const endTimeInput = document.getElementById('event-end-time');
+    
+    // 하루 일정 체크박스 처리
+    if (singleDayCheckbox) {
+        singleDayCheckbox.addEventListener('change', () => {
+            if (singleDayCheckbox.checked) {
+                endDateInput.value = startDateInput.value;
+                endDateInput.disabled = true;
+                endDateInput.style.backgroundColor = '#f3f4f6';
+            } else {
+                endDateInput.disabled = false;
+                endDateInput.style.backgroundColor = '';
+                // 종료일이 비어있으면 시작일과 같게 설정
+                if (!endDateInput.value) {
+                    endDateInput.value = startDateInput.value;
+                }
+            }
+        });
+    }
+    
+    // 시작 날짜 변경 시 종료 날짜도 동기화 (하루 일정인 경우)
+    if (startDateInput) {
+        startDateInput.addEventListener('change', () => {
+            if (singleDayCheckbox.checked) {
+                endDateInput.value = startDateInput.value;
+            }
+        });
+    }
+    
+    // 시간 없음 체크박스 처리
+    if (noTimeCheckbox) {
+        noTimeCheckbox.addEventListener('change', () => {
+            if (noTimeCheckbox.checked) {
+                startTimeInput.value = '';
+                endTimeInput.value = '';
+                startTimeInput.disabled = true;
+                endTimeInput.disabled = true;
+                startTimeInput.style.backgroundColor = '#f3f4f6';
+                endTimeInput.style.backgroundColor = '#f3f4f6';
+            } else {
+                startTimeInput.disabled = false;
+                endTimeInput.disabled = false;
+                startTimeInput.style.backgroundColor = '';
+                endTimeInput.style.backgroundColor = '';
+            }
+        });
+    }
+    
+    // 시작 시간 변경 시 종료 시간 자동 설정
+    if (startTimeInput) {
+        startTimeInput.addEventListener('change', () => {
+            if (startTimeInput.value && !endTimeInput.value && !noTimeCheckbox.checked) {
+                // 시작 시간에서 1시간 후로 설정
+                const [hours, minutes] = startTimeInput.value.split(':');
+                const endHour = parseInt(hours) + 1;
+                const endTimeValue = `${endHour.toString().padStart(2, '0')}:${minutes}`;
+                endTimeInput.value = endTimeValue;
+            }
+        });
+    }
     setupEditEventModalListeners();
 };
 
@@ -2405,6 +2572,23 @@ window.updateEvent = async function(eventId) {
         return;
     }
     
+    // 디버깅용 로그 추가
+    console.log('🔍 일정 수정 디버깅:', {
+        eventId,
+        title,
+        startDate,
+        endDate,
+        startTime,
+        endTime,
+        singleDay,
+        noTime,
+        userId,
+        description,
+        color,
+        isRecurring,
+        계산된_종료일: singleDay ? startDate : (endDate || startDate)
+    });
+    
     try {
         const family = window.stateManager.getState('family');
         const user = family.find(u => u.id === userId);
@@ -2427,12 +2611,13 @@ window.updateEvent = async function(eventId) {
         // 로컬 상태 업데이트
         const events = window.stateManager.getState('events');
         const eventIndex = events.findIndex(e => e.id === eventId);
+        const finalEndDate = singleDay ? startDate : (endDate || startDate);
         if (eventIndex > -1) {
             events[eventIndex] = {
                 ...events[eventIndex],
                 title: title,
                 start_date: startDate,
-                end_date: singleDay ? startDate : (endDate || startDate),
+                end_date: finalEndDate,
                 start_time: noTime ? '' : (startTime || ''),
                 end_time: noTime ? '' : (endTime || ''),
                 date: startDate, // 호환성을 위해 유지

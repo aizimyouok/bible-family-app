@@ -5,7 +5,7 @@
 
 // === API 설정 ===
 const API_CONFIG = {
-    scriptUrl: 'https://script.google.com/macros/s/AKfycbwBww_0qfNJdtVTDNtnobVLoHT-oPi4NGIyI3TIy6a9y_tiauFG3jiFRB9qdpxhgXPixQ/exec',
+    scriptUrl: 'https://script.google.com/macros/s/AKfycbxQWI_Zll6ZdYcAk74DPP43kAUxqD-T6achb-ZmrRJSBRez36Bsuw-E4qBPPEaaFx-Aug/exec',
     apiKey: 'bible_family_default',
     enableSecurity: false
 };
